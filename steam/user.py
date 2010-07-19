@@ -48,6 +48,9 @@ class profile:
         self.summary_object = (json.load(urllib2.urlopen(_profile_url + str(id64)))
                                ["response"]["players"]["player"][0])
 
+        if not self.summary_object:
+            raise Exception("Profile not found")
+
         return self.summary_object
 
     def get_id64(self):

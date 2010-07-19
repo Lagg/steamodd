@@ -81,26 +81,19 @@ class backpack:
             raise Exception("Bad schema")
         return self.schema_object
 
-    def load_pack_from_id64(self, id64):
-        """ Loads the player backpack for the given 64 bit Steam ID. Usually
-        load_pack_from_id should be used instead. Returns a list (first element
-        will be None if the backpack is empty.)"""
-        inventory_object = json.load(urllib2.urlopen(_inventory_url + id64))
-        result = inventory_object["result"]["status"]
+    def load_pack(self, sid):
+        """ Loads the player backpack for the given ID. (can be the 64 bit ID or profile name)
+        Returns a list of items, will be empty if there's nothing in the backpack"""
+        id64 = steam.user.profile(sid).get_id64()
+
+        self._inventory_object = json.load(urllib2.urlopen(_inventory_url + str(id64)))
+        result = self._inventory_object["result"]["status"]
         if result == 8:
             raise Exception("Bad SteamID64 given")
         elif result == 15:
             raise Exception("Profile set to private")
 
-        return inventory_object["result"]["items"]["item"]
-
-    def load_pack_from_id(self, ids):
-        """ Loads the player backpack for the given ID.
-        Returns a list of items, first and only element will be None if
-        the backpack is empty """
-        profile = str(steam.user.profile(ids).get_id64())
-
-        return self.load_pack_from_id64(profile)
+        return self.get_items()
 
     def get_schema_for_item(self, item):
         """ Looks up the schema block for the item """
@@ -164,6 +157,18 @@ class backpack:
 
         return classes
 
+    def get_items(self):
+        """ Returns the list of backpack items """
+        ilist = []
+        if self._inventory_object:
+            try:
+                ilist = self._inventory_object["result"]["items"]["item"]
+                if not ilist[0]:
+                    ilist = []
+            except KeyError:
+                pass
+        return ilist
+
     def format_attribute_description_string(self, attr):
         """ Returns a formatted description_string (%s* tokens replaced) """
         fattr = str(attr["value"])
@@ -183,10 +188,14 @@ class backpack:
 
         return attr["description_string"].encode("utf-8").replace("%s1", fattr)
 
-    def __init__(self):
+    def __init__(self, sid = None):
+        """ Loads the backpack of user sid if given """
         if not os.path.exists(cache_dir):
             os.makedirs(cache_dir)
         self.load_schema()
+
+        if sid:
+            self.load_pack(sid)
 
 class golden_wrench:
     """ Functions for reading info for the golden wrenches found

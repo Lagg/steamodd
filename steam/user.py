@@ -25,19 +25,27 @@ _profile_url = ("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/"
                 "v0001/?key=" + steam.api_key + "&steamids=")
 
 class profile:
+    # Hopefully Valve will provide a request for doing this so we won't
+    # have to use the old API
     def _get_id64_from_sid(self, sid):
         """ This uses the old API, don't use this directly. """
         prof = urllib2.urlopen(_old_profile_url % sid).read()
-        prof = (prof[prof.find("<steamID64>")+11:
-                         prof.find("</steamID64>")])
+        if type(sid) == str and prof.find("<steamID64>") != -1:
+            prof = (prof[prof.find("<steamID64>")+11:
+                             prof.find("</steamID64>")])
 
-        return prof
+            return prof
 
     def get_summary(self, sid):
         """ Returns the summary object. The wrapper functions should
         normally be used instead."""
-        self.summary_object = (json.load(urllib2.urlopen(_profile_url +
-                                                         self._get_id64_from_sid(sid)))
+        id64 = self._get_id64_from_sid(sid)
+
+        if not id64:
+            #Assume it's the 64 bit ID
+            id64 = sid
+
+        self.summary_object = (json.load(urllib2.urlopen(_profile_url + str(id64)))
                                ["response"]["players"]["player"][0])
 
         return self.summary_object

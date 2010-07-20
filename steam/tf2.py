@@ -143,9 +143,13 @@ class backpack:
         return quality
 
     def get_pack_position_for_item(self, item):
-        """ Returns the item's position in the backpack """
+        """ Returns the item's position in the backpack or -1 if it's not
+        in the backpack yet"""
 
-        return item["inventory"] & 0xFFFF
+        if item["inventory"] == 0:
+            return -1
+        else:
+            return item["inventory"] & 0xFFFF
 
     def get_equipped_classes_for_item(self, item):
         """ Returns a list of classes (see equipped_classes values) """

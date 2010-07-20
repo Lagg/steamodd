@@ -235,6 +235,11 @@ class golden_wrench:
         """ Returns the serial number of the wrench """
 
         return wrench["wrenchNumber"]
+
+    def get_owner(self, wrench):
+        """ Returns the 64 bit ID of the wrench owner """
+
+        return wrench["steamID"]
     
     def __init__(self):
         self._wrench_list = (json.load(urllib2.urlopen(_wrench_url))

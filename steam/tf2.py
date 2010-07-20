@@ -201,7 +201,38 @@ class golden_wrench:
     """ Functions for reading info for the golden wrenches found
     during the Engineer update """
 
+    def get_wrenches(self):
+        """ Returns the list of wrenches """
+
+        return self._wrench_list
+
+    def get_wrench_for_user(self, user):
+        """ If the user found a wrench a gw object will be returned
+        Otherwise None """
+
+        for w in self.get_wrenches():
+            if w["steamID"] == user.get_id64():
+                return w
+
+    def get_craft_date(self, wrench):
+        """ Returns the craft date as wrench as a time.struct_time object
+        as returned from localtime """
+
+        return time.localtime(wrench["timestamp"])
+
+    def get_id(self, wrench):
+        """ Returns the item ID (will match the ID in the user's inventory)
+        This is NOT the unique number from the wrench log, see get_serial
+        for that. """
+
+        return wrench["itemID"]
+
+    def get_serial(self, wrench):
+        """ Returns the serial number of the wrench """
+
+        return wrench["wrenchNumber"]
+    
     def __init__(self):
-        self.pack = backpack()
         self._wrench_list = (json.load(urllib2.urlopen(_wrench_url))
                              ["results"]["wrenches"]["wrench"])
+

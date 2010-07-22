@@ -36,6 +36,14 @@ if os.environ.has_key("XDG_CACHE_HOME"):
 elif os.environ.has_key("APPDATA"):
     cache_dir = os.path.join(os.environ["APPDATA"], cache_dir)
 
+class TF2Error(Exception):
+    def __init__(self, msg):
+        Exception.__init__(self)
+        self.msg = msg
+
+    def __str__(self):
+        return repr(self.msg)
+
 class backpack:
     """ Functions for reading player inventory """
     equipped_field = 0x1FF0000
@@ -68,7 +76,7 @@ class backpack:
             try:
                 schema_handle = self._rewrite_schema_cache()
             except URLError:
-                raise IOError("Couldn't download schema")
+                raise TF2Error("Couldn't download schema")
         else:
             if os.path.exists(self._schema_file):
                 schema_handle = file(self._schema_file, "rb")
@@ -78,7 +86,7 @@ class backpack:
         self.schema_object = json.load(schema_handle)
         schema_handle.close()
         if self.schema_object["result"]["status"] != 1:
-            raise Exception("Bad schema")
+            raise TF2Error("Bad schema")
         return self.schema_object
 
     def load_pack(self, sid):
@@ -89,9 +97,9 @@ class backpack:
         self._inventory_object = json.load(urllib2.urlopen(_inventory_url + str(id64)))
         result = self._inventory_object["result"]["status"]
         if result == 8:
-            raise Exception("Bad SteamID64 given")
+            raise TF2Error("Bad SteamID64 given")
         elif result == 15:
-            raise Exception("Profile set to private")
+            raise TF2Error("Profile set to private")
 
         return self.get_items()
 

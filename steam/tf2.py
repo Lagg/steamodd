@@ -108,8 +108,9 @@ class backpack:
             if sitem["defindex"] == item["defindex"]:
                 return sitem
 
-    def get_schema_for_item(self, item):
-        """ Looks up the schema block for the item """
+    def get_item_schema(self, item):
+        """ Looks up the schema block for the item, normally you want to use
+        the functions that wrap this """
 
         schema = self._internal_schema_get(item)
 
@@ -136,12 +137,12 @@ class backpack:
                         break
         return attrs
 
-    def get_attributes_for_item(self, item):
+    def get_item_attributes(self, item):
         """ Returns a list of attributes """
-        return (self._internal_attr_get("name", self.get_schema_for_item(item)) +
+        return (self._internal_attr_get("name", self.get_item_schema(item)) +
                 self._internal_attr_get("defindex", item))
 
-    def get_quality_for_item(self, item):
+    def get_item_quality(self, item):
         """ Returns a dict
         prettystr is the localized pretty name (e.g. Valve)
         id is the numerical quality (e.g. 8)
@@ -162,7 +163,7 @@ class backpack:
 
         return quality
 
-    def get_pack_position_for_item(self, item):
+    def get_item_position(self, item):
         """ Returns the item's position in the backpack or -1 if it's not
         in the backpack yet"""
 
@@ -171,7 +172,7 @@ class backpack:
         else:
             return item["inventory"] & 0xFFFF
 
-    def get_equipped_classes_for_item(self, item):
+    def get_item_equipped_classes(self, item):
         """ Returns a list of classes (see equipped_classes values) """
         classes = []
 
@@ -211,6 +212,30 @@ class backpack:
             fattr = "%d-%02d-%02d" % (d.tm_year, d.tm_mon, d.tm_mday)
 
         return attr["description_string"].encode("utf-8").replace("%s1", fattr)
+
+    def get_item_name(self, item):
+        """ Returns the item's name, this can be used with get_item_quality
+        to decide prefixes (e.g. "The Kritzkrieg") for a unique item. """
+        return self.get_item_schema(item)["item_name"]
+
+    def get_item_type(self, item):
+        """ Returns the item's type, e.g. "Kukri" for the Tribalman's Shiv """
+        itype = self.get_item_schema(item)["item_type_name"]
+        if itype == "TF_Wearable_Hat":
+            itype = "Hat"
+        return itype
+
+    def get_attribute_type(self, attr):
+        """ Returns the attribute effect type (positive, negative, or neutral) """
+        return attr["effect_type"]
+
+    def get_item_id(self, item):
+        """ Returns the item's unique serial number """
+        return item["id"]
+
+    def get_item_level(self, item):
+        """ Returns the item's level (e.g. 10 for The Axtinguisher) """
+        return item["level"]
 
     def __init__(self, sid = None):
         """ Loads the backpack of user sid if given """

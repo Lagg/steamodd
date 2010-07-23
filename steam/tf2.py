@@ -194,24 +194,28 @@ class backpack:
                 pass
         return ilist
 
-    def format_attribute_description_string(self, attr):
+    def format_attribute_description(self, attr):
         """ Returns a formatted description_string (%s* tokens replaced) """
-        fattr = str(attr["value"])
+        val = self.get_attribute_value(attr)
+        ftype = self.get_attribute_value_type(attr)
+        fattr = str(val)
 
         # I don't think %s2,%s3, etc. needs to be supported since there's
         # 1 value per attribute.
-        if (attr["description_format"] == "value_is_percentage" or
-            attr["description_format"] == "value_is_inverted_percentage" or
-            attr["description_format"] == "value_is_additive_percentage"):
-            fattr = str(int(attr["value"] * 100))
-        elif attr["description_format"] == "value_is_additive":
-            if int(attr["value"]) == attr["value"]:
-                fattr = (str(int(attr["value"])))
-        elif attr["description_format"] == "value_is_date":
-            d = time.localtime(int(attr["value"]))
+        if (ftype == "percentage" or ftype == "additive_percentage" or
+            ftype == "inverted_percentage"):
+            intp = int(val * 100)
+            if intp >= 100:
+                intp -= 100
+            fattr = str(intp)
+        elif ftype == "additive":
+            if int(val) == val:
+                fattr = (str(int(val)))
+        elif ftype == "date":
+            d = time.localtime(int(val))
             fattr = "%d-%02d-%02d" % (d.tm_year, d.tm_mon, d.tm_mday)
 
-        return attr["description_string"].encode("utf-8").replace("%s1", fattr)
+        return self.get_attribute_description(attr).replace("%s1", fattr)
 
     def get_item_name(self, item):
         """ Returns the item's name, this can be used with get_item_quality
@@ -228,6 +232,27 @@ class backpack:
     def get_attribute_type(self, attr):
         """ Returns the attribute effect type (positive, negative, or neutral) """
         return attr["effect_type"]
+
+    def get_attribute_value(self, attr):
+        """ Returns the attribute's value, use get_attribute_format to determine
+        the type. """
+        return attr["value"]
+
+    def get_attribute_description(self, attr):
+        """ Returns the attribute's UTF-8 encoded description string, if
+        it is intended to be printed with the value there will
+        be a "%s1" token somewhere in the string. Use
+        format_attribute_description to substitute this automatically. """
+        return attr["description_string"].encode("utf-8")
+
+    def get_attribute_value_type(self, attr):
+        """ Returns the attribute's type. Currently this can be one of
+        additive: An integer (convert value to integer) or boolean
+        percentage: A standard percentage
+        additive_percentage: Could represent a percentage that adds to default stats
+        inverted_percentage: The sum of the difference between the value and 100%
+        date: A unix timestamp """
+        return attr["description_format"][9:]
 
     def get_item_id(self, item):
         """ Returns the item's unique serial number """

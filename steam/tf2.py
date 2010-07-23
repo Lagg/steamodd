@@ -21,7 +21,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 import json, os, urllib2, time, steam, steam.user
 
 _schema_url = ("http://api.steampowered.com/ITFItems_440/GetSchema/v0001/?key=" +
-               steam.api_key + "&format=json&language=en")
+               steam.api_key + "&format=json&language=" + steam.language)
 
 _inventory_url = ("http://api.steampowered.com/ITFItems_440/GetPlayerItems/"
                   "v0001/?key=" + steam.api_key + "&format=json&SteamID=")

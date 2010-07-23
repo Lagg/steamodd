@@ -1,0 +1,20 @@
+Steamodd is a project that grew out of a 200 line test script I
+wrote to test out the new API and find stuff I could complain about.
+
+There are still some hacky spots but overall the modules should be
+usable in a project. End-users may be interested in the backpack viewer
+script found in this directory.
+
+
+I'm including my API key here mostly because I don't feel like rewriting the
+commit history to remove it and it shouldn't be that big of a deal if you're
+testing, however I ask that you use your own key if you're planning on using
+steamodd regularly. Especially if you're writing your own stuff that uses
+steamodd.
+
+Change the key by editing steam/__init__.py or setting steam.api_key at runtime
+before anything is instantiated.
+
+You can also set the language steamodd passes in API requests that support it by
+setting steam.language which is en (English) by default. See the docstrings for
+further info.

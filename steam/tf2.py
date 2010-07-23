@@ -103,11 +103,23 @@ class backpack:
 
         return self.get_items()
 
-    def get_schema_for_item(self, item):
-        """ Looks up the schema block for the item """
+    def _internal_schema_get(self, item):
         for sitem in self.schema_object["result"]["items"]["item"]:
             if sitem["defindex"] == item["defindex"]:
                 return sitem
+
+    def get_schema_for_item(self, item):
+        """ Looks up the schema block for the item """
+
+        schema = self._internal_schema_get(item)
+
+        # We might need to update the cache
+        if not schema:
+            self.load_schema(fresh = True)
+
+        schema = self._internal_schema_get(item)
+
+        return schema
 
     def _internal_attr_get(self, compareby, obj):
         """ Internal function for special/schema attributes """

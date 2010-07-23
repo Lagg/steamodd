@@ -90,9 +90,9 @@ class backpack:
         return self.schema_object
 
     def load_pack(self, sid):
-        """ Loads the player backpack for the given ID. (can be the 64 bit ID or profile name)
+        """ Loads the player backpack for the given steam.user
         Returns a list of items, will be empty if there's nothing in the backpack"""
-        id64 = steam.user.profile(sid).get_id64()
+        id64 = sid.get_id64()
 
         self._inventory_object = json.load(urllib2.urlopen(_inventory_url + str(id64)))
         result = self._inventory_object["result"]["status"]

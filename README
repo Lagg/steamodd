@@ -5,16 +5,18 @@ There are still some hacky spots but overall the modules should be
 usable in a project. End-users may be interested in the backpack viewer
 script found in this directory.
 
+Be sure to set your api key and language before using any of the module functions.
+It can be defined in the core config file which is currently in $XDG_CONFIG_HOME/
+steammod.rc.d/core.js in GNU/Linux systems and %APPDATA%/steammod/steammod.rc.d/core.js
+on Windows.
 
-I'm including my API key here mostly because I don't feel like rewriting the
-commit history to remove it and it shouldn't be that big of a deal if you're
-testing, however I ask that you use your own key if you're planning on using
-steamodd regularly. Especially if you're writing your own stuff that uses
-steamodd.
+You can also set it directly by assigning to steam.api_key and steam.language.
 
-Change the key by editing steam/__init__.py or setting steam.api_key at runtime
-before anything is instantiated.
 
-You can also set the language steamodd passes in API requests that support it by
-setting steam.language which is en (English) by default. See the docstrings for
-further info.
+
+Contributing
+================
+
+If you would like to contribute please send a patch with the change
+and your email and name in AUTHORS. If you want to be a member of the
+project drop me a mail and I'll add you to the group on gitorious.

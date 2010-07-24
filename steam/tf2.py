@@ -29,13 +29,6 @@ _inventory_url = ("http://api.steampowered.com/ITFItems_440/GetPlayerItems/"
 _wrench_url = ("http://api.steampowered.com/ITFItems_440/GetGoldenWrenches/"
                "v0001/?key=" + steam.api_key + "&format=json")
 
-# Random stuff that doesn't need to be downloaded every instance e.g. the schema
-cache_dir = "tf2_pack"
-if os.environ.has_key("XDG_CACHE_HOME"):
-    cache_dir = os.path.join(os.environ["XDG_CACHE_HOME"], cache_dir)
-elif os.environ.has_key("APPDATA"):
-    cache_dir = os.path.join(os.environ["APPDATA"], cache_dir)
-
 class TF2Error(Exception):
     def __init__(self, msg):
         Exception.__init__(self)
@@ -71,7 +64,7 @@ class backpack:
     def load_schema(self, fresh = False):
         """ Loads the item schema, if fresh is true a download is forced """
         schema_handle = 0
-        self._schema_file = os.path.join(cache_dir, "schema.js")
+        self._schema_file = os.path.join(steam.get_cache_dir(), "tf2_item_schema.js")
         if fresh:
             try:
                 schema_handle = self._rewrite_schema_cache()
@@ -264,8 +257,6 @@ class backpack:
 
     def __init__(self, sid = None):
         """ Loads the backpack of user sid if given """
-        if not os.path.exists(cache_dir):
-            os.makedirs(cache_dir)
         self.load_schema()
 
         if sid:
@@ -311,7 +302,16 @@ class golden_wrench:
 
         return wrench["steamID"]
     
-    def __init__(self):
-        self._wrench_list = (json.load(urllib2.urlopen(_wrench_url))
-                             ["results"]["wrenches"]["wrench"])
+    def __init__(self, fresh = False):
+        """ Will rewrite the wrench file if fresh = True """
+        cache = os.path.join(steam.get_cache_dir(), "golden_wrenches.js")
+        wc = None
 
+        if fresh or not os.path.exists(cache):
+            wc = file(cache, "wb+")
+            wc.write(urllib2.urlopen(_wrench_url).read())
+            wc.seek(0)
+        else:
+            wc = file(cache, "rb")
+
+        self._wrench_list = json.load(wc)["results"]["wrenches"]["wrench"]

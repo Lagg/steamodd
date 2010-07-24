@@ -12,7 +12,8 @@ on Windows.
 
 You can also set it directly by assigning to steam.api_key and steam.language.
 
-
+If you don't have an API key it's easy to register for one at
+http://steamcommunity.com/dev/apikey
 
 Contributing
 ================

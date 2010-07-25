@@ -1,5 +1,5 @@
-There's no egg/dist for this yet. It's easy enough to drop the module dir
-into your project for now if you're interested in the modules.
+To install everything (including the modules and tools) run `python setup.py install'
+To install only the steam package run `python setup.py install_lib'
 
-However if you think it's in an installable state and want it early patches
-are always welcome.
+
+See `python setup.py --help' for further instructions.

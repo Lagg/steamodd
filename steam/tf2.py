@@ -52,6 +52,9 @@ class backpack:
         1<<0: "Scout"
         }
 
+    ITEM_IMAGE_SMALL = "image_url"
+    ITEM_IMAGE_LARGE = "image_url_large"
+
     def _rewrite_schema_cache(self):
         """ Internal schema cache function, returns a stream """
         schema_handle = file(self._schema_file, "wb+")
@@ -221,6 +224,14 @@ class backpack:
         if itype == "TF_Wearable_Hat":
             itype = "Hat"
         return itype
+
+    def get_item_image(self, item, size):
+        """ Returns the URL to the item's image, size should be one of
+        ITEM_IMAGE_* """
+        try:
+            return self.get_item_schema(item)[size]
+        except KeyError:
+            raise TF2Error("Bad item image size given")
 
     def get_attribute_type(self, attr):
         """ Returns the attribute effect type (positive, negative, or neutral) """

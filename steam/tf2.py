@@ -41,15 +41,15 @@ class backpack:
     """ Functions for reading player inventory """
     equipped_field = 0x1FF0000
     equipped_classes = {
-        1<<8: "engineer",
-        1<<7: "spy",
-        1<<6: "pyro",
-        1<<5: "heavy",
-        1<<4: "medic",
-        1<<3: "demoman",
-        1<<2: "soldier",
-        1<<1: "sniper",
-        1<<0: "scout"
+        1<<8: "Engineer",
+        1<<7: "Spy",
+        1<<6: "Pyro",
+        1<<5: "Heavy",
+        1<<4: "Medic",
+        1<<3: "Demoman",
+        1<<2: "Soldier",
+        1<<1: "Sniper",
+        1<<0: "Scout"
         }
 
     def _rewrite_schema_cache(self):

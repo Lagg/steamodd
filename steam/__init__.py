@@ -64,10 +64,36 @@ def write_config_file(config, basename):
 
     thefile = os.path.join(get_config_dir(), basename)
     try:
-        fp = file(thefile, "wb")
+        fp = file(thefile, "wb+")
         json.dump(config, fp)
     except ValueError:
         pass
+
+def load_cache_file(basename):
+    """ Returns the cache file content as a string or None
+    if the file doesn't exist or can't be read """
+
+    thefile = os.path.join(get_cache_dir(), basename)
+    if os.path.exists(thefile):
+        try:
+            fp = file(thefile, "rb")
+            return fp.read()
+        except IOError:
+            raise Warning("Couldn't read cache file: " + thefile)
+
+def write_cache_file(data, basename):
+    """ Writes data to cache file basename. data should
+    be a file-like object """
+
+    thefile = os.path.join(get_cache_dir(), basename)
+    try:
+        fp = file(thefile, "wb+")
+        fp.write(data.read())
+        fp.seek(0)
+    except:
+        try: os.unlink(thefile)
+        except: pass
+        raise Warning("Couldn't write cache file: " + thefile)
 
 if os.environ.has_key("XDG_CACHE_HOME"):
     _cache_dir = os.path.join(os.environ["XDG_CACHE_HOME"], _cache_dir)

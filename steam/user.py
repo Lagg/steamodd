@@ -177,7 +177,7 @@ class profile:
     def __init__(self, sid):
         """ Creates a profile instance for the given user """
 
-        self.get_summary(sid)
+        self.get_summary(sid.encode("ascii"))
 
     AVATAR_SMALL = "avatar"
     AVATAR_MEDIUM = "avatarmedium"

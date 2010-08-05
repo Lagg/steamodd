@@ -178,6 +178,18 @@ class backpack:
 
         return classes
 
+    def get_item_equipable_classes(self, item):
+        """ Returns a list of classes that _can_ use the item. """
+        classes = []
+        schema = self.get_item_schema(item)
+
+        if schema.has_key("used_by_classes"):
+            classes = schema["used_by_classes"]["class"]
+        else:
+            classes = self.equipped_classes.values()
+
+        return classes
+
     def get_items(self):
         """ Returns the list of backpack items """
         ilist = []

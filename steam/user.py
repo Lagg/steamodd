@@ -147,8 +147,8 @@ class profile:
 
     def get_current_game(self):
         """ Returns a dict of game info if the user is playing if public and set
-        id is an integer
-        server is the IP address:port string, will be 0.0.0.0:0 if they're not on a server
+        id is an integer if it's a steam game
+        server is the IP address:port string if they're on a server
         extra is the game name """
         ret = {}
         if self.get_visibility() == "public":

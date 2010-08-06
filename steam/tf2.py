@@ -280,6 +280,11 @@ class backpack:
         """ Returns the item's level (e.g. 10 for The Axtinguisher) """
         return item["level"]
 
+    def get_item_slot(self, item):
+        """ Returns the item's slot as a string, this includes "primary",
+        "secondary", "melee", and "head" """
+        return self.get_item_schema(item)["item_slot"]
+
     def __init__(self, sid = None):
         """ Loads the backpack of user sid if given """
         self.load_schema()

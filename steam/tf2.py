@@ -96,6 +96,8 @@ class backpack:
             raise TF2Error("Bad SteamID64 given")
         elif result == 15:
             raise TF2Error("Profile set to private")
+        elif result != 1:
+            raise TF2Error("Unknown error")
 
         return self.get_items()
 

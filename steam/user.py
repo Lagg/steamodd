@@ -20,10 +20,6 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import json, urllib2, steam, time
 
-_old_profile_url = "http://steamcommunity.com/id/%s?xml=1"
-_profile_url = ("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/"
-                "v0001/?key=" + steam.api_key + "&steamids=")
-
 class ProfileError(Exception):
     def __init__(self, msg):
         Exception.__init__(self)
@@ -33,11 +29,13 @@ class ProfileError(Exception):
         return repr(self.msg)
 
 class profile:
+    """ Functions for reading user account data """
+
     # Hopefully Valve will provide a request for doing this so we won't
     # have to use the old API
     def _get_id64_from_sid(self, sid):
         """ This uses the old API, don't use this directly. """
-        prof = urllib2.urlopen(_old_profile_url % sid).read()
+        prof = urllib2.urlopen(self._old_profile_url % sid).read()
         if type(sid) == str and prof.find("<steamID64>") != -1:
             prof = (prof[prof.find("<steamID64>")+11:
                              prof.find("</steamID64>")])
@@ -53,7 +51,7 @@ class profile:
             #Assume it's the 64 bit ID
             id64 = sid
 
-        self.summary_object = (json.load(urllib2.urlopen(_profile_url + str(id64)))
+        self.summary_object = (json.load(urllib2.urlopen(self._profile_url + str(id64)))
                                ["response"]["players"]["player"][0])
 
         if not self.summary_object:
@@ -176,6 +174,10 @@ class profile:
 
     def __init__(self, sid):
         """ Creates a profile instance for the given user """
+        self._old_profile_url = "http://steamcommunity.com/id/%s?xml=1"
+        self._profile_url = ("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/"
+                             "v0001/?key=" + steam.api_key + "&steamids=")
+
 
         self.get_summary(sid.encode("ascii"))
 

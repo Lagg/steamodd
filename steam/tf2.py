@@ -20,15 +20,6 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import json, os, urllib2, time, steam, steam.user
 
-_schema_url = ("http://api.steampowered.com/ITFItems_440/GetSchema/v0001/?key=" +
-               steam.api_key + "&format=json&language=" + steam.language)
-
-_inventory_url = ("http://api.steampowered.com/ITFItems_440/GetPlayerItems/"
-                  "v0001/?key=" + steam.api_key + "&format=json&SteamID=")
-
-_wrench_url = ("http://api.steampowered.com/ITFItems_440/GetGoldenWrenches/"
-               "v0001/?key=" + steam.api_key + "&format=json")
-
 class TF2Error(Exception):
     def __init__(self, msg):
         Exception.__init__(self)
@@ -58,7 +49,7 @@ class backpack:
     def _rewrite_schema_cache(self):
         """ Internal schema cache function, returns a stream """
         schema_handle = file(self._schema_file, "wb+")
-        schema = urllib2.urlopen(_schema_url).read()
+        schema = urllib2.urlopen(self._schema_url).read()
         schema_handle.write(schema)
         schema_handle.seek(0)
 
@@ -90,7 +81,7 @@ class backpack:
         Returns a list of items, will be empty if there's nothing in the backpack"""
         id64 = sid.get_id64()
 
-        self._inventory_object = json.load(urllib2.urlopen(_inventory_url + str(id64)))
+        self._inventory_object = json.load(urllib2.urlopen(self._inventory_url + str(id64)))
         result = self._inventory_object["result"]["status"]
         if result == 8:
             raise TF2Error("Bad SteamID64 given")
@@ -287,6 +278,11 @@ class backpack:
 
     def __init__(self, sid = None):
         """ Loads the backpack of user sid if given """
+        self._schema_url = ("http://api.steampowered.com/ITFItems_440/GetSchema/v0001/?key=" +
+                            steam.api_key + "&format=json&language=" + steam.language)
+        self._inventory_url = ("http://api.steampowered.com/ITFItems_440/GetPlayerItems/"
+                               "v0001/?key=" + steam.api_key + "&format=json&SteamID=")
+
         self.load_schema()
 
         if sid:
@@ -334,12 +330,16 @@ class golden_wrench:
     
     def __init__(self, fresh = False):
         """ Will rewrite the wrench file if fresh = True """
+
+        self._wrench_url = ("http://api.steampowered.com/ITFItems_440/GetGoldenWrenches/"
+                            "v0001/?key=" + steam.api_key + "&format=json")
+
         cache = os.path.join(steam.get_cache_dir(), "golden_wrenches.js")
         wc = None
 
         if fresh or not os.path.exists(cache):
             wc = file(cache, "wb+")
-            wc.write(urllib2.urlopen(_wrench_url).read())
+            wc.write(urllib2.urlopen(self._wrench_url).read())
             wc.seek(0)
         else:
             wc = file(cache, "rb")

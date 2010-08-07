@@ -46,29 +46,21 @@ class backpack:
     ITEM_IMAGE_SMALL = "image_url"
     ITEM_IMAGE_LARGE = "image_url_large"
 
+    _schema_basename = "tf2_item_schema.js"
+
     def _rewrite_schema_cache(self):
         """ Internal schema cache function, returns a stream """
-        schema_handle = file(self._schema_file, "wb+")
-        schema = urllib2.urlopen(self._schema_url).read()
-        schema_handle.write(schema)
-        schema_handle.seek(0)
-
-        return schema_handle
+        return steam.write_cache_file(urllib2.urlopen(self._schema_url),
+                                      self._schema_basename)
     
     def load_schema(self, fresh = False):
         """ Loads the item schema, if fresh is true a download is forced """
-        schema_handle = 0
-        self._schema_file = os.path.join(steam.get_cache_dir(), "tf2_item_schema.js")
-        if fresh:
+        schema_handle = steam.get_cache_file(self._schema_basename)
+        if fresh or not schema_handle:
             try:
                 schema_handle = self._rewrite_schema_cache()
             except URLError:
                 raise TF2Error("Couldn't download schema")
-        else:
-            if os.path.exists(self._schema_file):
-                schema_handle = file(self._schema_file, "rb")
-            else:
-                schema_handle = self._rewrite_schema_cache()
 
         self.schema_object = json.load(schema_handle)
         schema_handle.close()
@@ -279,9 +271,9 @@ class backpack:
     def __init__(self, sid = None):
         """ Loads the backpack of user sid if given """
         self._schema_url = ("http://api.steampowered.com/ITFItems_440/GetSchema/v0001/?key=" +
-                            steam.api_key + "&format=json&language=" + steam.language)
+                            steam.get_api_key() + "&format=json&language=" + steam.get_language())
         self._inventory_url = ("http://api.steampowered.com/ITFItems_440/GetPlayerItems/"
-                               "v0001/?key=" + steam.api_key + "&format=json&SteamID=")
+                               "v0001/?key=" + steam.get_api_key() + "&format=json&SteamID=")
 
         self.load_schema()
 
@@ -291,6 +283,8 @@ class backpack:
 class golden_wrench:
     """ Functions for reading info for the golden wrenches found
     during the Engineer update """
+
+    _cache_basename = "tf2_golden_wrenches.js"
 
     def get_wrenches(self):
         """ Returns the list of wrenches """
@@ -332,16 +326,11 @@ class golden_wrench:
         """ Will rewrite the wrench file if fresh = True """
 
         self._wrench_url = ("http://api.steampowered.com/ITFItems_440/GetGoldenWrenches/"
-                            "v0001/?key=" + steam.api_key + "&format=json")
+                            "v0001/?key=" + steam.get_api_key() + "&format=json")
 
-        cache = os.path.join(steam.get_cache_dir(), "golden_wrenches.js")
-        wc = None
+        cache = steam.get_cache_file(self._cache_basename)
+        if fresh or not cache:
+            cache = steam.write_cache_file(urllib2.urlopen(self._wrench_url),
+                                           self._cache_basename)
 
-        if fresh or not os.path.exists(cache):
-            wc = file(cache, "wb+")
-            wc.write(urllib2.urlopen(self._wrench_url).read())
-            wc.seek(0)
-        else:
-            wc = file(cache, "rb")
-
-        self._wrench_list = json.load(wc)["results"]["wrenches"]["wrench"]
+        self._wrench_list = json.load(cache)["results"]["wrenches"]["wrench"]

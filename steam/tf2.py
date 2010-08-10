@@ -59,7 +59,7 @@ class backpack:
         if fresh or not schema_handle:
             try:
                 schema_handle = self._rewrite_schema_cache()
-            except URLError:
+            except urllib2.URLError:
                 raise TF2Error("Couldn't download schema")
 
         self.schema_object = json.load(schema_handle)

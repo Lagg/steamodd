@@ -101,11 +101,7 @@ class profile:
     def is_configured(self):
         """ Returns true if the user has created a Community profile """
 
-        if (self.summary_object.has_key("profilestate") and
-            self.summary_object["profilestate"]):
-            return True
-        else:
-            return False
+        return self.summary_object.get("profilestate", False)
 
     def get_last_online(self):
         """ Returns the last time the user was online as a localtime
@@ -115,33 +111,29 @@ class profile:
 
     def is_comment_enabled(self):
         """ Returns true if the profile allows public comments """
-        if (self.summary_object.has_key("commentpermission") and
-            self.summary_object["commentpermission"]):
-            return True
-        else:
-            return False
+
+        return self.summary_object.get("commentpermission", False)
 
     def get_real_name(self):
         """ Returns the user's real name if it's set and public """
-        if (self.get_visibility() == "public" and
-            self.summary_object.has_key("realname")):
-            return self.summary_object["realname"]
+
+        return self.summary_object.get("realname")
 
     # This isn't very useful yet since there's no API request
     # for groups yet, and I'm avoiding using the old API
     # as much as possible
     def get_primary_group(self):
         """ Returns the user's primary group ID if set. """
-        if (self.get_visibility() == "public" and
-            self.summary_object.has_key("primaryclanid")):
-            return self.summary_object["primaryclanid"]
+
+        return self.summary_object.get("primaryclanid")
 
     def get_creation_date(self):
         """ Returns the account creation date as a localtime time.struct_time
         struct if public"""
-        if (self.get_visibility() == "public" and
-            self.summary_object.has_key("timecreated")):
-            return time.localtime(self.summary_object["timecreated"])
+
+        timestamp = self.summary_object.get("timecreated")
+        if timestamp:
+            return time.localtime(timestamp)
 
     def get_current_game(self):
         """ Returns a dict of game info if the user is playing if public and set

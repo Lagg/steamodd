@@ -46,16 +46,17 @@ class backpack:
     ITEM_IMAGE_SMALL = "image_url"
     ITEM_IMAGE_LARGE = "image_url_large"
 
-    _schema_basename = "tf2_item_schema.js"
+    def _get_schema_basename(self):
+        return "tf2_item_schema_" + steam.get_language() + ".js"
 
     def _rewrite_schema_cache(self):
         """ Internal schema cache function, returns a stream """
         return steam.write_cache_file(urllib2.urlopen(self._schema_url),
-                                      self._schema_basename)
+                                      self._get_schema_basename())
     
     def load_schema(self, fresh = False):
         """ Loads the item schema, if fresh is true a download is forced """
-        schema_handle = steam.get_cache_file(self._schema_basename)
+        schema_handle = steam.get_cache_file(self._get_schema_basename())
         if fresh or not schema_handle:
             try:
                 schema_handle = self._rewrite_schema_cache()

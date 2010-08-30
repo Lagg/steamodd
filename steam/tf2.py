@@ -196,15 +196,14 @@ class backpack:
 
         # I don't think %s2,%s3, etc. needs to be supported since there's
         # 1 value per attribute.
-        if (ftype == "percentage" or ftype == "additive_percentage" or
-            ftype == "inverted_percentage"):
-            intp = int(val * 100)
-            if intp >= 100:
-                intp -= 100
-            fattr = str(intp)
+        if ftype == "percentage" or ftype == "additive_percentage":
+            intp = val
+            if intp > 1: intp -= 1
+            fattr = str(int(round(intp, 2) * 100))
+        elif ftype == "inverted_percentage":
+            fattr = str(100 - int(round(val, 2) * 100))
         elif ftype == "additive":
-            if int(val) == val:
-                fattr = (str(int(val)))
+            if int(val) == val: fattr = (str(int(val)))
         elif ftype == "date":
             d = time.localtime(int(val))
             fattr = "%d-%02d-%02d" % (d.tm_year, d.tm_mon, d.tm_mday)

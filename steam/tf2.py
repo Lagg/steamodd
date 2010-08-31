@@ -188,6 +188,13 @@ class backpack:
                 pass
         return ilist
 
+    def get_item_by_id(self, id):
+        """ Takes an id (serial number) and returns the item if one is found """
+        for item in self.get_items():
+            if self.get_item_id(item) == id:
+                return item
+
+
     def format_attribute_description(self, attr):
         """ Returns a formatted description_string (%s* tokens replaced) """
         val = self.get_attribute_value(attr)

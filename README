@@ -10,7 +10,8 @@ It can be defined in the core config file which is currently in $XDG_CONFIG_HOME
 steammod.rc.d/core.js in GNU/Linux systems and %APPDATA%/steammod/steammod.rc.d/core.js
 on Windows.
 
-You can also set it directly by assigning to steam.api_key and steam.language.
+You can also set it directly in your code by calling steam.set_api_key and
+steam.set_language
 
 If you don't have an API key it's easy to register for one at
 http://steamcommunity.com/dev/apikey

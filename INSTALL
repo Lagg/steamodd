@@ -1,5 +1,3 @@
-To install everything (including the modules and tools) run `python setup.py install'
-To install only the steam package run `python setup.py install_lib'
-
+To install steamodd run `python setup.py install'
 
 See `python setup.py --help' for further instructions.

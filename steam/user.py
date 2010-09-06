@@ -18,7 +18,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
-import json, urllib2, steam, time
+import json, urllib2, steam, time, shelve, os
 
 class ProfileError(Exception):
     def __init__(self, msg):
@@ -34,11 +34,19 @@ class profile:
     # Hopefully Valve will provide a request for doing this so we won't
     # have to use the old API
     def _get_id64_from_sid(self, sid):
-        """ This uses the old API, don't use this directly. """
+        """ This uses the old API, don't use this directly. caches
+        64 bit ID mappings in id64_cache* """
+
+        cache = shelve.open(os.path.join(steam.get_cache_dir(), "id64_cache"))
+        ids = cache.get(sid)
+        if ids: return ids
+
         prof = urllib2.urlopen(self._old_profile_url % sid).read()
         if type(sid) == str and prof.find("<steamID64>") != -1:
             prof = (prof[prof.find("<steamID64>")+11:
                              prof.find("</steamID64>")])
+            cache[sid] = prof
+            cache.close()
 
             return prof
 

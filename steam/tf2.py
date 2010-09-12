@@ -19,6 +19,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
 import json, os, urllib2, time, steam, steam.user
+import cPickle as pickle
 
 class TF2Error(Exception):
     def __init__(self, msg):
@@ -68,6 +69,22 @@ class backpack:
         if self.schema_object["result"]["status"] != 1:
             raise TF2Error("Bad schema")
         return self.schema_object
+
+    def load_pack_file(self, pack, pickled = True):
+        """ Loads a backpack from the given file. If pickled == True
+        assume it's a pickled dict, otherwise a JSON object. """
+
+        if pickled:
+            self._inventory_object = pickle.load(pack)
+        else:
+            self._inventory_object = json.load(pack)
+
+        return self.get_items()
+
+    def get_pack_object(self):
+        """ Returns the backpack as a dict """
+
+        return self._inventory_object
 
     def load_pack(self, sid):
         """ Loads the player backpack for the given steam.user

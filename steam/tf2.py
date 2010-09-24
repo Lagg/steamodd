@@ -127,7 +127,8 @@ class backpack:
         if obj.has_key("attributes"):
             for attr in obj["attributes"]["attribute"]:
                 for sattr in self.schema_object["result"]["attributes"]["attribute"]:
-                    if sattr[compareby] == attr[compareby]:
+                    if ((sattr.has_key(compareby) and attr.has_key(compareby)) and
+                        (sattr[compareby] == attr[compareby])):
                         if sattr["description_string"] != "unused":
                             if sattr["attribute_class"] == "set_attached_particle":
                                 sattr["description_string"] = "Particle Type: %s1"
@@ -148,7 +149,8 @@ class backpack:
         str is the non-pretty string (e.g. developer) """
         quality = {}
 
-        quality["id"] = item["quality"]
+        quality["id"] = item.get("quality", item.get("item_quality", 0))
+        quality["str"] = "normal"
 
         for k,v in self.schema_object["result"]["qualities"].iteritems():
             if v == quality["id"]:
@@ -166,17 +168,19 @@ class backpack:
         """ Returns the item's position in the backpack or -1 if it's not
         in the backpack yet"""
 
-        if item["inventory"] == 0:
+        inventory_token = item.get("inventory", 0)
+
+        if inventory_token == 0:
             return -1
         else:
-            return item["inventory"] & 0xFFFF
+            return inventory_token & 0xFFFF
 
     def get_item_equipped_classes(self, item):
         """ Returns a list of classes (see equipped_classes values) """
         classes = []
 
         for k,v in self.equipped_classes.iteritems():
-            if ((item["inventory"] & self.equipped_field) >> 16) & k:
+            if ((item.get("inventory", 0) & self.equipped_field) >> 16) & k:
                 classes.append(v)
 
         return classes
@@ -193,12 +197,22 @@ class backpack:
 
         return classes
 
-    def get_items(self):
-        """ Returns the list of backpack items """
+    def get_items(self, from_schema = False):
+        """ Returns the list of backpack items, if from_schema = True
+        ALL items will be returned, not just from the current player's backpack """
         ilist = []
-        if self._inventory_object:
+
+        if from_schema:
+            fromobj = self.schema_object
+        else:
             try:
-                ilist = self._inventory_object["result"]["items"]["item"]
+                fromobj = self._inventory_object
+            except AttributeError:
+                fromobj = None
+
+        if fromobj:
+            try:
+                ilist = fromobj["result"]["items"]["item"]
                 if not ilist[0]:
                     ilist = []
             except KeyError:
@@ -280,12 +294,12 @@ class backpack:
         return attr["description_format"][9:]
 
     def get_item_id(self, item):
-        """ Returns the item's unique serial number """
-        return item["id"]
+        """ Returns the item's unique serial number if it has one """
+        return item.get("id", None)
 
     def get_item_level(self, item):
-        """ Returns the item's level (e.g. 10 for The Axtinguisher) """
-        return item["level"]
+        """ Returns the item's level (e.g. 10 for The Axtinguisher) if it has one """
+        return item.get("level", 0)
 
     def get_item_slot(self, item):
         """ Returns the item's slot as a string, this includes "primary",

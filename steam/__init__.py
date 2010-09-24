@@ -18,7 +18,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import os, json
 
-__version__ = "0.5"
+__version__ = "0.6"
 
 _api_key = None
 _language = None

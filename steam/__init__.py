@@ -46,6 +46,24 @@ def get_config_dir():
 
     return _config_dir
 
+def set_cache_dir(dirs):
+    """ Set the cache directory. """
+    global _cache_dir
+
+    if not os.path.exists(dirs):
+        os.makedirs(dirs)
+
+    _cache_dir = dirs
+
+def set_config_dir(dirs):
+    """ Set the config file directory (your API key would be read from here) """
+    global _config_dir
+
+    if not os.path.exists(dirs):
+        os.makedirs(dirs)
+
+    _config_dir = dirs
+
 def load_config_file(basename):
     """ Returns the configuration dict in basename
     from the config directory if available. """

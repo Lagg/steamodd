@@ -39,10 +39,16 @@ def get_cache_dir():
     """ Returns the cache directory, you should use this if you're
     extending the modules """
 
+    if not os.path.exists(_cache_dir):
+        os.makedirs(_cache_dir)
+
     return _cache_dir
 
 def get_config_dir():
     """ Returns the config directory """
+
+    if not os.path.exists(_config_dir):
+        os.makedirs(_config_dir)
 
     return _config_dir
 

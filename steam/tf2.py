@@ -306,6 +306,10 @@ class backpack:
         "secondary", "melee", and "head" """
         return self.get_item_schema(item)["item_slot"]
 
+    def get_item_custom_name(self, item):
+        """ Returns the item's custom name if it has one. """
+        return item.get("custom_name")
+
     def __init__(self, sid = None):
         """ Loads the backpack of user sid if given """
         self._schema_url = ("http://api.steampowered.com/ITFItems_440/GetSchema/v0001/?key=" +

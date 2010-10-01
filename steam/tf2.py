@@ -268,6 +268,10 @@ class backpack:
         except KeyError:
             raise TF2Error("Bad item image size given")
 
+    def get_attribute_name(self, attr):
+        """ Returns the attributes name """
+        return attr["name"]
+
     def get_attribute_type(self, attr):
         """ Returns the attribute effect type (positive, negative, or neutral) """
         return attr["effect_type"]
@@ -309,6 +313,21 @@ class backpack:
     def get_item_custom_name(self, item):
         """ Returns the item's custom name if it has one. """
         return item.get("custom_name")
+
+    def is_item_promotional(self, item):
+        """ Returns True if the item is promotional, False
+        otherwise """
+        return item.get("flag_promotion", False)
+
+    def is_item_purchased(self, item):
+        """ Returns True if the item was purchased in the Mann Co. store,
+        False otherwise """
+        return item.get("flag_purchased", False)
+
+    def is_item_unlock(self, item):
+        """ Returns True if the item was unlocked via an achievement,
+        False otherwise """
+        return item.get("flag_achievement_granted", False)
 
     def __init__(self, sid = None):
         """ Loads the backpack of user sid if given """

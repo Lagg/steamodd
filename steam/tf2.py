@@ -261,7 +261,7 @@ class backpack:
             fattr = str(int(round(intp, 2) * 100))
         elif ftype == "inverted_percentage":
             fattr = str(100 - int(round(val, 2) * 100))
-        elif ftype == "additive":
+        elif ftype == "additive" or ftype == "particle_index" or ftype == "account_id":
             if int(val) == val: fattr = (str(int(val)))
         elif ftype == "date":
             d = time.localtime(int(val))

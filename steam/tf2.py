@@ -121,26 +121,47 @@ class backpack:
 
         return schema
 
-    def _internal_attr_get(self, compareby, obj):
-        """ Internal function for special/schema attributes """
-        attrs = []
-        if obj.has_key("attributes"):
-            for attr in obj["attributes"]["attribute"]:
-                for sattr in self.schema_object["result"]["attributes"]["attribute"]:
-                    if ((sattr.has_key(compareby) and attr.has_key(compareby)) and
-                        (sattr[compareby] == attr[compareby])):
-                        if sattr["description_string"] != "unused":
-                            if sattr["attribute_class"] == "set_attached_particle":
-                                sattr["description_string"] = "Particle Type: %s1"
-                            sattr["value"] = attr["value"]
-                            attrs.append(sattr)
-                        break
-        return attrs
-
     def get_item_attributes(self, item):
         """ Returns a list of attributes """
-        return (self._internal_attr_get("name", self.get_item_schema(item)) +
-                self._internal_attr_get("defindex", item))
+        item_schema = self.get_item_schema(item)
+        schema_block = self.schema_object["result"]["attributes"]["attribute"]
+
+        schema_attrs = []
+        if item_schema.has_key("attributes"): schema_attrs = item_schema["attributes"]["attribute"]
+
+        item_attrs = []
+        if item.has_key("attributes"): item_attrs = item["attributes"]["attribute"]
+
+        final_attrs = []
+
+        for attr in schema_attrs:
+            for sattr in schema_block:
+                if sattr["name"] == attr["name"]:
+                    sattr["value"] = attr["value"]
+                    final_attrs.append(sattr)
+
+        for attr in item_attrs:
+            for sattr in schema_block:
+                if not sattr.has_key("defindex") or not attr.has_key("defindex"):
+                    break
+                if sattr["defindex"] == attr["defindex"]:
+                    old_val = False
+                    for oldattr in final_attrs:
+                        if oldattr["defindex"] == attr["defindex"]:
+                            oldattr["value"] = attr["value"]
+                            old_val = True
+                            break
+                    if not old_val:
+                        sattr["value"] = attr["value"]
+                        final_attrs.append(sattr)
+
+        for attr in final_attrs:
+            if attr["description_string"] == "unused":
+                final_attrs.remove(attr)
+            if attr["attribute_class"] == "set_attached_particle":
+                attr["description_string"] = "Particle Type: %s1"
+
+        return final_attrs
 
     def get_item_quality(self, item):
         """ Returns a dict

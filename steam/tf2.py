@@ -246,6 +246,14 @@ class backpack:
             if self.get_item_id(item) == id:
                 return item
 
+    def get_item_schema_id(self, item):
+        return item["defindex"]
+
+    def get_item_by_schema_id(self, id):
+        for item in self.get_items(from_schema = True):
+            if self.get_item_schema_id(item) == id:
+                return item
+
 
     def format_attribute_description(self, attr):
         """ Returns a formatted description_string (%s* tokens replaced) """

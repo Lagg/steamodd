@@ -358,6 +358,11 @@ class backpack:
         False otherwise """
         return item.get("flag_achievement_granted", False)
 
+    def is_item_prefixed(self, item):
+        """ Returns True if the item name already has a prefix (e.g.
+        The Ambassador, Ol' Snaggletooth) """
+        return item.get("proper_name", False)
+
     def __init__(self, sid = None):
         """ Loads the backpack of user sid if given """
         self._schema_url = ("http://api.steampowered.com/ITFItems_440/GetSchema/v0001/?key=" +

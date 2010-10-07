@@ -343,20 +343,10 @@ class backpack:
         """ Returns the item's custom name if it has one. """
         return item.get("custom_name")
 
-    def is_item_promotional(self, item):
-        """ Returns True if the item is promotional, False
-        otherwise """
-        return item.get("flag_promotion", False)
-
-    def is_item_purchased(self, item):
-        """ Returns True if the item was purchased in the Mann Co. store,
-        False otherwise """
-        return item.get("flag_purchased", False)
-
-    def is_item_unlock(self, item):
-        """ Returns True if the item was unlocked via an achievement,
-        False otherwise """
-        return item.get("flag_achievement_granted", False)
+    def is_item_untradeable(self, item):
+        """ Returns True if the item cannot be traded, False
+        otherwise. """
+        return item.get("flag_cannot_trade", False)
 
     def is_item_prefixed(self, item):
         """ Returns False if the item doesn't use

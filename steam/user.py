@@ -19,6 +19,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
 import json, urllib2, steam, time, shelve, os
+import cPickle as pickle
 
 class ProfileError(Exception):
     def __init__(self, msg):
@@ -53,39 +54,52 @@ class profile:
     def get_summary(self, sid):
         """ Returns the summary object. The wrapper functions should
         normally be used instead."""
-        id64 = self._get_id64_from_sid(sid)
+        id64 = self._get_id64_from_sid(str(sid).encode("ascii"))
 
         if not id64:
             #Assume it's the 64 bit ID
             id64 = sid
 
-        self.summary_object = (json.load(urllib2.urlopen(self._profile_url + str(id64)))
+        self._summary_object = (json.load(urllib2.urlopen(self._profile_url + str(id64)))
                                ["response"]["players"]["player"][0])
 
-        if not self.summary_object:
+        if not self._summary_object:
             raise ProfileError("Profile not found")
 
-        return self.summary_object
+        return self._summary_object
+
+    def load_summary_file(self, summary, pickled = True):
+        """ Loads a profile summary object from the given file
+        object. If pickled == True assume it's a pickled dict, otherwise
+        a JSON object. """
+
+        if pickled:
+            self._summary_object = pickle.load(summary)
+        else:
+            self._summary_object = json.load(summary)
+
+    def get_summary_object(self):
+        return self._summary_object
 
     def get_id64(self):
         """ Returns the 64 bit steam ID (use with other API requests) """
-        return self.summary_object["steamid"]
+        return self._summary_object["steamid"]
 
     def get_persona(self):
         """ Returns the user's persona (what you usually see in-game) """
-        return self.summary_object["personaname"]
+        return self._summary_object["personaname"]
 
     def get_profile_url(self):
         """ Returns a URL to the user's Community profile page """
-        return self.summary_object["profileurl"]
+        return self._summary_object["profileurl"]
 
     def get_avatar_url(self, size):
         """ Returns a URL to the user's avatar, see AVATAR_* """
-        return self.summary_object[size]
+        return self._summary_object[size]
 
     def get_status(self):
         """ Returns the user's status as a string. (or integer if unrecognized)"""
-        status = self.summary_object["personastate"]
+        status = self._summary_object["personastate"]
 
         if status == 0:   return "offline"
         elif status == 1: return "online"
@@ -97,7 +111,7 @@ class profile:
 
     def get_visibility(self):
         """ Returns the visibility setting of the profile """
-        vis = self.summary_object["communityvisibilitystate"]
+        vis = self._summary_object["communityvisibilitystate"]
 
         if vis == 1: return "private"
         if vis == 2: return "friends"
@@ -109,23 +123,23 @@ class profile:
     def is_configured(self):
         """ Returns true if the user has created a Community profile """
 
-        return self.summary_object.get("profilestate", False)
+        return self._summary_object.get("profilestate", False)
 
     def get_last_online(self):
         """ Returns the last time the user was online as a localtime
         time.struct_time struct """
 
-        return time.localtime(self.summary_object["lastlogoff"])
+        return time.localtime(self._summary_object["lastlogoff"])
 
     def is_comment_enabled(self):
         """ Returns true if the profile allows public comments """
 
-        return self.summary_object.get("commentpermission", False)
+        return self._summary_object.get("commentpermission", False)
 
     def get_real_name(self):
         """ Returns the user's real name if it's set and public """
 
-        return self.summary_object.get("realname")
+        return self._summary_object.get("realname")
 
     # This isn't very useful yet since there's no API request
     # for groups yet, and I'm avoiding using the old API
@@ -133,13 +147,13 @@ class profile:
     def get_primary_group(self):
         """ Returns the user's primary group ID if set. """
 
-        return self.summary_object.get("primaryclanid")
+        return self._summary_object.get("primaryclanid")
 
     def get_creation_date(self):
         """ Returns the account creation date as a localtime time.struct_time
         struct if public"""
 
-        timestamp = self.summary_object.get("timecreated")
+        timestamp = self._summary_object.get("timecreated")
         if timestamp:
             return time.localtime(timestamp)
 
@@ -150,12 +164,12 @@ class profile:
         extra is the game name """
         ret = {}
         if self.get_visibility() == "public":
-            if self.summary_object.has_key("gameid"):
-                ret["id"] = self.summary_object["gameid"]
-            if self.summary_object.has_key("gameserverip"):
-                ret["server"] = self.summary_object["gameserverip"]
-            if self.summary_object.has_key("gameextrainfo"):
-                ret["extra"] = self.summary_object["gameextrainfo"]
+            if self._summary_object.has_key("gameid"):
+                ret["id"] = self._summary_object["gameid"]
+            if self._summary_object.has_key("gameserverip"):
+                ret["server"] = self._summary_object["gameserverip"]
+            if self._summary_object.has_key("gameextrainfo"):
+                ret["extra"] = self._summary_object["gameextrainfo"]
 
             return ret
 
@@ -165,21 +179,21 @@ class profile:
         state: A two char ISO state code """
         ret = {}
         if self.get_visibility() == "public":
-            if self.summary_object.has_key("loccountrycode"):
-                ret["country"] = self.summary_object["loccountrycode"]
-            if self.summary_object.has_key("locstatecode"):
-                ret["state"] = self.summary_object["locstatecode"]
+            if self._summary_object.has_key("loccountrycode"):
+                ret["country"] = self._summary_object["loccountrycode"]
+            if self._summary_object.has_key("locstatecode"):
+                ret["state"] = self._summary_object["locstatecode"]
 
             return ret
 
-    def __init__(self, sid):
+    def __init__(self, sid = None):
         """ Creates a profile instance for the given user """
         self._old_profile_url = "http://steamcommunity.com/id/%s?xml=1"
         self._profile_url = ("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/"
                              "v0001/?key=" + steam.get_api_key() + "&steamids=")
 
-
-        self.get_summary(sid.encode("ascii"))
+        if sid:
+            self.get_summary(sid)
 
     AVATAR_SMALL = "avatar"
     AVATAR_MEDIUM = "avatarmedium"

@@ -339,6 +339,11 @@ class backpack:
         "secondary", "melee", and "head" """
         return self.get_item_schema(item)["item_slot"]
 
+    def get_item_craft_class(self, item):
+        """ Returns the item's class in the crafting system if it has one.
+        This includes hat, craft_bar, or craft_token. """
+        return self.get_item_schema(item).get("craft_class")
+
     def get_item_custom_name(self, item):
         """ Returns the item's custom name if it has one. """
         return item.get("custom_name")

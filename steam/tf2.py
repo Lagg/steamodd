@@ -137,7 +137,7 @@ class backpack:
         for attr in schema_attrs:
             for sattr in schema_block:
                 if sattr["name"] == attr["name"]:
-                    sattr["value"] = attr["value"]
+                    for k, v in attr.iteritems(): sattr[k] = v
                     final_attrs.append(sattr)
 
         for attr in item_attrs:
@@ -148,11 +148,11 @@ class backpack:
                     old_val = False
                     for oldattr in final_attrs:
                         if oldattr["defindex"] == attr["defindex"]:
-                            oldattr["value"] = attr["value"]
+                            for k, v in attr.iteritems(): oldattr[k] = v
                             old_val = True
                             break
                     if not old_val:
-                        sattr["value"] = attr["value"]
+                        for k, v in attr.iteritems(): sattr[k] = v
                         final_attrs.append(sattr)
 
         for attr in final_attrs:
@@ -338,6 +338,11 @@ class backpack:
         """ Returns the item's slot as a string, this includes "primary",
         "secondary", "melee", and "head" """
         return self.get_item_schema(item)["item_slot"]
+
+    def get_item_class(self, item):
+        """ Returns the item's class
+        (what you use in the console to equip it, not the craft class)"""
+        return self.get_item_schema(item).get("item_class")
 
     def get_item_craft_class(self, item):
         """ Returns the item's class in the crafting system if it has one.

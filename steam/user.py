@@ -34,8 +34,8 @@ class profile:
 
     # Hopefully Valve will provide a request for doing this so we won't
     # have to use the old API
-    def _get_id64_from_sid(self, sid):
-        """ This uses the old API, don't use this directly. caches
+    def get_id64_from_sid(self, sid):
+        """ This uses the old API, caches
         64 bit ID mappings in id64_cache* """
 
         cache = shelve.open(os.path.join(steam.get_cache_dir(), "id64_cache"))
@@ -54,7 +54,7 @@ class profile:
     def get_summary(self, sid):
         """ Returns the summary object. The wrapper functions should
         normally be used instead."""
-        id64 = self._get_id64_from_sid(str(sid).encode("ascii"))
+        id64 = self.get_id64_from_sid(str(sid).encode("ascii"))
 
         if not id64:
             #Assume it's the 64 bit ID
@@ -79,7 +79,10 @@ class profile:
             self._summary_object = json.load(summary)
 
     def get_summary_object(self):
-        return self._summary_object
+        try:
+            return self._summary_object
+        except AttributeError:
+            raise ProfileError("No summary")
 
     def get_id64(self):
         """ Returns the 64 bit steam ID (use with other API requests) """

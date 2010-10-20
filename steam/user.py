@@ -190,7 +190,7 @@ class profile:
 
     def __init__(self, sid = None):
         """ Creates a profile instance for the given user """
-        self._old_profile_url = "http://steamcommunity.com/id/{:s}?xml=1"
+        self._old_profile_url = "http://steamcommunity.com/id/{0:s}?xml=1"
         self._profile_url = ("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/"
                              "v0001/?key=" + steam.get_api_key() + "&steamids=")
 

@@ -271,7 +271,7 @@ class backpack:
             if int(val) == val: fattr = (str(int(val)))
         elif ftype == "date":
             d = time.localtime(int(val))
-            fattr = "{:d}-{:02d}-{:02d}".format(d.tm_year, d.tm_mon, d.tm_mday)
+            fattr = "{0:d}-{1:02d}-{2:02d}".format(d.tm_year, d.tm_mon, d.tm_mday)
 
         return self.get_attribute_description(attr).replace("%s1", fattr)
 

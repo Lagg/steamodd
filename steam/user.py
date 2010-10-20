@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Module for reading Steam user account data
 

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Module for reading Team Fortress 2 data using the Steam API
 

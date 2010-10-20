@@ -42,7 +42,8 @@ class profile:
         ids = cache.get(sid)
         if ids: return ids
 
-        prof = urllib2.urlopen(self._old_profile_url % sid).read()
+        prof = urllib2.urlopen(self._old_profile_url.format(sid)).read()
+
         if type(sid) == str and prof.find("<steamID64>") != -1:
             prof = (prof[prof.find("<steamID64>")+11:
                              prof.find("</steamID64>")])
@@ -167,11 +168,11 @@ class profile:
         extra is the game name """
         ret = {}
         if self.get_visibility() == "public":
-            if self._summary_object.has_key("gameid"):
+            if "gameid" in self._summary_object:
                 ret["id"] = self._summary_object["gameid"]
-            if self._summary_object.has_key("gameserverip"):
+            if "gameserverip" in self._summary_object:
                 ret["server"] = self._summary_object["gameserverip"]
-            if self._summary_object.has_key("gameextrainfo"):
+            if "gameextrainfo" in self._summary_object:
                 ret["extra"] = self._summary_object["gameextrainfo"]
 
             return ret
@@ -182,16 +183,16 @@ class profile:
         state: A two char ISO state code """
         ret = {}
         if self.get_visibility() == "public":
-            if self._summary_object.has_key("loccountrycode"):
+            if "loccountrycode" in self._summary_object:
                 ret["country"] = self._summary_object["loccountrycode"]
-            if self._summary_object.has_key("locstatecode"):
+            if "locstatecode" in self._summary_object:
                 ret["state"] = self._summary_object["locstatecode"]
 
             return ret
 
     def __init__(self, sid = None):
         """ Creates a profile instance for the given user """
-        self._old_profile_url = "http://steamcommunity.com/id/%s?xml=1"
+        self._old_profile_url = "http://steamcommunity.com/id/{:s}?xml=1"
         self._profile_url = ("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/"
                              "v0001/?key=" + steam.get_api_key() + "&steamids=")
 

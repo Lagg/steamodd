@@ -18,7 +18,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import os, json
 
-__version__ = "0.6"
+__version__ = "0.8"
 
 _api_key = None
 _language = None
@@ -77,7 +77,7 @@ def load_config_file(basename):
     thefile = os.path.join(get_config_dir(), basename)
     if os.path.exists(thefile):
         try:
-            fp = file(thefile, "rb")
+            fp = open(thefile, "rb")
             return json.load(fp)
         except:
             pass
@@ -93,7 +93,7 @@ def write_config_file(config, basename):
         os.makedirs(confdir)
 
     try:
-        fp = file(thefile, "wb+")
+        fp = open(thefile, "wb+")
         json.dump(config, fp)
     except ValueError:
         pass
@@ -103,7 +103,7 @@ def get_cache_file(basename):
     thefile = os.path.join(get_cache_dir(), basename)
     if os.path.exists(thefile):
         try:
-            return file(thefile, "rb")
+            return open(thefile, "rb")
         except IOError:
             raise Warning("Couldn't read cache file: " + thefile)
 
@@ -118,7 +118,7 @@ def write_cache_file(data, basename):
         os.makedirs(cachedir)
 
     try:
-        fp = file(thefile, "wb+")
+        fp = open(thefile, "wb+")
         fp.write(data.read())
         fp.close()
         return get_cache_file(basename)
@@ -154,14 +154,14 @@ def set_language(lang):
 
     _language = lang
 
-if os.environ.has_key("XDG_CACHE_HOME"):
+if "XDG_CACHE_HOME" in os.environ:
     _cache_dir = os.path.join(os.environ["XDG_CACHE_HOME"], _cache_dir)
-elif os.environ.has_key("APPDATA"):
+elif "APPDATA" in os.environ:
     _cache_dir = os.path.join(os.environ["APPDATA"], _cache_dir)
 
-if os.environ.has_key("XDG_CONFIG_HOME"):
+if "XDG_CONFIG_HOME" in os.environ:
     _config_dir = os.path.join(os.environ["XDG_CONFIG_HOME"], _config_dir)
-elif os.environ.has_key("APPDATA"):
+elif "APPDATA" in os.environ:
     _config_dir = os.path.join(_cache_dir, _config_dir)
 
 if os.path.exists(_config_dir):
@@ -169,7 +169,7 @@ if os.path.exists(_config_dir):
 else:
     _config = {}
 
-if _config.has_key("api_key"):
+if "api_key" in _config:
     _api_key = _config["api_key"]
-if _config.has_key("language"):
+if "language" in _config:
     _language = _config["language"]

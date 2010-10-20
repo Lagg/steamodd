@@ -127,10 +127,10 @@ class backpack:
         schema_block = self.schema_object["result"]["attributes"]["attribute"]
 
         schema_attrs = []
-        if item_schema.has_key("attributes"): schema_attrs = item_schema["attributes"]["attribute"]
+        if "attributes" in item_schema: schema_attrs = item_schema["attributes"]["attribute"]
 
         item_attrs = []
-        if item.has_key("attributes"): item_attrs = item["attributes"]["attribute"]
+        if "attributes" in item: item_attrs = item["attributes"]["attribute"]
 
         final_attrs = []
 
@@ -142,7 +142,7 @@ class backpack:
 
         for attr in item_attrs:
             for sattr in schema_block:
-                if not sattr.has_key("defindex") or not attr.has_key("defindex"):
+                if "defindex" not in sattr or "defindex" not in attr:
                     break
                 if sattr["defindex"] == attr["defindex"]:
                     old_val = False
@@ -178,7 +178,7 @@ class backpack:
                 quality["str"] = k
                 break
 
-        if self.schema_object["result"].has_key("qualityNames"):
+        if "qualityNames" in self.schema_object["result"]:
             quality["prettystr"] = self.schema_object["result"]["qualityNames"][quality["str"]]
         else:
             quality["prettystr"] = quality["str"]
@@ -211,7 +211,7 @@ class backpack:
         classes = []
         schema = self.get_item_schema(item)
 
-        if schema.has_key("used_by_classes"):
+        if "used_by_classes" in schema:
             classes = schema["used_by_classes"]["class"]
         else:
             classes = self.equipped_classes.values()
@@ -273,7 +273,7 @@ class backpack:
             if int(val) == val: fattr = (str(int(val)))
         elif ftype == "date":
             d = time.localtime(int(val))
-            fattr = "%d-%02d-%02d" % (d.tm_year, d.tm_mon, d.tm_mday)
+            fattr = "{:d}-{:02d}-{:02d}".format(d.tm_year, d.tm_mon, d.tm_mday)
 
         return self.get_attribute_description(attr).replace("%s1", fattr)
 

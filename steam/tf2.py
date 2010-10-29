@@ -154,6 +154,9 @@ class backpack:
                         final_attrs.append(sattr)
 
         for attr in final_attrs:
+            if "description_string" not in attr:
+                final_attrs.remove(attr)
+                continue
             if attr["description_string"] == "unused":
                 final_attrs.remove(attr)
             if attr["attribute_class"] == "set_attached_particle":

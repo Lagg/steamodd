@@ -354,6 +354,10 @@ class backpack:
         """ Returns the item's custom name if it has one. """
         return item.get("custom_name")
 
+    def get_item_custom_description(self, item):
+        """ Returns the item's custom description if it has one. """
+        return item.get("custom_desc")
+
     def is_item_untradeable(self, item):
         """ Returns True if the item cannot be traded, False
         otherwise. """

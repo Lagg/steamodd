@@ -288,6 +288,8 @@ class backpack:
         itype = self.get_item_schema(item)["item_type_name"]
         if itype == "TF_Wearable_Hat":
             itype = "Hat"
+        elif itype == "TF_LockedCrate":
+            itype = "Crate"
         return itype
 
     def get_item_image(self, item, size):

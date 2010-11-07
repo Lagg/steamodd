@@ -61,6 +61,8 @@ class profile:
 
         self._summary_object = (json.load(urllib2.urlopen(self._profile_url + str(id64)))
                                ["response"]["players"]["player"][0])
+        self._summary_object["realname"] = self._summary_object["realname"].encode("utf-8")
+        self._summary_object["personaname"] = self._summary_object["personaname"].encode("utf-8")
 
         if not self._summary_object:
             raise ProfileError("Profile not found")

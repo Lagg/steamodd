@@ -88,8 +88,11 @@ class backpack:
         """ Loads the player backpack for the given steam.user
         Returns a list of items, will be empty if there's nothing in the backpack"""
         id64 = sid.get_id64()
+        inv = urllib2.urlopen(self._inventory_url + str(id64)).read()
 
-        self._inventory_object = json.load(urllib2.urlopen(self._inventory_url + str(id64)))
+        # Once again I'm doing what Valve should be doing before they generate
+        # JSON. WORKAROUND
+        self._inventory_object = json.loads(inv.replace("-1.#QNAN0", "0"))
         result = self._inventory_object["result"]["status"]
         if result == 8:
             raise TF2Error("Bad SteamID64 given")

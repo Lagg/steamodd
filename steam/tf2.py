@@ -122,6 +122,13 @@ class backpack:
 
         return schema
 
+    def get_item_schema_attributes(self):
+        """ Returns the list of all attributes in the schema """
+
+        if self.schema_object:
+            return self.schema_object["result"]["attributes"]["attribute"]
+        return None
+
     def get_item_attributes(self, item):
         """ Returns a list of attributes """
         item_schema = self.get_item_schema(item)
@@ -259,10 +266,8 @@ class backpack:
                 return item
 
 
-    def format_attribute_description(self, attr):
-        """ Returns a formatted description_string (%s* tokens replaced) """
-        val = self.get_attribute_value(attr)
-        ftype = self.get_attribute_value_type(attr)
+    def get_attribute_value_formatted(self, val, ftype):
+        """ Returns a formatted value """
         fattr = str(val)
 
         # I don't think %s2,%s3, etc. needs to be supported since there's
@@ -279,7 +284,15 @@ class backpack:
             d = time.localtime(int(val))
             fattr = "{0:d}-{1:02d}-{2:02d}".format(d.tm_year, d.tm_mon, d.tm_mday)
 
-        return self.get_attribute_description(attr).replace("%s1", fattr)
+        return fattr
+
+    def format_attribute_description(self, attr):
+        """ Returns a formatted description_string (%s* tokens replaced) """
+        val = self.get_attribute_value(attr)
+        ftype = self.get_attribute_value_type(attr)
+
+        return self.get_attribute_description(attr).replace("%s1",
+                                                            self.get_attribute_value_formatted(val, ftype))
 
     def get_item_name(self, item):
         """ Returns the item's name, this can be used with get_item_quality
@@ -306,6 +319,22 @@ class backpack:
     def get_attribute_name(self, attr):
         """ Returns the attributes name """
         return attr["name"]
+
+    def get_attribute_class(self, attr):
+        return attr["attribute_class"]
+
+    def get_attribute_id(self, attr):
+        return attr["defindex"]
+
+    def get_attribute_value_min(self, attr):
+        """ Returns the minimum value for the attribute (not all attributes
+        stay above this) """
+        return attr["min_value"]
+
+    def get_attribute_value_max(self, attr):
+        """ Returns the maximum value for the attribute (not all attributes
+        stay below this) """
+        return attr["max_value"]
 
     def get_attribute_type(self, attr):
         """ Returns the attribute effect type (positive, negative, or neutral) """

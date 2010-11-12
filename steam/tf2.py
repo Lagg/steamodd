@@ -350,7 +350,9 @@ class backpack:
         it is intended to be printed with the value there will
         be a "%s1" token somewhere in the string. Use
         format_attribute_description to substitute this automatically. """
-        return attr["description_string"].encode("utf-8")
+        desc = attr.get("description_string")
+        if desc: return desc.encode("utf-8")
+        else: return None
 
     def get_attribute_value_type(self, attr):
         """ Returns the attribute's type. Currently this can be one of

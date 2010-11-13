@@ -2,8 +2,7 @@ Steamodd is a project that grew out of a 200 line test script I
 wrote to test out the new API and find stuff I could complain about.
 
 There are still some hacky spots but overall the modules should be
-usable in a project. End-users may be interested in the backpack viewer
-script found in this directory.
+usable in a project.
 
 Be sure to set your api key and language before using any of the module functions.
 It can be defined in the core config file which is currently in $XDG_CONFIG_HOME/
@@ -20,7 +19,6 @@ Contributing
 ================
 
 If you would like to contribute please send a patch with the change
-and your email and name in AUTHORS. If you want to be a member of the
-project drop me a mail and I'll add you to the group on gitorious.
+and your email and name in AUTHORS.
 
 Also consider joining http://steamcommunity.com/groups/gutc

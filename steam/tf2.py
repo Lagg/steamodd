@@ -196,11 +196,15 @@ class backpack:
 
         return quality
 
+    def get_item_inventory_token(self, item):
+        """ Returns the item's inventory token (a bitfield) """
+        return item.get("inventory", 0)
+
     def get_item_position(self, item):
         """ Returns the item's position in the backpack or -1 if it's not
         in the backpack yet"""
 
-        inventory_token = item.get("inventory", 0)
+        inventory_token = self.get_item_inventory_token(item)
 
         if inventory_token == 0:
             return -1
@@ -212,7 +216,7 @@ class backpack:
         classes = []
 
         for k,v in self.equipped_classes.iteritems():
-            if ((item.get("inventory", 0) & self.equipped_field) >> 16) & k:
+            if ((self.get_item_inventory_token(item) & self.equipped_field) >> 16) & k:
                 classes.append(v)
 
         return classes

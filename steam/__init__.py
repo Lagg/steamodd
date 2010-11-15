@@ -17,6 +17,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
 import os, json
+from user import *
+from tf2 import *
 
 __version__ = "0.8"
 

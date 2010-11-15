@@ -92,7 +92,7 @@ class backpack:
 
         # Once again I'm doing what Valve should be doing before they generate
         # JSON. WORKAROUND
-        self._inventory_object = json.loads(inv.replace("-1.#QNAN0", "0"))
+        self._inventory_object = json.loads(inv.replace("-1.#QNAN0", "0").encode("utf-8"))
         result = self._inventory_object["result"]["status"]
         if result == 8:
             raise TF2Error("Bad SteamID64 given")

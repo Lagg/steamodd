@@ -53,18 +53,14 @@ class profile:
     def get_summary(self, sid):
         """ Returns the summary object. The wrapper functions should
         normally be used instead."""
-        id64 = self.get_id64_from_sid(str(sid).encode("ascii"))
+        id64 = self.get_id64_from_sid(str(sid).encode("ascii", "replace"))
 
         if not id64:
             #Assume it's the 64 bit ID
             id64 = sid
 
-        self._summary_object = (json.load(urllib2.urlopen(self._profile_url + str(id64)))
+        self._summary_object = (json.loads(urllib2.urlopen(self._profile_url + str(id64)).read().encode("utf-8"))
                                ["response"]["players"]["player"][0])
-        if "realname" in self._summary_object:
-            self._summary_object["realname"] = self._summary_object["realname"].encode("utf-8")
-        if "personaname" in self._summary_object:
-            self._summary_object["personaname"] = self._summary_object["personaname"].encode("utf-8")
 
         if not self._summary_object:
             raise ProfileError("Profile not found")

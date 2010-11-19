@@ -371,7 +371,10 @@ class backpack:
         additive_percentage: Could represent a percentage that adds to default stats
         inverted_percentage: The sum of the difference between the value and 100%
         date: A unix timestamp """
-        return attr["description_format"][9:]
+        if "description_format" in attr:
+            return attr["description_format"][9:]
+        else:
+            return None
 
     def get_item_id(self, item):
         """ Returns the item's unique serial number if it has one """

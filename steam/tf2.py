@@ -163,16 +163,13 @@ class backpack:
                         for k, v in attr.iteritems(): sattr[k] = v
                         final_attrs.append(sattr)
 
+        filtered_attrs = []
         for attr in final_attrs:
             if "description_string" not in attr:
-                final_attrs.remove(attr)
                 continue
-            if attr["description_string"] == "unused":
-                final_attrs.remove(attr)
-            if attr["attribute_class"] == "set_attached_particle":
-                attr["description_string"] = "Particle Type: %s1"
+            filtered_attrs.append(attr)
 
-        return final_attrs
+        return filtered_attrs
 
     def get_item_quality(self, item):
         """ Returns a dict

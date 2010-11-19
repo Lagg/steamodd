@@ -412,6 +412,23 @@ class backpack:
         for example, a dueling mini-game has 5 uses by default """
         return item.get("quantity", 1)
 
+    def get_item_description(self, item):
+        """ Returns the item's description if it has one """
+        item_schema = self.get_item_schema(item)
+        return item_schema.get("item_description")
+
+    def get_item_min_level(self, item):
+        """ Returns the item's minimum level
+        (non-random levels will have the same min and max level) """
+        item_schema = self.get_item_schema(item)
+        return item_schema.get("min_ilevel", 0)
+
+    def get_item_max_level(self, item):
+        """ Returns the item's maximum level
+        (non-random levels will have the same min and max level) """
+        item_schema = self.get_item_schema(item)
+        return item_schema.get("max_ilevel", 0)
+
     def is_item_untradeable(self, item):
         """ Returns True if the item cannot be traded, False
         otherwise. """

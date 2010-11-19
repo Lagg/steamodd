@@ -201,10 +201,12 @@ class backpack:
         return item.get("inventory", 0)
 
     def get_item_position(self, item):
-        """ Returns the item's position in the backpack or -1 if it's not
-        in the backpack yet"""
+        """ Returns a position in the backpack or -1 if there's no position
+        available (i.e. an item isn't in the backpack) """
 
-        inventory_token = self.get_item_inventory_token(item)
+        inventory_token = item
+        if type(item) != int:
+            inventory_token = self.get_item_inventory_token(item)
 
         if inventory_token == 0:
             return -1
@@ -215,8 +217,12 @@ class backpack:
         """ Returns a list of classes (see equipped_classes values) """
         classes = []
 
+        inventory_token = item
+        if type(item) != int:
+            inventory_token = self.get_item_inventory_token(item)
+
         for k,v in self.equipped_classes.iteritems():
-            if ((self.get_item_inventory_token(item) & self.equipped_field) >> 16) & k:
+            if ((inventory_token & self.equipped_field) >> 16) & k:
                 classes.append(v)
 
         return classes
@@ -397,6 +403,11 @@ class backpack:
     def get_item_custom_description(self, item):
         """ Returns the item's custom description if it has one. """
         return item.get("custom_desc")
+
+    def get_item_quantity(self, item):
+        """ Returns the number of uses the item has,
+        for example, a dueling mini-game has 5 uses by default """
+        return item.get("quantity", 1)
 
     def is_item_untradeable(self, item):
         """ Returns True if the item cannot be traded, False

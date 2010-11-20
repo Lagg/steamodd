@@ -163,13 +163,7 @@ class backpack:
                         for k, v in attr.iteritems(): sattr[k] = v
                         final_attrs.append(sattr)
 
-        filtered_attrs = []
-        for attr in final_attrs:
-            if "description_string" not in attr:
-                continue
-            filtered_attrs.append(attr)
-
-        return filtered_attrs
+        return final_attrs
 
     def get_item_quality(self, item):
         """ Returns a dict
@@ -297,9 +291,12 @@ class backpack:
         """ Returns a formatted description_string (%s* tokens replaced) """
         val = self.get_attribute_value(attr)
         ftype = self.get_attribute_value_type(attr)
+        desc = self.get_attribute_description(attr)
 
-        return self.get_attribute_description(attr).replace("%s1",
-                                                            self.get_attribute_value_formatted(val, ftype))
+        if desc:
+            return desc.replace("%s1", self.get_attribute_value_formatted(val, ftype))
+        else:
+            return None
 
     def get_item_name(self, item):
         """ Returns the item's name, this can be used with get_item_quality
@@ -372,6 +369,12 @@ class backpack:
             return attr["description_format"][9:]
         else:
             return None
+
+    def is_attribute_hidden(self, attr):
+        """ Returns True if the attribute is "hidden"
+        (not intended to be shown to the end user). Note
+        that hidden attributes also usually have no description string """
+        return attr.get("hidden", True)
 
     def get_item_id(self, item):
         """ Returns the item's unique serial number if it has one """

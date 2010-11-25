@@ -170,9 +170,10 @@ class backpack:
         prettystr is the localized pretty name (e.g. Valve)
         id is the numerical quality (e.g. 8)
         str is the non-pretty string (e.g. developer) """
-        quality = {}
+        quality = {"id": item}
 
-        quality["id"] = item.get("quality", item.get("item_quality", 0))
+        if type(item) != int:
+            quality["id"] = item.get("quality", item.get("item_quality", 0))
         quality["str"] = "normal"
 
         for k,v in self.schema_object["result"]["qualities"].iteritems():

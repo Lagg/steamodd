@@ -16,11 +16,11 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
-import os, json
+import os, json, sqlite3
 from user import *
 from tf2 import *
 
-__version__ = "0.8"
+__version__ = "1.0"
 
 _api_key = None
 _language = None
@@ -156,6 +156,9 @@ def set_language(lang):
 
     _language = lang
 
+def get_id64_cache_path():
+    return os.path.join(get_cache_dir(), "id64_cache.db")
+
 if "XDG_CACHE_HOME" in os.environ:
     _cache_dir = os.path.join(os.environ["XDG_CACHE_HOME"], _cache_dir)
 elif "APPDATA" in os.environ:
@@ -175,3 +178,9 @@ if "api_key" in _config:
     _api_key = _config["api_key"]
 if "language" in _config:
     _language = _config["language"]
+
+_id64_cache_conn = sqlite3.connect(get_id64_cache_path())
+_id64_cache = _id64_cache_conn.cursor()
+_id64_cache.execute("CREATE TABLE IF NOT EXISTS cache (sid TEXT, id64 INTEGER PRIMARY KEY)")
+_id64_cache_conn.commit()
+_id64_cache.close()

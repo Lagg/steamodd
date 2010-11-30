@@ -16,7 +16,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
-import json, urllib2, steam, time, shelve, os
+import json, urllib2, steam, time, os, sqlite3
 import cPickle as pickle
 
 class ProfileError(Exception):
@@ -36,16 +36,22 @@ class profile:
         """ This uses the old API, caches
         64 bit ID mappings in id64_cache* """
 
-        cache = shelve.open(os.path.join(steam.get_cache_dir(), "id64_cache"))
-        ids = cache.get(sid)
-        if ids: return ids
+        conn = sqlite3.connect(steam.get_id64_cache_path())
+        cache = conn.cursor()
+        ids = cache.execute("SELECT id64 FROM cache WHERE sid=?", (sid,)).fetchone()
+        if ids:
+            cache.close()
+            return ids[0]
 
         prof = urllib2.urlopen(self._old_profile_url.format(sid)).read()
 
         if type(sid) == str and prof.find("<steamID64>") != -1:
             prof = (prof[prof.find("<steamID64>")+11:
                              prof.find("</steamID64>")])
-            cache[sid] = prof
+            cache.execute("INSERT OR IGNORE INTO cache (id64) VALUES (?)",
+                          (prof,))
+            cache.execute("UPDATE cache SET sid=? WHERE id64=?", (sid, prof,))
+            conn.commit()
             cache.close()
 
             return prof

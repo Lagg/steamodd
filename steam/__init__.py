@@ -16,7 +16,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
-import os, json, sqlite3
+import os, json
 from user import *
 from tf2 import *
 
@@ -26,8 +26,6 @@ _api_key = None
 _language = None
 
 _cache_dir = "steamodd"
-_config_dir = "steamodd.rc.d"
-_core_config = "core.js"
 
 class APIError(Exception):
     def __init__(self, msg):
@@ -46,14 +44,6 @@ def get_cache_dir():
 
     return _cache_dir
 
-def get_config_dir():
-    """ Returns the config directory """
-
-    if not os.path.exists(_config_dir):
-        os.makedirs(_config_dir)
-
-    return _config_dir
-
 def set_cache_dir(dirs):
     """ Set the cache directory. """
     global _cache_dir
@@ -62,43 +52,6 @@ def set_cache_dir(dirs):
         os.makedirs(dirs)
 
     _cache_dir = dirs
-
-def set_config_dir(dirs):
-    """ Set the config file directory (your API key would be read from here) """
-    global _config_dir
-
-    if not os.path.exists(dirs):
-        os.makedirs(dirs)
-
-    _config_dir = dirs
-
-def load_config_file(basename):
-    """ Returns the configuration dict in basename
-    from the config directory if available. """
-
-    thefile = os.path.join(get_config_dir(), basename)
-    if os.path.exists(thefile):
-        try:
-            fp = open(thefile, "rb")
-            return json.load(fp)
-        except:
-            pass
-    return {}
-
-def write_config_file(config, basename):
-    """ Writes the config dict to basename in the config dir. """
-
-    confdir = get_config_dir()
-    thefile = os.path.join(confdir, basename)
-
-    if not os.path.exists(confdir):
-        os.makedirs(confdir)
-
-    try:
-        fp = open(thefile, "wb+")
-        json.dump(config, fp)
-    except ValueError:
-        pass
 
 def get_cache_file(basename):
     """ Returns the cache file as a file object """
@@ -156,31 +109,7 @@ def set_language(lang):
 
     _language = lang
 
-def get_id64_cache_path():
-    return os.path.join(get_cache_dir(), "id64_cache.db")
-
 if "XDG_CACHE_HOME" in os.environ:
     _cache_dir = os.path.join(os.environ["XDG_CACHE_HOME"], _cache_dir)
 elif "APPDATA" in os.environ:
     _cache_dir = os.path.join(os.environ["APPDATA"], _cache_dir)
-
-if "XDG_CONFIG_HOME" in os.environ:
-    _config_dir = os.path.join(os.environ["XDG_CONFIG_HOME"], _config_dir)
-elif "APPDATA" in os.environ:
-    _config_dir = os.path.join(_cache_dir, _config_dir)
-
-if os.path.exists(_config_dir):
-    _config = load_config_file(_core_config)
-else:
-    _config = {}
-
-if "api_key" in _config:
-    _api_key = _config["api_key"]
-if "language" in _config:
-    _language = _config["language"]
-
-_id64_cache_conn = sqlite3.connect(get_id64_cache_path())
-_id64_cache = _id64_cache_conn.cursor()
-_id64_cache.execute("CREATE TABLE IF NOT EXISTS cache (sid TEXT, id64 INTEGER PRIMARY KEY)")
-_id64_cache_conn.commit()
-_id64_cache.close()

@@ -50,7 +50,9 @@ class backpack:
 
     def _rewrite_schema_cache(self):
         """ Internal schema cache function, returns a stream """
-        return steam.write_cache_file(urllib2.urlopen(self._schema_url),
+        url = ("http://api.steampowered.com/ITFItems_440/GetSchema/v0001/?key=" +
+               steam.get_api_key() + "&format=json&language=" + steam.get_language())
+        return steam.write_cache_file(urllib2.urlopen(url),
                                       self._get_schema_basename())
     
     def load_schema(self, fresh = False):
@@ -88,7 +90,9 @@ class backpack:
         """ Loads the player backpack for the given steam.user
         Returns a list of items, will be empty if there's nothing in the backpack"""
         id64 = sid.get_id64()
-        inv = urllib2.urlopen(self._inventory_url + str(id64)).read()
+        url = ("http://api.steampowered.com/ITFItems_440/GetPlayerItems/"
+               "v0001/?key=" + steam.get_api_key() + "&format=json&SteamID=")
+        inv = urllib2.urlopen(url + str(id64)).read()
 
         # Once again I'm doing what Valve should be doing before they generate
         # JSON. WORKAROUND
@@ -444,11 +448,6 @@ class backpack:
 
     def __init__(self, sid = None):
         """ Loads the backpack of user sid if given """
-        self._schema_url = ("http://api.steampowered.com/ITFItems_440/GetSchema/v0001/?key=" +
-                            steam.get_api_key() + "&format=json&language=" + steam.get_language())
-        self._inventory_url = ("http://api.steampowered.com/ITFItems_440/GetPlayerItems/"
-                               "v0001/?key=" + steam.get_api_key() + "&format=json&SteamID=")
-
         self.load_schema()
 
         if sid:

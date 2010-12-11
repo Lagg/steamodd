@@ -30,13 +30,23 @@ class ProfileError(Exception):
 class profile:
     """ Functions for reading user account data """
 
+    def _get_id64_cache_path(self):
+        return os.path.join(steam.get_cache_dir(), "id64_cache.db")
+
+    def _create_id64_db(self):
+        _id64_cache_conn = sqlite3.connect(self._get_id64_cache_path())
+        _id64_cache = _id64_cache_conn.cursor()
+        _id64_cache.execute("CREATE TABLE IF NOT EXISTS cache (sid TEXT, id64 INTEGER PRIMARY KEY)")
+        _id64_cache_conn.commit()
+        _id64_cache.close()
+
     # Hopefully Valve will provide a request for doing this so we won't
     # have to use the old API
     def get_id64_from_sid(self, sid):
         """ This uses the old API, caches
         64 bit ID mappings in id64_cache* """
 
-        conn = sqlite3.connect(steam.get_id64_cache_path())
+        conn = sqlite3.connect(self._get_id64_cache_path())
         cache = conn.cursor()
         ids = cache.execute("SELECT id64 FROM cache WHERE sid=?", (sid,)).fetchone()
         if ids:
@@ -199,6 +209,7 @@ class profile:
         self._old_profile_url = "http://steamcommunity.com/id/{0:s}?xml=1"
         self._profile_url = ("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/"
                              "v0001/?key=" + steam.get_api_key() + "&steamids=")
+        self._create_id64_db()
 
         if sid:
             self.get_summary(sid)

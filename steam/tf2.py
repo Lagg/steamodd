@@ -257,6 +257,12 @@ class backpack:
                 pass
         return ilist
 
+    def get_total_cells():
+        """ Returns the total number of cells in the backpack.
+        This can be used to determine if the user has bought a backpack
+        expander. """
+        return self._inventory_object["result"].get("num_backpack_slots", 0)
+
     def get_item_by_id(self, id):
         """ Takes an id (serial number) and returns the item if one is found """
         for item in self.get_items():
@@ -433,6 +439,11 @@ class backpack:
         (non-random levels will have the same min and max level) """
         item_schema = self.get_item_schema(item)
         return item_schema.get("max_ilevel", 0)
+
+    def get_item_contents(self, item):
+        """ Returns the item in the container, if there is one.
+        This will be a standard item object. """
+        return item.get("contained_item")
 
     def is_item_untradeable(self, item):
         """ Returns True if the item cannot be traded, False

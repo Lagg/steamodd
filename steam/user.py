@@ -46,6 +46,8 @@ class profile:
         """ This uses the old API, caches
         64 bit ID mappings in id64_cache* """
 
+        if sid.isdigit(): return sid
+
         conn = sqlite3.connect(self._get_id64_cache_path())
         cache = conn.cursor()
         ids = cache.execute("SELECT id64 FROM cache WHERE sid=?", (sid,)).fetchone()

@@ -169,28 +169,40 @@ class backpack:
 
         return final_attrs
 
+    def get_qualities(self):
+        """ Returns a list of all possible item qualities,
+        each element will be a dict.
+        prettystr is the localized pretty name (e.g. Valve)
+        id is the numerical quality (e.g. 8)
+        str is the non-pretty string (e.g. developer) """
+        qualities = []
+
+        for k,v in self.schema_object["result"]["qualities"].iteritems():
+            aquality = {"id": v, "str": k, "prettystr": k}
+
+            if "qualityNames" in self.schema_object["result"]:
+                aquality["prettystr"] = self.schema_object["result"]["qualityNames"][aquality["str"]]
+
+            qualities.append(aquality)
+
+        return qualities
+
     def get_item_quality(self, item):
         """ Returns a dict
         prettystr is the localized pretty name (e.g. Valve)
         id is the numerical quality (e.g. 8)
         str is the non-pretty string (e.g. developer) """
-        quality = {"id": item}
+        qid = 0
 
         if type(item) != int:
-            quality["id"] = item.get("quality", item.get("item_quality", 0))
-        quality["str"] = "normal"
+            qid = item.get("quality", item.get("item_quality", 0))
 
-        for k,v in self.schema_object["result"]["qualities"].iteritems():
-            if v == quality["id"]:
-                quality["str"] = k
-                break
+        qualities = self.get_qualities()
+        for q in qualities:
+            if q["id"] == qid:
+                return q
 
-        if "qualityNames" in self.schema_object["result"]:
-            quality["prettystr"] = self.schema_object["result"]["qualityNames"][quality["str"]]
-        else:
-            quality["prettystr"] = quality["str"]
-
-        return quality
+        return {"id": 0, "prettystr": "Broken", "str": "ohnoes"}
 
     def get_item_inventory_token(self, item):
         """ Returns the item's inventory token (a bitfield) """

@@ -405,7 +405,7 @@ class backpack:
 
     def get_item_level(self, item):
         """ Returns the item's level (e.g. 10 for The Axtinguisher) if it has one """
-        return item.get("level", 0)
+        return item.get("level")
 
     def get_item_slot(self, item):
         """ Returns the item's slot as a string, this includes "primary",
@@ -444,13 +444,13 @@ class backpack:
         """ Returns the item's minimum level
         (non-random levels will have the same min and max level) """
         item_schema = self.get_item_schema(item)
-        return item_schema.get("min_ilevel", 0)
+        return item_schema.get("min_ilevel")
 
     def get_item_max_level(self, item):
         """ Returns the item's maximum level
         (non-random levels will have the same min and max level) """
         item_schema = self.get_item_schema(item)
-        return item_schema.get("max_ilevel", 0)
+        return item_schema.get("max_ilevel")
 
     def get_item_contents(self, item):
         """ Returns the item in the container, if there is one.

@@ -17,7 +17,6 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
 import json, urllib2, steam, time, os, sqlite3
-import cPickle as pickle
 
 class ProfileError(Exception):
     def __init__(self, msg):
@@ -30,16 +29,6 @@ class ProfileError(Exception):
 class profile:
     """ Functions for reading user account data """
 
-    def _get_id64_cache_path(self):
-        return os.path.join(steam.get_cache_dir(), "id64_cache.db")
-
-    def _create_id64_db(self):
-        _id64_cache_conn = sqlite3.connect(self._get_id64_cache_path())
-        _id64_cache = _id64_cache_conn.cursor()
-        _id64_cache.execute("CREATE TABLE IF NOT EXISTS cache (sid TEXT, id64 INTEGER PRIMARY KEY)")
-        _id64_cache_conn.commit()
-        _id64_cache.close()
-
     # Hopefully Valve will provide a request for doing this so we won't
     # have to use the old API
     def get_id64_from_sid(self, sid):
@@ -48,23 +37,11 @@ class profile:
 
         if sid.isdigit(): return sid
 
-        conn = sqlite3.connect(self._get_id64_cache_path())
-        cache = conn.cursor()
-        ids = cache.execute("SELECT id64 FROM cache WHERE sid=?", (sid,)).fetchone()
-        if ids:
-            cache.close()
-            return ids[0]
-
         prof = urllib2.urlopen(self._old_profile_url.format(sid)).read()
 
         if type(sid) == str and prof.find("<steamID64>") != -1:
             prof = (prof[prof.find("<steamID64>")+11:
                              prof.find("</steamID64>")])
-            cache.execute("INSERT OR IGNORE INTO cache (id64) VALUES (?)",
-                          (prof,))
-            cache.execute("UPDATE cache SET sid=? WHERE id64=?", (sid, prof,))
-            conn.commit()
-            cache.close()
 
             return prof
 
@@ -77,6 +54,7 @@ class profile:
             #Assume it's the 64 bit ID
             id64 = sid
 
+        self._id64 = str(id64)
         self._summary_object = (json.loads(urllib2.urlopen(self._profile_url + str(id64)).read().encode("utf-8"))
                                ["response"]["players"]["player"][0])
 
@@ -85,21 +63,11 @@ class profile:
 
         return self._summary_object
 
-    def load_summary_file(self, summary, pickled = True):
-        """ Loads a profile summary object from the given file
-        object. If pickled == True assume it's a pickled dict, otherwise
-        a JSON object. """
-
-        if pickled:
-            self._summary_object = pickle.load(summary)
-        else:
-            self._summary_object = json.load(summary)
-
     def get_summary_object(self):
         try:
             return self._summary_object
         except AttributeError:
-            raise ProfileError("No summary")
+            raise ProfileError("Profile data unavailable")
 
     def get_id64(self):
         """ Returns the 64 bit steam ID (use with other API requests) """
@@ -211,9 +179,10 @@ class profile:
         self._old_profile_url = "http://steamcommunity.com/id/{0:s}?xml=1"
         self._profile_url = ("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/"
                              "v0001/?key=" + steam.get_api_key() + "&steamids=")
-        self._create_id64_db()
 
-        if sid:
+        if isinstance(sid, dict):
+            self._summary_object = sid
+        elif sid:
             self.get_summary(sid)
 
     AVATAR_SMALL = "avatar"

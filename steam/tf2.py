@@ -16,8 +16,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
-import json, os, urllib2, time, steam, steam.user
-import cPickle as pickle
+import json, os, urllib2, time, steam
 
 class TF2Error(Exception):
     def __init__(self, msg):
@@ -25,11 +24,122 @@ class TF2Error(Exception):
         self.msg = msg
 
     def __str__(self):
-        return repr(self.msg)
+        return str(self.msg)
 
-class backpack:
-    """ Functions for reading player inventory """
+class SchemaError(TF2Error):
+    def __init__(self, msg, status = 0):
+        TF2Error.__init__(self, msg)
+        self.msg = msg
+
+class ItemError(TF2Error):
+    def __init__(self, msg, item = None):
+        TF2Error.__init__(self, msg)
+        self.msg = msg
+        self.item = item
+
+class item_schema:
+    """ The base class for the item schema. """
+
+    def get_language(self):
+        """ Returns the ISO code of the language the instance
+        is localized to """
+        return self._language
+
+    def get_raw_attributes(self, item = None):
+        """ Returns all attributes in the schema or for the item if one is given """
+        if not item:
+            return self._schema["result"]["attributes"]["attribute"] or []
+        else:
+            for sitem in self:
+                if sitem.get_schema_id() == item.get_schema_id():
+                    if "attributes" in sitem._item:
+                        return sitem._item["attributes"]["attribute"]
+                    else:
+                        return []
+
+    def get_attributes(self, item = None):
+        """ Returns all attributes in the schema
+        or the attributes for the item if given"""
+
+        return [item_attribute(attr) for attr in self.get_raw_attributes(item)]
+
+    def get_qualities(self):
+        """ Returns a list of all possible item qualities,
+        each element will be a dict.
+        prettystr is the localized pretty name (e.g. Valve)
+        id is the numerical quality (e.g. 8)
+        str is the non-pretty string (e.g. developer) """
+
+        qualities = []
+
+        for k,v in self._schema["result"]["qualities"].iteritems():
+            aquality = {"id": v, "str": k, "prettystr": k}
+
+            if "qualityNames" in self._schema["result"]:
+                aquality["prettystr"] = self._schema["result"]["qualityNames"][aquality["str"]]
+
+            qualities.append(aquality)
+
+        return qualities
+
+    def _download(self, lang):
+        url = ("http://api.steampowered.com/ITFItems_440/GetSchema/v0001/?key=" +
+               steam.get_api_key() + "&format=json&language=" + lang)
+        self._language = lang
+
+        return json.load(urllib2.urlopen(url))
+
+    def __iter__(self):
+        return self.nextitem()
+
+    def nextitem(self):
+        iterindex = 0
+        iterdata = [item(self, rawitem) for rawitem in self._schema["result"]["items"]["item"]]
+
+        while(iterindex < len(iterdata)):
+            data = iterdata[iterindex]
+            iterindex += 1
+            yield data
+
+    def __getitem__(self, key):
+        if isinstance(key, dict):
+            for item in self:
+                if key["defindex"] == item.get_schema_id():
+                    return item
+        elif isinstance(key, int):
+            for item in self:
+                if key == item.get_schema_id():
+                    return item
+        else:
+            raise TypeError(type(key))
+        raise KeyError(key)
+
+    def __init__(self, schema_object = None, lang = "en"):
+        """ schema_object will be used to initialize the schema if given,
+        lang can be any ISO language code. """
+
+        if not schema_object:
+            try:
+                self._schema = self._download(lang)
+            except urllib2.URLError:
+                # Try once more
+                self._schema = self._download(lang)
+            except Exception as E:
+                raise SchemaError(E)
+
+            if not self._schema or self._schema["result"]["status"] != 1:
+                raise SchemaError("Schema error", self._schema["result"]["status"])
+        else:
+            self._schema = schema_object
+
+class item:
+    """ Stores a single TF2 backpack item """
+    # The bitfield in the inventory token where
+    # equipped classes are stored
     equipped_field = 0x1FF0000
+
+    # A list of equipped classes and their position
+    # in the inventory token
     equipped_classes = {
         1<<8: "Engineer",
         1<<7: "Spy",
@@ -42,107 +152,18 @@ class backpack:
         1<<0: "Scout"
         }
 
+    # Item image fields in the schema
     ITEM_IMAGE_SMALL = "image_url"
     ITEM_IMAGE_LARGE = "image_url_large"
 
-    def _get_schema_basename(self):
-        return "tf2_item_schema_" + steam.get_language() + ".js"
-
-    def _rewrite_schema_cache(self):
-        """ Internal schema cache function, returns a stream """
-        url = ("http://api.steampowered.com/ITFItems_440/GetSchema/v0001/?key=" +
-               steam.get_api_key() + "&format=json&language=" + steam.get_language())
-        return steam.write_cache_file(urllib2.urlopen(url),
-                                      self._get_schema_basename())
-    
-    def load_schema(self, fresh = False):
-        """ Loads the item schema, if fresh is true a download is forced """
-        schema_handle = steam.get_cache_file(self._get_schema_basename())
-        if fresh or not schema_handle:
-            try:
-                schema_handle = self._rewrite_schema_cache()
-            except urllib2.URLError:
-                raise TF2Error("Couldn't download schema")
-
-        self.schema_object = json.load(schema_handle)
-        schema_handle.close()
-        if self.schema_object["result"]["status"] != 1:
-            raise TF2Error("Bad schema")
-        return self.schema_object
-
-    def load_pack_file(self, pack, pickled = True):
-        """ Loads a backpack from the given file. If pickled == True
-        assume it's a pickled dict, otherwise a JSON object. """
-
-        if pickled:
-            self._inventory_object = pickle.load(pack)
-        else:
-            self._inventory_object = json.load(pack)
-
-        return self.get_items()
-
-    def get_pack_object(self):
-        """ Returns the backpack as a dict """
-
-        return self._inventory_object
-
-    def load_pack(self, sid):
-        """ Loads the player backpack for the given steam.user
-        Returns a list of items, will be empty if there's nothing in the backpack"""
-        id64 = sid.get_id64()
-        url = ("http://api.steampowered.com/ITFItems_440/GetPlayerItems/"
-               "v0001/?key=" + steam.get_api_key() + "&format=json&SteamID=")
-        inv = urllib2.urlopen(url + str(id64)).read()
-
-        # Once again I'm doing what Valve should be doing before they generate
-        # JSON. WORKAROUND
-        self._inventory_object = json.loads(inv.replace("-1.#QNAN0", "0").encode("utf-8"))
-        result = self._inventory_object["result"]["status"]
-        if result == 8:
-            raise TF2Error("Bad SteamID64 given")
-        elif result == 15:
-            raise TF2Error("Profile set to private")
-        elif result != 1:
-            raise TF2Error("Unknown error")
-
-        return self.get_items()
-
-    def _internal_schema_get(self, item):
-        for sitem in self.schema_object["result"]["items"]["item"]:
-            if sitem["defindex"] == item["defindex"]:
-                return sitem
-
-    def get_item_schema(self, item):
-        """ Looks up the schema block for the item, normally you want to use
-        the functions that wrap this """
-
-        schema = self._internal_schema_get(item)
-
-        # We might need to update the cache
-        if not schema:
-            self.load_schema(fresh = True)
-
-        schema = self._internal_schema_get(item)
-
-        return schema
-
-    def get_item_schema_attributes(self):
-        """ Returns the list of all attributes in the schema """
-
-        if self.schema_object:
-            return self.schema_object["result"]["attributes"]["attribute"]
-        return None
-
-    def get_item_attributes(self, item):
+    def get_attributes(self):
         """ Returns a list of attributes """
-        item_schema = self.get_item_schema(item)
-        schema_block = self.schema_object["result"]["attributes"]["attribute"]
 
-        schema_attrs = []
-        if "attributes" in item_schema: schema_attrs = item_schema["attributes"]["attribute"]
-
+        schema_attrs = self._schema.get_raw_attributes(self)
+        schema_block = self._schema.get_raw_attributes()
         item_attrs = []
-        if "attributes" in item: item_attrs = item["attributes"]["attribute"]
+
+        if "attributes" in self._item: item_attrs = self._item["attributes"].get("attribute", [])
 
         final_attrs = []
 
@@ -167,67 +188,47 @@ class backpack:
                         for k, v in attr.iteritems(): sattr[k] = v
                         final_attrs.append(sattr)
 
-        return final_attrs
+        return [item_attribute(theattr) for theattr in final_attrs]
 
-    def get_qualities(self):
-        """ Returns a list of all possible item qualities,
-        each element will be a dict.
-        prettystr is the localized pretty name (e.g. Valve)
-        id is the numerical quality (e.g. 8)
-        str is the non-pretty string (e.g. developer) """
-        qualities = []
-
-        for k,v in self.schema_object["result"]["qualities"].iteritems():
-            aquality = {"id": v, "str": k, "prettystr": k}
-
-            if "qualityNames" in self.schema_object["result"]:
-                aquality["prettystr"] = self.schema_object["result"]["qualityNames"][aquality["str"]]
-
-            qualities.append(aquality)
-
-        return qualities
-
-    def get_item_quality(self, item):
+    def get_quality(self):
         """ Returns a dict
         prettystr is the localized pretty name (e.g. Valve)
         id is the numerical quality (e.g. 8)
         str is the non-pretty string (e.g. developer) """
+
         qid = 0
+        item = self._item
 
         if type(item) != int:
             qid = item.get("quality", item.get("item_quality", 0))
 
-        qualities = self.get_qualities()
+        qualities = self._schema.get_qualities()
         for q in qualities:
             if q["id"] == qid:
                 return q
 
         return {"id": 0, "prettystr": "Broken", "str": "ohnoes"}
 
-    def get_item_inventory_token(self, item):
+    def get_inventory_token(self):
         """ Returns the item's inventory token (a bitfield) """
-        return item.get("inventory", 0)
+        return self._item.get("inventory", 0)
 
-    def get_item_position(self, item):
+    def get_position(self):
         """ Returns a position in the backpack or -1 if there's no position
         available (i.e. an item isn't in the backpack) """
 
-        inventory_token = item
-        if type(item) != int:
-            inventory_token = self.get_item_inventory_token(item)
+        inventory_token = self.get_inventory_token()
 
         if inventory_token == 0:
             return -1
         else:
             return inventory_token & 0xFFFF
 
-    def get_item_equipped_classes(self, item):
+    def get_equipped_classes(self):
         """ Returns a list of classes (see equipped_classes values) """
         classes = []
 
-        inventory_token = item
-        if type(item) != int:
-            inventory_token = self.get_item_inventory_token(item)
+        inventory_token = self.get_inventory_token()
 
         for k,v in self.equipped_classes.iteritems():
             if ((inventory_token & self.equipped_field) >> 16) & k:
@@ -235,64 +236,201 @@ class backpack:
 
         return classes
 
-    def get_item_equipable_classes(self, item):
+    def get_equipable_classes(self):
         """ Returns a list of classes that _can_ use the item. """
         classes = []
-        schema = self.get_item_schema(item)
+        schema = self._schema_item
 
         if "used_by_classes" in schema:
             classes = schema["used_by_classes"]["class"]
         else:
             classes = self.equipped_classes.values()
 
-        return classes
+        if len(classes) <= 0 or classes[0] == None: return []
+        else: return classes
 
-    def get_items(self, from_schema = False):
-        """ Returns the list of backpack items, if from_schema = True
-        ALL items will be returned, not just from the current player's backpack """
-        ilist = []
+    def get_schema_id(self):
+        """ Returns the item's ID in the schema. """
+        return self._item["defindex"]
 
-        if from_schema:
-            fromobj = self.schema_object
+    def get_name(self):
+        """ Returns the item's undecorated name """
+        return self._schema_item["item_name"]
+
+    def get_type(self):
+        """ Returns the item's type. e.g. "Kukri" for the Tribalman's Shiv.
+        If Valve failed to provide a translation the type will be the token without
+        the hash prefix. """
+        return self._schema_item["item_type_name"]
+
+    def get_image(self, size):
+        """ Returns the URL to the item's image, size should be one of
+        ITEM_IMAGE_* """
+        try:
+            return self._schema_item[size]
+        except KeyError:
+            raise TF2Error("Bad item image size given")
+
+    def get_id(self):
+        """ Returns the item's unique serial number if it has one """
+        return self._item.get("id")
+
+    def get_level(self):
+        """ Returns the item's level (e.g. 10 for The Axtinguisher) if it has one """
+        return self._item.get("level")
+
+    def get_slot(self):
+        """ Returns the item's slot as a string, this includes "primary",
+        "secondary", "melee", and "head" """
+        return self._schema_item["item_slot"]
+
+    def get_class(self):
+        """ Returns the item's class
+        (what you use in the console to equip it, not the craft class)"""
+        return self._schema_item.get("item_class")
+
+    def get_craft_class(self):
+        """ Returns the item's class in the crafting system if it has one.
+        This includes hat, craft_bar, or craft_token. """
+        return self._schema_item.get("craft_class")
+
+    def get_custom_name(self):
+        """ Returns the item's custom name if it has one. """
+        return self._item.get("custom_name")
+
+    def get_custom_description(self):
+        """ Returns the item's custom description if it has one. """
+        return self._item.get("custom_desc")
+
+    def get_quantity(self):
+        """ Returns the number of uses the item has,
+        for example, a dueling mini-game has 5 uses by default """
+        return self._item.get("quantity", 1)
+
+    def get_description(self):
+        """ Returns the item's default description if it has one """
+        return self._schema_item.get("item_description")
+
+    def get_min_level(self):
+        """ Returns the item's minimum level
+        (non-random levels will have the same min and max level) """
+        return self._schema_item.get("min_ilevel")
+
+    def get_max_level(self):
+        """ Returns the item's maximum level
+        (non-random levels will have the same min and max level) """
+        return self._schema_item.get("max_ilevel")
+
+    def get_contents(self):
+        """ Returns the item in the container, if there is one.
+        This will be a standard item object. """
+        rawitem = self._item.get("contained_item")
+        if rawitem: return item(self._schema, rawitem)
+
+    def is_untradable(self):
+        """ Returns True if the item cannot be traded, False
+        otherwise. """
+        # Somewhat a WORKAROUND since this flag is there
+        # sometimes, "cannot trade" is there somtimes
+        # and then there's "always tradable". Opposed to
+        # only occasionally tradable when it feels like it.
+        untradable = self._item.get("flag_cannot_trade", False)
+        if "cannot trade" in self and self["cannot trade"] > 0:
+            untradable = True
+        if "always tradable" in self and self["always tradable"] > 0:
+            untradable = False
+        return untradable
+
+    def is_name_prefixed(self):
+        """ Returns False if the item doesn't use
+        a prefix, True otherwise. (e.g. Bonk! Atomic Punch
+        shouldn't have a prefix so this would be False) """
+        return self._schema_item.get("proper_name", False)
+
+    def get_full_item_name(self, strip_prefixes = [], prefixes = {}):
+        """
+        Generates a prefixed item name and is custom name-aware.
+
+        Will use an alternate prefix dict if given,
+        following the format of "non-localized quality": "alternate prefix"
+
+        strip_prefixes is a list that will be checked for prefixes to remove
+        from the item name, each element should be a non-localized quality string
+        """
+        quality = self.get_quality()
+        quality_str = quality["str"]
+        pretty_quality_str = quality["prettystr"]
+        custom_name = self.get_custom_name()
+        item_name = self.get_name()
+        prefix = prefixes.get(quality_str, pretty_quality_str) + " "
+
+        if item_name.find("The ") != -1 and self.is_name_prefixed():
+            item_name = item_name[4:]
+
+        if custom_name:
+            item_name = custom_name
+
+        if custom_name or not self.is_name_prefixed() or quality_str in strip_prefixes:
+            return item_name
         else:
-            try:
-                fromobj = self._inventory_object
-            except AttributeError:
-                fromobj = None
+            return prefix + item_name
 
-        if fromobj:
-            try:
-                ilist = fromobj["result"]["items"]["item"]
-                if not ilist[0]:
-                    ilist = []
-            except KeyError:
-                pass
-        return ilist
+    def __iter__(self):
+        return self.nextattr()
 
-    def get_total_cells():
-        """ Returns the total number of cells in the backpack.
-        This can be used to determine if the user has bought a backpack
-        expander. """
-        return self._inventory_object["result"].get("num_backpack_slots", 0)
+    def nextattr(self):
+        iterindex = 0
+        attrs = self.get_attributes()
 
-    def get_item_by_id(self, id):
-        """ Takes an id (serial number) and returns the item if one is found """
-        for item in self.get_items():
-            if self.get_item_id(item) == id:
-                return item
+        while(iterindex < len(attrs)):
+            data = attrs[iterindex]
+            iterindex += 1
+            yield data
 
-    def get_item_schema_id(self, item):
-        return item["defindex"]
+    def __getitem__(self, key):
+        if isinstance(key, str):
+            for attr in self:
+                if attr.get_name() == key:
+                    return attr
+        elif isinstance(key, int):
+            for attr in self:
+                if attr.get_id() == key:
+                    return attr
+        else:
+            raise TypeError(type(key))
+        raise KeyError(key)
 
-    def get_item_by_schema_id(self, id):
-        for item in self.get_items(from_schema = True):
-            if self.get_item_schema_id(item) == id:
-                return item
+    def __unicode__(self):
+        return self.get_full_item_name()
 
+    def __str__(self):
+        return unicode(self).encode("utf-8")
 
-    def get_attribute_value_formatted(self, val, ftype):
-        """ Returns a formatted value """
+    def __init__(self, schema, item):
+        self._item = item
+        self._schema = schema
+        self._schema_item = None
+
+        # Assume it isn't a schema item if it has it's own ID
+        if "id" in self._item:
+            for sitem in schema:
+                if sitem.get_schema_id() == self._item["defindex"]:
+                    self._schema_item = sitem._item
+                    break
+        else:
+            self._schema_item = item
+
+        if not self._schema_item:
+            raise ItemError("Item has no corresponding schema entry")
+
+class item_attribute:
+    """ Wrapper around item attributes """
+
+    def get_value_formatted(self):
+        """ Returns a formatted value as a string"""
+        val = self.get_value()
         fattr = str(val)
+        ftype = self.get_value_type()
 
         # I don't think %s2,%s3, etc. needs to be supported since there's
         # 1 value per attribute.
@@ -305,176 +443,156 @@ class backpack:
         elif ftype == "additive" or ftype == "particle_index" or ftype == "account_id":
             if int(val) == val: fattr = (str(int(val)))
         elif ftype == "date":
-            d = time.localtime(int(val))
-            fattr = "{0:d}-{1:02d}-{2:02d}".format(d.tm_year, d.tm_mon, d.tm_mday)
+            d = time.gmtime(int(val))
+            fattr = time.strftime("%F %H:%M:%S", d)
 
         return fattr
 
-    def format_attribute_description(self, attr):
-        """ Returns a formatted description_string (%s* tokens replaced) """
-        val = self.get_attribute_value(attr)
-        ftype = self.get_attribute_value_type(attr)
-        desc = self.get_attribute_description(attr)
+    def get_description_formatted(self):
+        """ Returns a formatted description string (%s* tokens replaced) """
+        val = self.get_value()
+        ftype = self.get_value_type()
+        desc = self.get_description()
 
         if desc:
-            return desc.replace("%s1", self.get_attribute_value_formatted(val, ftype))
+            return desc.replace("%s1", self.get_value_formatted())
         else:
             return None
 
-    def get_item_name(self, item):
-        """ Returns the item's name, this can be used with get_item_quality
-        to decide prefixes (e.g. "The Kritzkrieg") for a unique item. """
-        return self.get_item_schema(item)["item_name"]
-
-    def get_item_type(self, item):
-        """ Returns the item's type, e.g. "Kukri" for the Tribalman's Shiv """
-        itype = self.get_item_schema(item)["item_type_name"]
-        if itype == "TF_Wearable_Hat":
-            itype = "Hat"
-        elif itype == "TF_LockedCrate":
-            itype = "Crate"
-        return itype
-
-    def get_item_image(self, item, size):
-        """ Returns the URL to the item's image, size should be one of
-        ITEM_IMAGE_* """
-        try:
-            return self.get_item_schema(item)[size]
-        except KeyError:
-            raise TF2Error("Bad item image size given")
-
-    def get_attribute_name(self, attr):
+    def get_name(self):
         """ Returns the attributes name """
-        return attr["name"]
+        return self._attribute["name"]
 
-    def get_attribute_class(self, attr):
-        return attr["attribute_class"]
+    def get_class(self):
+        return self._attribute["attribute_class"]
 
-    def get_attribute_id(self, attr):
-        return attr["defindex"]
+    def get_id(self):
+        return self._attribute["defindex"]
 
-    def get_attribute_value_min(self, attr):
+    def get_value_min(self):
         """ Returns the minimum value for the attribute (not all attributes
         stay above this) """
-        return attr["min_value"]
+        return self._attribute["min_value"]
 
-    def get_attribute_value_max(self, attr):
+    def get_value_max(self):
         """ Returns the maximum value for the attribute (not all attributes
         stay below this) """
-        return attr["max_value"]
+        return self._attribute["max_value"]
 
-    def get_attribute_type(self, attr):
+    def get_type(self):
         """ Returns the attribute effect type (positive, negative, or neutral) """
-        return attr["effect_type"]
+        return self._attribute["effect_type"]
 
-    def get_attribute_value(self, attr):
-        """ Returns the attribute's value, use get_attribute_format to determine
+    def get_value(self):
+        """ Returns the attribute's value, use get_value_type to determine
         the type. """
-        return attr["value"]
+        return self._attribute.get("value")
 
-    def get_attribute_description(self, attr):
+    def get_description(self):
         """ Returns the attribute's UTF-8 encoded description string, if
         it is intended to be printed with the value there will
         be a "%s1" token somewhere in the string. Use
-        format_attribute_description to substitute this automatically. """
-        desc = attr.get("description_string")
+        get_description_formatted to substitute this automatically. """
+        desc = self._attribute.get("description_string")
         if desc: return desc.encode("utf-8")
         else: return None
 
-    def get_attribute_value_type(self, attr):
+    def get_value_type(self):
         """ Returns the attribute's type. Currently this can be one of
         additive: An integer (convert value to integer) or boolean
         percentage: A standard percentage
         additive_percentage: Could represent a percentage that adds to default stats
         inverted_percentage: The sum of the difference between the value and 100%
         date: A unix timestamp """
-        if "description_format" in attr:
-            return attr["description_format"][9:]
+        if "description_format" in self._attribute:
+            return self._attribute["description_format"][9:]
         else:
             return None
 
-    def is_attribute_hidden(self, attr):
+    def is_hidden(self):
         """ Returns True if the attribute is "hidden"
         (not intended to be shown to the end user). Note
         that hidden attributes also usually have no description string """
-        return attr.get("hidden", True)
+        if self._attribute.get("hidden", True) or self.get_description() == None:
+            return True
+        else:
+            return False
 
-    def get_item_id(self, item):
-        """ Returns the item's unique serial number if it has one """
-        return item.get("id", None)
+    def __unicode__(self):
+        """ Pretty printing """
+        if not self.is_hidden():
+            return self.get_description_formatted()
+        else:
+            return self.get_name() + ": " + self.get_value_formatted()
 
-    def get_item_level(self, item):
-        """ Returns the item's level (e.g. 10 for The Axtinguisher) if it has one """
-        return item.get("level")
+    def __str__(self):
+        return unicode(self).encode("utf-8")
 
-    def get_item_slot(self, item):
-        """ Returns the item's slot as a string, this includes "primary",
-        "secondary", "melee", and "head" """
-        return self.get_item_schema(item)["item_slot"]
+    def __init__(self, attribute):
+        self._attribute = attribute
 
-    def get_item_class(self, item):
-        """ Returns the item's class
-        (what you use in the console to equip it, not the craft class)"""
-        return self.get_item_schema(item).get("item_class")
+        # Workaround until Valve gives sane values
+        if (self.get_value_type() != "date" and
+            self.get_value() > 1000000000 and
+            "float_value" in self._attribute):
+            self._attribute["value"] = self._attribute["float_value"]
 
-    def get_item_craft_class(self, item):
-        """ Returns the item's class in the crafting system if it has one.
-        This includes hat, craft_bar, or craft_token. """
-        return self.get_item_schema(item).get("craft_class")
 
-    def get_item_custom_name(self, item):
-        """ Returns the item's custom name if it has one. """
-        return item.get("custom_name")
+class backpack:
+    """ Functions for reading player inventory """
 
-    def get_item_custom_description(self, item):
-        """ Returns the item's custom description if it has one. """
-        return item.get("custom_desc")
+    def load(self, sid):
+        """ Loads or refreshes the player backpack for the given steam.user
+        Returns a list of items, will be empty if there's nothing in the backpack"""
+        if not isinstance(sid, steam.user.profile):
+            sid = steam.user.profile(sid)
+        id64 = sid.get_id64()
+        url = ("http://api.steampowered.com/ITFItems_440/GetPlayerItems/"
+               "v0001/?key=" + steam.get_api_key() + "&format=json&SteamID=")
+        inv = urllib2.urlopen(url + str(id64)).read()
 
-    def get_item_quantity(self, item):
-        """ Returns the number of uses the item has,
-        for example, a dueling mini-game has 5 uses by default """
-        return item.get("quantity", 1)
+        # Once again I'm doing what Valve should be doing before they generate
+        # JSON. WORKAROUND
+        self._inventory_object = json.loads(inv.replace("-1.#QNAN0", "0").encode("utf-8"))
+        result = self._inventory_object["result"]["status"]
+        if result == 8:
+            raise TF2Error("Bad SteamID64 given")
+        elif result == 15:
+            raise TF2Error("Profile set to private")
+        elif result != 1:
+            raise TF2Error("Unknown error")
 
-    def get_item_description(self, item):
-        """ Returns the item's description if it has one """
-        item_schema = self.get_item_schema(item)
-        return item_schema.get("item_description")
+    def get_total_cells(self):
+        """ Returns the total number of cells in the backpack.
+        This can be used to determine if the user has bought a backpack
+        expander. """
+        return self._inventory_object["result"].get("num_backpack_slots", 0)
 
-    def get_item_min_level(self, item):
-        """ Returns the item's minimum level
-        (non-random levels will have the same min and max level) """
-        item_schema = self.get_item_schema(item)
-        return item_schema.get("min_ilevel")
+    def set_schema(self, schema):
+        """ Sets a new item_schema to be used on inventory items """
+        self._schema = schema
 
-    def get_item_max_level(self, item):
-        """ Returns the item's maximum level
-        (non-random levels will have the same min and max level) """
-        item_schema = self.get_item_schema(item)
-        return item_schema.get("max_ilevel")
+    def __iter__(self):
+        return self.nextitem()
 
-    def get_item_contents(self, item):
-        """ Returns the item in the container, if there is one.
-        This will be a standard item object. """
-        return item.get("contained_item")
+    def nextitem(self):
+        iterindex = 0
+        iterdata = [item(self._schema, rawitem) for rawitem in self._inventory_object["result"]["items"]["item"] if rawitem != None]
 
-    def is_item_untradeable(self, item):
-        """ Returns True if the item cannot be traded, False
-        otherwise. """
-        return item.get("flag_cannot_trade", False)
+        while(iterindex < len(iterdata)):
+            data = iterdata[iterindex]
+            iterindex += 1
+            yield data
 
-    def is_item_prefixed(self, item):
-        """ Returns False if the item doesn't use
-        a prefix, True otherwise. (e.g. Bonk! Atomic Punch
-        shouldn't have a prefix so this would be False) """
-        item_schema = self.get_item_schema(item)
-        return item_schema.get("proper_name", False)
+    def __init__(self, sid = None, schema = None):
+        """ Loads the backpack of user sid if given,
+        generates a fresh schema object if one is not given. """
 
-    def __init__(self, sid = None):
-        """ Loads the backpack of user sid if given """
-        self.load_schema()
-
+        self._schema = schema
+        if not self._schema:
+            self._schema = item_schema(lang = steam.get_language())
         if sid:
-            self.load_pack(sid)
+            self.load(sid)
 
 class golden_wrench:
     """ Functions for reading info for the golden wrenches found

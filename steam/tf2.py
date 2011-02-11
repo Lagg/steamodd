@@ -595,7 +595,7 @@ class backpack:
 
         self._schema = schema
         if not self._schema:
-            self._schema = item_schema(lang = steam.get_language())
+            self._schema = item_schema()
         if sid:
             self.load(sid)
 

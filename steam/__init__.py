@@ -23,7 +23,6 @@ import tf2
 __version__ = "1.0"
 
 _api_key = None
-_language = None
 
 class APIError(Exception):
     def __init__(self, msg):
@@ -45,17 +44,3 @@ def set_api_key(key):
     global _api_key
 
     _api_key = key
-
-def get_language():
-    """ Returns the language code used for API requests """
-
-    if not _language:
-        raise APIError("Language not set")
-
-    return _language
-
-def set_language(lang):
-    """ Should be a two char language code, e.g. 'en' for english """
-    global _language
-
-    _language = lang

@@ -102,23 +102,21 @@ class item_schema:
             yield data
 
     def __getitem__(self, key):
-        if isinstance(key, dict):
-            for item in self:
-                if key["defindex"] == item.get_schema_id():
-                    return item
-        elif isinstance(key, int):
-            for item in self:
-                if key == item.get_schema_id():
-                    return item
-        else:
-            raise TypeError(type(key))
+        realkey = None
+        try: realkey = key["defindex"]
+        except: realkey = key
+
+        for item in self:
+            if realkey == item.get_schema_id():
+                return item
+
         raise KeyError(key)
 
-    def __init__(self, schema_object = None, lang = "en"):
-        """ schema_object will be used to initialize the schema if given,
+    def __init__(self, schema = None, lang = "en"):
+        """ schema will be used to initialize the schema if given,
         lang can be any ISO language code. """
 
-        if not schema_object:
+        if not schema:
             try:
                 self._schema = self._download(lang)
             except urllib2.URLError:
@@ -130,7 +128,7 @@ class item_schema:
             if not self._schema or self._schema["result"]["status"] != 1:
                 raise SchemaError("Schema error", self._schema["result"]["status"])
         else:
-            self._schema = schema_object
+            self._schema = schema
 
 class item:
     """ Stores a single TF2 backpack item """
@@ -335,9 +333,9 @@ class item:
         # and then there's "always tradable". Opposed to
         # only occasionally tradable when it feels like it.
         untradable = self._item.get("flag_cannot_trade", False)
-        if "cannot trade" in self and self["cannot trade"] > 0:
+        if "cannot trade" in self:
             untradable = True
-        if "always tradable" in self and self["always tradable"] > 0:
+        if "always tradable" in self:
             untradable = False
         return untradable
 
@@ -388,17 +386,18 @@ class item:
             yield data
 
     def __getitem__(self, key):
-        if isinstance(key, str):
-            for attr in self:
-                if attr.get_name() == key:
-                    return attr
-        elif isinstance(key, int):
-            for attr in self:
-                if attr.get_id() == key:
-                    return attr
-        else:
-            raise TypeError(type(key))
+        for attr in self:
+            if attr.get_id() == key or attr.get_name() == key:
+                return attr
+
         raise KeyError(key)
+
+    def __contains__(self, key):
+        try:
+            self.__getitem__(key)
+            return True
+        except KeyError:
+            return False
 
     def __unicode__(self):
         return self.get_full_item_name()
@@ -411,8 +410,8 @@ class item:
         self._schema = schema
         self._schema_item = None
 
-        # Assume it isn't a schema item if it has it's own ID
-        if "id" in self._item:
+        # Assume it isn't a schema item if it doesn't have a name
+        if "item_name" not in self._item:
             for sitem in schema:
                 if sitem.get_schema_id() == self._item["defindex"]:
                     self._schema_item = sitem._item
@@ -426,9 +425,12 @@ class item:
 class item_attribute:
     """ Wrapper around item attributes """
 
-    def get_value_formatted(self):
+    def get_value_formatted(self, value = None):
         """ Returns a formatted value as a string"""
-        val = self.get_value()
+        if value == None:
+            val = self.get_value()
+        else:
+            val = value
         fattr = str(val)
         ftype = self.get_value_type()
 
@@ -532,11 +534,14 @@ class item_attribute:
         self._attribute = attribute
 
         # Workaround until Valve gives sane values
-        if (self.get_value_type() != "date" and
-            self.get_value() > 1000000000 and
-            "float_value" in self._attribute):
-            self._attribute["value"] = self._attribute["float_value"]
-
+        try:
+            int(self.get_value())
+            if (self.get_value_type() != "date" and
+                self.get_value() > 1000000000 and
+                "float_value" in self._attribute):
+                self._attribute["value"] = self._attribute["float_value"]
+        except TypeError:
+            pass
 
 class backpack:
     """ Functions for reading player inventory """

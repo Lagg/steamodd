@@ -35,11 +35,13 @@ class profile:
         """ This uses the old API, caches
         64 bit ID mappings in id64_cache* """
 
+        sid = str(sid)
+
         if sid.isdigit(): return sid
 
         prof = urllib2.urlopen(self._old_profile_url.format(sid)).read()
 
-        if type(sid) == str and prof.find("<steamID64>") != -1:
+        if prof.find("<steamID64>") != -1:
             prof = (prof[prof.find("<steamID64>")+11:
                              prof.find("</steamID64>")])
 
@@ -62,12 +64,6 @@ class profile:
             raise ProfileError("Profile not found")
 
         return self._summary_object
-
-    def get_summary_object(self):
-        try:
-            return self._summary_object
-        except AttributeError:
-            raise ProfileError("Profile data unavailable")
 
     def get_id64(self):
         """ Returns the 64 bit steam ID (use with other API requests) """

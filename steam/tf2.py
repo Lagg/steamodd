@@ -17,6 +17,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
 import json, os, urllib2, time, steam
+from copy import deepcopy
 
 class TF2Error(Exception):
     def __init__(self, msg):
@@ -168,8 +169,9 @@ class item:
         for attr in schema_attrs:
             for sattr in schema_block:
                 if sattr["name"] == attr["name"]:
-                    for k, v in attr.iteritems(): sattr[k] = v
-                    final_attrs.append(sattr)
+                    fattr = deepcopy(sattr)
+                    for k, v in attr.iteritems(): fattr[k] = v
+                    final_attrs.append(fattr)
 
         for attr in item_attrs:
             for sattr in schema_block:
@@ -183,8 +185,9 @@ class item:
                             old_val = True
                             break
                     if not old_val:
-                        for k, v in attr.iteritems(): sattr[k] = v
-                        final_attrs.append(sattr)
+                        fattr = deepcopy(sattr)
+                        for k, v in attr.iteritems(): fattr[k] = v
+                        final_attrs.append(fattr)
 
         return [item_attribute(theattr) for theattr in final_attrs]
 

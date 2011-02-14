@@ -39,7 +39,10 @@ class profile:
 
         if sid.isdigit(): return sid
 
-        prof = urllib2.urlopen(self._old_profile_url.format(sid)).read()
+        try:
+            prof = urllib2.urlopen(self._old_profile_url.format(sid)).read()
+        except:
+            return None
 
         if prof.find("<steamID64>") != -1:
             prof = (prof[prof.find("<steamID64>")+11:

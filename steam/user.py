@@ -24,7 +24,7 @@ class ProfileError(Exception):
         self.msg = msg
 
     def __str__(self):
-        return repr(self.msg)
+        return str(self.msg)
 
 class profile:
     """ Functions for reading user account data """

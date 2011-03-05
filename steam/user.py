@@ -60,7 +60,7 @@ class profile:
             id64 = sid
 
         self._id64 = str(id64)
-        self._summary_object = (json.loads(urllib2.urlopen(self._profile_url + str(id64)).read().encode("utf-8"))
+        self._summary_object = (json.load(urllib2.urlopen(self._profile_url + str(id64)))
                                ["response"]["players"]["player"][0])
 
         if not self._summary_object:

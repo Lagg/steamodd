@@ -499,7 +499,7 @@ class item_attribute:
         be a "%s1" token somewhere in the string. Use
         get_description_formatted to substitute this automatically. """
         desc = self._attribute.get("description_string")
-        if desc: return desc.encode("utf-8")
+        if desc: return desc
         else: return None
 
     def get_value_type(self):
@@ -561,7 +561,7 @@ class backpack:
 
         # Once again I'm doing what Valve should be doing before they generate
         # JSON. WORKAROUND
-        self._inventory_object = json.loads(inv.replace("-1.#QNAN0", "0").encode("utf-8"))
+        self._inventory_object = json.loads(inv.replace("-1.#QNAN0", "0"))
         result = self._inventory_object["result"]["status"]
         if result == 8:
             raise TF2Error("Bad SteamID64 given")

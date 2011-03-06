@@ -17,7 +17,6 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
 import json, os, urllib2, time, steam
-from copy import deepcopy
 
 class TF2Error(Exception):
     def __init__(self, msg):
@@ -48,15 +47,25 @@ class item_schema:
 
     def get_raw_attributes(self, item = None):
         """ Returns all attributes in the schema or for the item if one is given """
+
+        dabiglist = self._schema["result"]["attributes"]["attribute"] or []
+        attrs = []
+        realattrs = []
         if not item:
-            return self._schema["result"]["attributes"]["attribute"] or []
-        else:
-            for sitem in self:
-                if sitem.get_schema_id() == item.get_schema_id():
-                    if "attributes" in sitem._item:
-                        return sitem._item["attributes"]["attribute"]
-                    else:
-                        return []
+            return dabiglist
+
+        for sitem in self:
+            if sitem.get_schema_id() == item.get_schema_id():
+                if "attributes" in sitem._item:
+                    attrs = sitem._item["attributes"]["attribute"]
+                break
+
+        for specattr in attrs:
+            for attr in dabiglist:
+                if specattr["name"] == attr["name"]:
+                    realattrs.append(dict(attr.items() + specattr.items()))
+
+        return realattrs
 
     def get_attributes(self, item = None):
         """ Returns all attributes in the schema
@@ -161,33 +170,30 @@ class item:
         schema_attrs = self._schema.get_raw_attributes(self)
         schema_block = self._schema.get_raw_attributes()
         item_attrs = []
-
-        if "attributes" in self._item: item_attrs = self._item["attributes"].get("attribute", [])
-
         final_attrs = []
 
+        if self._item != self._schema_item and "attributes" in self._item:
+            item_attrs = self._item["attributes"].get("attribute", [])
+
+        usedattrs = []
         for attr in schema_attrs:
-            for sattr in schema_block:
-                if sattr["name"] == attr["name"]:
-                    fattr = deepcopy(sattr)
-                    for k, v in attr.iteritems(): fattr[k] = v
-                    final_attrs.append(fattr)
+            used = False
+            for iattr in item_attrs:
+                if attr["defindex"] == iattr["defindex"]:
+                    final_attrs.append(dict(attr.items() + iattr.items()))
+                    used = True
+                    usedattrs.append(iattr)
+                    break
+            if not used:
+                final_attrs.append(attr)
 
         for attr in item_attrs:
+            if attr in usedattrs:
+                continue
             for sattr in schema_block:
-                if "defindex" not in sattr or "defindex" not in attr:
-                    break
                 if sattr["defindex"] == attr["defindex"]:
-                    old_val = False
-                    for oldattr in final_attrs:
-                        if oldattr["defindex"] == attr["defindex"]:
-                            for k, v in attr.iteritems(): oldattr[k] = v
-                            old_val = True
-                            break
-                    if not old_val:
-                        fattr = deepcopy(sattr)
-                        for k, v in attr.iteritems(): fattr[k] = v
-                        final_attrs.append(fattr)
+                    final_attrs.append(dict(sattr.items() + attr.items()))
+                    break
 
         return [item_attribute(theattr) for theattr in final_attrs]
 

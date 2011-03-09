@@ -54,10 +54,10 @@ class item_schema:
         if not item:
             return dabiglist
 
-        for sitem in self:
-            if sitem.get_schema_id() == item.get_schema_id():
-                if "attributes" in sitem._item:
-                    attrs = sitem._item["attributes"]["attribute"]
+        for sitem in self._schema["result"]["items"]["item"]:
+            if sitem["defindex"] == item._item["defindex"]:
+                try: attrs = sitem["attributes"]["attribute"]
+                except KeyError: attrs = []
                 break
 
         for specattr in attrs:
@@ -85,8 +85,8 @@ class item_schema:
         for k,v in self._schema["result"]["qualities"].iteritems():
             aquality = {"id": v, "str": k, "prettystr": k}
 
-            if "qualityNames" in self._schema["result"]:
-                aquality["prettystr"] = self._schema["result"]["qualityNames"][aquality["str"]]
+            try: aquality["prettystr"] = self._schema["result"]["qualityNames"][aquality["str"]]
+            except KeyError: pass
 
             qualities.append(aquality)
 
@@ -172,8 +172,9 @@ class item:
         item_attrs = []
         final_attrs = []
 
-        if self._item != self._schema_item and "attributes" in self._item:
-            item_attrs = self._item["attributes"].get("attribute", [])
+        if self._item != self._schema_item:
+            try: item_attrs = self._item["attributes"]["attribute"]
+            except KeyError: pass
 
         usedattrs = []
         for attr in schema_attrs:
@@ -205,11 +206,9 @@ class item:
 
         qid = 0
         item = self._item
-
-        if type(item) != int:
-            qid = item.get("quality", item.get("item_quality", 0))
-
+        qid = item.get("quality", item.get("item_quality", 0))
         qualities = self._schema.get_qualities()
+
         for q in qualities:
             if q["id"] == qid:
                 return q
@@ -246,12 +245,10 @@ class item:
     def get_equipable_classes(self):
         """ Returns a list of classes that _can_ use the item. """
         classes = []
-        schema = self._schema_item
+        sitem = self._schema_item
 
-        if "used_by_classes" in schema:
-            classes = schema["used_by_classes"]["class"]
-        else:
-            classes = self.equipped_classes.values()
+        try: classes = sitem["used_by_classes"]["class"]
+        except KeyError: classes = self.equipped_classes.values()
 
         if len(classes) <= 0 or classes[0] == None: return []
         else: return classes
@@ -500,13 +497,11 @@ class item_attribute:
         return self._attribute.get("value")
 
     def get_description(self):
-        """ Returns the attribute's UTF-8 encoded description string, if
+        """ Returns the attribute's description string, if
         it is intended to be printed with the value there will
         be a "%s1" token somewhere in the string. Use
         get_description_formatted to substitute this automatically. """
-        desc = self._attribute.get("description_string")
-        if desc: return desc
-        else: return None
+        return self._attribute.get("description_string")
 
     def get_value_type(self):
         """ Returns the attribute's type. Currently this can be one of
@@ -515,10 +510,8 @@ class item_attribute:
         additive_percentage: Could represent a percentage that adds to default stats
         inverted_percentage: The sum of the difference between the value and 100%
         date: A unix timestamp """
-        if "description_format" in self._attribute:
-            return self._attribute["description_format"][9:]
-        else:
-            return None
+        try: return self._attribute["description_format"][9:]
+        except KeyError: return None
 
     def is_hidden(self):
         """ Returns True if the attribute is "hidden"

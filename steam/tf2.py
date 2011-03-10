@@ -104,10 +104,10 @@ class item_schema:
 
     def nextitem(self):
         iterindex = 0
-        iterdata = [item(self, rawitem) for rawitem in self._schema["result"]["items"]["item"]]
+        iterdata = self._schema["result"]["items"]["item"]
 
         while(iterindex < len(iterdata)):
-            data = iterdata[iterindex]
+            data = item(self, iterdata[iterindex])
             iterindex += 1
             yield data
 
@@ -418,9 +418,9 @@ class item:
 
         # Assume it isn't a schema item if it doesn't have a name
         if "item_name" not in self._item:
-            for sitem in schema:
-                if sitem.get_schema_id() == self._item["defindex"]:
-                    self._schema_item = sitem._item
+            for sitem in schema._schema["result"]["items"]["item"]:
+                if sitem["defindex"] == self._item["defindex"]:
+                    self._schema_item = sitem
                     break
         else:
             self._schema_item = item
@@ -584,10 +584,10 @@ class backpack:
 
     def nextitem(self):
         iterindex = 0
-        iterdata = [item(self._schema, rawitem) for rawitem in self._inventory_object["result"]["items"]["item"] if rawitem != None]
+        iterdata = self._inventory_object["result"]["items"]["item"]
 
         while(iterindex < len(iterdata)):
-            data = iterdata[iterindex]
+            data = item(self._schema, iterdata[iterindex])
             iterindex += 1
             yield data
 

@@ -48,22 +48,20 @@ class item_schema:
     def get_raw_attributes(self, item = None):
         """ Returns all attributes in the schema or for the item if one is given """
 
-        dabiglist = self._schema["result"]["attributes"]["attribute"] or []
         attrs = []
         realattrs = []
         if not item:
-            return dabiglist
+            return self._attributes.values()
 
-        for sitem in self._schema["result"]["items"]["item"]:
-            if sitem["defindex"] == item._item["defindex"]:
-                try: attrs = sitem["attributes"]["attribute"]
-                except KeyError: attrs = []
-                break
+        try:
+            attrs = self._items[item._item["defindex"]]["attributes"]["attribute"]
+        except KeyError: attrs = []
 
         for specattr in attrs:
-            for attr in dabiglist:
-                if specattr["name"] == attr["name"]:
-                    realattrs.append(dict(attr.items() + specattr.items()))
+            attrid = self._attribute_names[specattr["name"]]
+            attrdict = self._attributes[attrid]
+
+            realattrs.append(dict(attrdict.items() + specattr.items()))
 
         return realattrs
 
@@ -80,17 +78,7 @@ class item_schema:
         id is the numerical quality (e.g. 8)
         str is the non-pretty string (e.g. developer) """
 
-        qualities = []
-
-        for k,v in self._schema["result"]["qualities"].iteritems():
-            aquality = {"id": v, "str": k, "prettystr": k}
-
-            try: aquality["prettystr"] = self._schema["result"]["qualityNames"][aquality["str"]]
-            except KeyError: pass
-
-            qualities.append(aquality)
-
-        return qualities
+        return self._qualities
 
     def _download(self, lang):
         url = ("http://api.steampowered.com/ITFItems_440/GetSchema/v0001/?key=" +
@@ -104,7 +92,7 @@ class item_schema:
 
     def nextitem(self):
         iterindex = 0
-        iterdata = self._schema["result"]["items"]["item"]
+        iterdata = self._items.values()
 
         while(iterindex < len(iterdata)):
             data = item(self, iterdata[iterindex])
@@ -116,29 +104,42 @@ class item_schema:
         try: realkey = key["defindex"]
         except: realkey = key
 
-        for item in self:
-            if realkey == item.get_schema_id():
-                return item
+        return item(self, self._items[realkey])
 
-        raise KeyError(key)
-
-    def __init__(self, schema = None, lang = "en"):
+    def __init__(self, lang = "en"):
         """ schema will be used to initialize the schema if given,
         lang can be any ISO language code. """
 
-        if not schema:
-            try:
-                self._schema = self._download(lang)
-            except urllib2.URLError:
-                # Try once more
-                self._schema = self._download(lang)
-            except Exception as E:
-                raise SchemaError(E)
+        schema = None
+        try:
+            schema = self._download(lang)
+        except urllib2.URLError:
+            # Try once more
+            schema = self._download(lang)
+        except Exception as E:
+            raise SchemaError(E)
 
-            if not self._schema or self._schema["result"]["status"] != 1:
-                raise SchemaError("Schema error", self._schema["result"]["status"])
-        else:
-            self._schema = schema
+        if not schema or schema["result"]["status"] != 1:
+            raise SchemaError("Schema error", schema["result"]["status"])
+
+        self._attributes = {}
+        self._attribute_names = {}
+        for attrib in schema["result"]["attributes"]["attribute"]:
+            self._attributes[attrib["defindex"]] = attrib
+            self._attribute_names[attrib["name"]] = attrib["defindex"]
+
+        self._items = {}
+        for item in schema["result"]["items"]["item"]:
+            self._items[item["defindex"]] = item
+
+        self._qualities = {}
+        for k,v in schema["result"]["qualities"].iteritems():
+            aquality = {"id": v, "str": k, "prettystr": k}
+
+            try: aquality["prettystr"] = schema["result"]["qualityNames"][aquality["str"]]
+            except KeyError: pass
+
+            self._qualities[v] = aquality
 
 class item:
     """ Stores a single TF2 backpack item """
@@ -168,7 +169,6 @@ class item:
         """ Returns a list of attributes """
 
         schema_attrs = self._schema.get_raw_attributes(self)
-        schema_block = self._schema.get_raw_attributes()
         item_attrs = []
         final_attrs = []
 
@@ -191,10 +191,8 @@ class item:
         for attr in item_attrs:
             if attr in usedattrs:
                 continue
-            for sattr in schema_block:
-                if sattr["defindex"] == attr["defindex"]:
-                    final_attrs.append(dict(sattr.items() + attr.items()))
-                    break
+            attrdict = self._schema._attributes[attr["defindex"]]
+            final_attrs.append(dict(attrdict.items() + attr.items()))
 
         return [item_attribute(theattr) for theattr in final_attrs]
 
@@ -209,11 +207,10 @@ class item:
         qid = item.get("quality", item.get("item_quality", 0))
         qualities = self._schema.get_qualities()
 
-        for q in qualities:
-            if q["id"] == qid:
-                return q
-
-        return {"id": 0, "prettystr": "Broken", "str": "ohnoes"}
+        try:
+            return qualities[qid]
+        except KeyError:
+            return {"id": 0, "prettystr": "Broken", "str": "ohnoes"}
 
     def get_inventory_token(self):
         """ Returns the item's inventory token (a bitfield) """
@@ -418,10 +415,11 @@ class item:
 
         # Assume it isn't a schema item if it doesn't have a name
         if "item_name" not in self._item:
-            for sitem in schema._schema["result"]["items"]["item"]:
-                if sitem["defindex"] == self._item["defindex"]:
-                    self._schema_item = sitem
-                    break
+            try:
+                sitem = schema._items[self._item["defindex"]]
+                self._schema_item = sitem
+            except KeyError:
+                pass
         else:
             self._schema_item = item
 

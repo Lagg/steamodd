@@ -16,7 +16,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
-import json, os, urllib2, time, steam
+import json, os, urllib2, time, steam, operator
 
 class TF2Error(Exception):
     def __init__(self, msg):
@@ -51,7 +51,9 @@ class item_schema:
         attrs = []
         realattrs = []
         if not item:
-            return self._attributes.values()
+            attrs = self._attributes.values()
+            attrs.sort(key = operator.itemgetter("defindex"))
+            return attrs
 
         try:
             attrs = self._items[item._item["defindex"]]["attributes"]["attribute"]
@@ -93,6 +95,7 @@ class item_schema:
     def nextitem(self):
         iterindex = 0
         iterdata = self._items.values()
+        iterdata.sort(key = operator.itemgetter("defindex"))
 
         while(iterindex < len(iterdata)):
             data = item(self, iterdata[iterindex])

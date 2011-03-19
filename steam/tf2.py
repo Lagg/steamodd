@@ -17,6 +17,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
 import json, os, urllib2, time, steam, operator
+from collections import OrderedDict
 
 class TF2Error(Exception):
     def __init__(self, msg):
@@ -152,17 +153,17 @@ class item:
 
     # A list of equipped classes and their position
     # in the inventory token
-    equipped_classes = {
-        1<<8: "Engineer",
-        1<<7: "Spy",
-        1<<6: "Pyro",
-        1<<5: "Heavy",
-        1<<4: "Medic",
-        1<<3: "Demoman",
-        1<<2: "Soldier",
-        1<<1: "Sniper",
-        1<<0: "Scout"
-        }
+    equipped_classes = OrderedDict([
+        (1<<0, "Scout"),
+        (1<<2, "Soldier"),
+        (1<<6, "Pyro"),
+        (1<<3, "Demoman"),
+        (1<<5, "Heavy"),
+        (1<<8, "Engineer"),
+        (1<<4, "Medic"),
+        (1<<1, "Sniper"),
+        (1<<7, "Spy")
+        ])
 
     # Item image fields in the schema
     ITEM_IMAGE_SMALL = "image_url"

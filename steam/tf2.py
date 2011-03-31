@@ -571,6 +571,10 @@ class backpack:
         elif result != 1:
             raise TF2Error("Unknown error")
 
+        itemlist = self._inventory_object["result"]["items"]["item"]
+        if len(itemlist) and itemlist[0] == None:
+            self._inventory_object["result"]["items"]["item"] = []
+
     def get_total_cells(self):
         """ Returns the total number of cells in the backpack.
         This can be used to determine if the user has bought a backpack

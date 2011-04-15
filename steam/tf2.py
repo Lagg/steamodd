@@ -280,6 +280,11 @@ class item:
         """ Returns the item's unique serial number if it has one """
         return self._item.get("id")
 
+    def get_original_id(self):
+        """ Returns the item's original ID if it has one. This is the last "version"
+        of the item before it was customized or otherwise changed """
+        return self._item.get("original_id")
+
     def get_level(self):
         """ Returns the item's level (e.g. 10 for The Axtinguisher) if it has one """
         return self._item.get("level")

@@ -1,5 +1,5 @@
 """
-A set of useful modules for reading data with the Steam API
+Module for reading Portal 2 data using the Steam API
 
 Copyright (c) 2010, Anthony Garcia <lagg@lavabit.com>
 
@@ -16,31 +16,15 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
-import os, json
-import user
-import tf2, p2
+import tf2
 
-__version__ = "1.0"
+class backpack(tf2.backpack):
+    def __init__(self, sid = None, schema = None):
+        self.backpack_version = "620"
+        if not schema: schema = item_schema()
+        tf2.backpack.__init__(self, sid, schema)
 
-_api_key = None
-
-class APIError(Exception):
-    def __init__(self, msg):
-        Exception.__init__(self)
-        self.msg = msg
-
-    def __str__(self):
-        return repr(self.msg)
-
-def get_api_key():
-    """ Returns the API key as a string, raises APIError if it's not set """
-
-    if not _api_key:
-        raise APIError("API key not set")
-
-    return _api_key
-
-def set_api_key(key):
-    global _api_key
-
-    _api_key = key
+class item_schema(tf2.item_schema):
+    def __init__(self, lang = "en"):
+        self.schema_version = "620"
+        tf2.item_schema.__init__(self, lang)

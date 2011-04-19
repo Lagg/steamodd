@@ -41,6 +41,8 @@ class ItemError(TF2Error):
 class item_schema:
     """ The base class for the item schema. """
 
+    schema_version = "440"
+
     def get_language(self):
         """ Returns the ISO code of the language the instance
         is localized to """
@@ -57,7 +59,7 @@ class item_schema:
             return attrs
 
         try:
-            attrs = self._items[item._item["defindex"]]["attributes"]["attribute"]
+            attrs = self._items[item._item["defindex"]]["attributes"]
         except KeyError: attrs = []
 
         for specattr in attrs:
@@ -84,8 +86,8 @@ class item_schema:
         return self._qualities
 
     def _download(self, lang):
-        url = ("http://api.steampowered.com/ITFItems_440/GetSchema/v0001/?key=" +
-               steam.get_api_key() + "&format=json&language=" + lang)
+        url = ("http://api.steampowered.com/IEconItems_" + self.schema_version +
+               "/GetSchema/v0001/?key=" + steam.get_api_key() + "&format=json&language=" + lang)
         self._language = lang
 
         return json.load(urllib2.urlopen(url))
@@ -128,12 +130,12 @@ class item_schema:
 
         self._attributes = {}
         self._attribute_names = {}
-        for attrib in schema["result"]["attributes"]["attribute"]:
+        for attrib in schema["result"]["attributes"]:
             self._attributes[attrib["defindex"]] = attrib
             self._attribute_names[attrib["name"]] = attrib["defindex"]
 
         self._items = {}
-        for item in schema["result"]["items"]["item"]:
+        for item in schema["result"]["items"]:
             self._items[item["defindex"]] = item
 
         self._qualities = {}
@@ -177,7 +179,7 @@ class item:
         final_attrs = []
 
         if self._item != self._schema_item:
-            try: item_attrs = self._item["attributes"]["attribute"]
+            try: item_attrs = self._item["attributes"]
             except KeyError: pass
 
         usedattrs = []
@@ -248,7 +250,7 @@ class item:
         classes = []
         sitem = self._schema_item
 
-        try: classes = sitem["used_by_classes"]["class"]
+        try: classes = sitem["used_by_classes"]
         except KeyError: classes = self.equipped_classes.values()
 
         if len(classes) <= 0 or classes[0] == None: return []
@@ -555,13 +557,15 @@ class item_attribute:
 class backpack:
     """ Functions for reading player inventory """
 
+    backpack_version = "440"
+
     def load(self, sid):
         """ Loads or refreshes the player backpack for the given steam.user
         Returns a list of items, will be empty if there's nothing in the backpack"""
         if not isinstance(sid, steam.user.profile):
             sid = steam.user.profile(sid)
         id64 = sid.get_id64()
-        url = ("http://api.steampowered.com/ITFItems_440/GetPlayerItems/"
+        url = ("http://api.steampowered.com/IEconItems_" + self.backpack_version + "/GetPlayerItems/"
                "v0001/?key=" + steam.get_api_key() + "&format=json&SteamID=")
         inv = urllib2.urlopen(url + str(id64)).read()
 
@@ -576,9 +580,9 @@ class backpack:
         elif result != 1:
             raise TF2Error("Unknown error")
 
-        itemlist = self._inventory_object["result"]["items"]["item"]
+        itemlist = self._inventory_object["result"]["items"]
         if len(itemlist) and itemlist[0] == None:
-            self._inventory_object["result"]["items"]["item"] = []
+            self._inventory_object["result"]["items"] = []
 
     def get_total_cells(self):
         """ Returns the total number of cells in the backpack.
@@ -595,7 +599,7 @@ class backpack:
 
     def nextitem(self):
         iterindex = 0
-        iterdata = self._inventory_object["result"]["items"]["item"]
+        iterdata = self._inventory_object["result"]["items"]
 
         while(iterindex < len(iterdata)):
             data = item(self._schema, iterdata[iterindex])

@@ -17,6 +17,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
 import tf2
+from collections import OrderedDict
 
 class backpack(tf2.backpack):
     def __init__(self, sid = None, schema = None):
@@ -27,4 +28,8 @@ class backpack(tf2.backpack):
 class item_schema(tf2.item_schema):
     def __init__(self, lang = "en"):
         self.schema_version = "620"
+        self.class_bits = OrderedDict([
+                (1<<0, "P-Body"),
+                (1<<1, "Atlas")
+                ])
         tf2.item_schema.__init__(self, lang)

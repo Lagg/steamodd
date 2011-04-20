@@ -43,6 +43,20 @@ class item_schema:
 
     schema_version = "440"
 
+    # A list of equipped classes and their position
+    # in the inventory token
+    class_bits = OrderedDict([
+            (1<<0, "Scout"),
+            (1<<2, "Soldier"),
+            (1<<6, "Pyro"),
+            (1<<3, "Demoman"),
+            (1<<5, "Heavy"),
+            (1<<8, "Engineer"),
+            (1<<4, "Medic"),
+            (1<<1, "Sniper"),
+            (1<<7, "Spy")
+            ])
+
     def get_language(self):
         """ Returns the ISO code of the language the instance
         is localized to """
@@ -153,20 +167,6 @@ class item:
     # equipped classes are stored
     equipped_field = 0x1FF0000
 
-    # A list of equipped classes and their position
-    # in the inventory token
-    equipped_classes = OrderedDict([
-        (1<<0, "Scout"),
-        (1<<2, "Soldier"),
-        (1<<6, "Pyro"),
-        (1<<3, "Demoman"),
-        (1<<5, "Heavy"),
-        (1<<8, "Engineer"),
-        (1<<4, "Medic"),
-        (1<<1, "Sniper"),
-        (1<<7, "Spy")
-        ])
-
     # Item image fields in the schema
     ITEM_IMAGE_SMALL = "image_url"
     ITEM_IMAGE_LARGE = "image_url_large"
@@ -234,12 +234,12 @@ class item:
             return inventory_token & 0xFFFF
 
     def get_equipped_classes(self):
-        """ Returns a list of classes (see equipped_classes values) """
+        """ Returns a list of classes (see schema class_bits values) """
         classes = []
 
         inventory_token = self.get_inventory_token()
 
-        for k,v in self.equipped_classes.iteritems():
+        for k,v in self._schema.class_bits.iteritems():
             if ((inventory_token & self.equipped_field) >> 16) & k:
                 classes.append(v)
 
@@ -251,7 +251,7 @@ class item:
         sitem = self._schema_item
 
         try: classes = sitem["used_by_classes"]
-        except KeyError: classes = self.equipped_classes.values()
+        except KeyError: classes = self._schema.class_bits.values()
 
         if len(classes) <= 0 or classes[0] == None: return []
         else: return classes

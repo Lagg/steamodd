@@ -16,20 +16,40 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
-import tf2
+import items
 from collections import OrderedDict
 
-class backpack(tf2.backpack):
+class backpack(items.backpack):
     def __init__(self, sid = None, schema = None):
-        self.backpack_version = "620"
+        self._app_id = "620"
         if not schema: schema = item_schema()
-        tf2.backpack.__init__(self, sid, schema)
+        items.backpack.__init__(self, sid, schema)
 
-class item_schema(tf2.item_schema):
-    def __init__(self, lang = "en"):
-        self.schema_version = "620"
+class item_schema(items.schema):
+    def create_item(self, oitem):
+        return item(self, oitem)
+
+    def __init__(self, lang = None):
+        self._app_id = "620"
         self.class_bits = OrderedDict([
                 (1<<0, "P-body"),
                 (1<<1, "Atlas")
                 ])
-        tf2.item_schema.__init__(self, lang)
+        items.schema.__init__(self, lang)
+
+class item(items.item):
+    def get_equipable_classes(self):
+        classes = items.item.get_equipable_classes(self)
+        realclasses = []
+
+        #Temporary WORKAROUND until the right class names are used
+        for c in classes:
+            if c == None: c = "Atlas"
+            elif c == "eggbot": c = "P-body"
+
+            realclasses.append(c)
+
+        return realclasses
+
+    def __init__(self, schema, item):
+        items.item.__init__(self, schema, item)

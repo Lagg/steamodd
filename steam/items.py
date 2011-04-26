@@ -347,22 +347,24 @@ class item:
         shouldn't have a prefix so this would be False) """
         return self._schema_item.get("proper_name", False)
 
-    def get_full_item_name(self, strip_prefixes = [], prefixes = {}):
+    def get_full_item_name(self, prefixes = {}):
         """
         Generates a prefixed item name and is custom name-aware.
 
         Will use an alternate prefix dict if given,
         following the format of "non-localized quality": "alternate prefix"
 
-        strip_prefixes is a list that will be checked for prefixes to remove
-        from the item name, each element should be a non-localized quality string
+        If you want prefixes stripped entirely call with prefixes = None
+        If you want to selectively strip prefixes set the alternate prefix value to
+        None in the dict
+
         """
-        quality = self.get_quality()
-        quality_str = quality["str"]
-        pretty_quality_str = quality["prettystr"]
+        quality_str = self.get_quality()["str"]
+        pretty_quality_str = self.get_quality()["prettystr"]
         custom_name = self.get_custom_name()
         item_name = self.get_name()
-        prefix = prefixes.get(quality_str, pretty_quality_str) + " "
+        language = self._schema.get_language()
+        prefix = ""
 
         if item_name.find("The ") != -1 and self.is_name_prefixed():
             item_name = item_name[4:]
@@ -370,10 +372,20 @@ class item:
         if custom_name:
             item_name = custom_name
 
-        if custom_name or not self.is_name_prefixed() or quality_str in strip_prefixes:
-            return item_name
-        else:
-            return prefix + item_name
+        if prefixes != None:
+            prefix = prefixes.get(quality_str, pretty_quality_str)
+
+        if prefixes == None or custom_name or (not self.is_name_prefixed() and quality_str == "unique"):
+            prefix = ""
+
+        if ((prefixes == None or language != "en") and (quality_str == "unique" or quality_str == "normal")):
+            prefix = ""
+
+        if (language != "en" and prefix):
+            return item_name + " (" + prefix + ")"
+
+        if prefix: return prefix + " " + item_name
+        else: return item_name
 
     def __iter__(self):
         return self.nextattr()

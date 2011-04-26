@@ -51,5 +51,8 @@ class item(items.item):
 
         return realclasses
 
+    def get_full_item_name(self, prefixes = None):
+        return items.item.get_full_item_name(self, None)
+
     def __init__(self, schema, item):
         items.item.__init__(self, schema, item)

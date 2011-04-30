@@ -25,28 +25,29 @@ class TF2Error(items.Error):
         self.msg = msg
 
 class item_schema(items.schema):
+    _app_id = "440"
+    class_bits = OrderedDict([
+            (1<<0, "Scout"),
+            (1<<2, "Soldier"),
+            (1<<6, "Pyro"),
+            (1<<3, "Demoman"),
+            (1<<5, "Heavy"),
+            (1<<8, "Engineer"),
+            (1<<4, "Medic"),
+            (1<<1, "Sniper"),
+            (1<<7, "Spy")
+            ])
+
     def create_item(self, oitem):
         return item(self, oitem)
 
     def __init__(self, lang = None):
-        self._app_id = "440"
-        self.class_bits = OrderedDict([
-                (1<<0, "Scout"),
-                (1<<2, "Soldier"),
-                (1<<6, "Pyro"),
-                (1<<3, "Demoman"),
-                (1<<5, "Heavy"),
-                (1<<8, "Engineer"),
-                (1<<4, "Medic"),
-                (1<<1, "Sniper"),
-                (1<<7, "Spy")
-                ])
-
         items.schema.__init__(self, lang)
 
 class backpack(items.backpack):
+    _app_id = "440"
+
     def __init__(self, sid = None, schema = None):
-        self._app_id = "440"
         if not schema: schema = item_schema()
         items.backpack.__init__(self, sid, schema)
 
@@ -59,9 +60,6 @@ class item(items.item):
 
     def __init__(self, schema, item):
         items.item.__init__(self, schema, item)
-
-class item_attribute(items.item_attribute):
-    pass
 
 class golden_wrench:
     """ Functions for reading info for the golden wrenches found

@@ -92,7 +92,7 @@ class schema:
                "/GetSchema/v0001/?key=" + steam.get_api_key() + "&format=json&language=" + lang)
         self._language = lang
 
-        return json.load(urllib2.urlopen(url))
+        return urllib2.urlopen(url).read()
 
     def __iter__(self):
         return self.nextitem()
@@ -121,10 +121,10 @@ class schema:
         schema = None
         if not lang: lang = "en"
         try:
-            schema = self._download(lang)
+            schema = json.loads(self._download(lang))
         except urllib2.URLError:
             # Try once more
-            schema = self._download(lang)
+            schema = json.loads(self._download(lang))
         except Exception as E:
             raise SchemaError(E)
 

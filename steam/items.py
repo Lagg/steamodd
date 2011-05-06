@@ -387,6 +387,37 @@ class item:
         if prefix: return prefix + " " + item_name
         else: return item_name
 
+    def get_styles(self):
+        """ Returns all styles defined for the item """
+        styles = self._schema_item.get("styles")
+
+        if not styles: return []
+
+        return [style["name"] for style in styles]
+
+    def get_current_style_id(self):
+        """ Returns the style ID of the item if it has one, this is used as an index """
+        return self._item.get("style")
+
+    def get_current_style_name(self):
+        """ Returns the name of the style if it has one """
+        styleid = self.get_current_style_id()
+        if styleid:
+            try:
+                return self.get_styles()[styleid]
+            except IndexError:
+                return styleid
+
+    def get_capabilities(self):
+        """ Returns a list of capabilities, these are flags for what the item can do or be done with """
+        caps = self._schema_item.get("capabilities")
+        if caps: return [k for k in caps.keys()]
+        else: return []
+
+    def get_tool_metadata(self):
+        """ Assume this will change. For now returns a dict of various information about tool items """
+        return self._schema_item.get("tool")
+
     def __iter__(self):
         return self.nextattr()
 

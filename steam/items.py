@@ -337,8 +337,6 @@ class item:
         untradable = self._item.get("flag_cannot_trade", False)
         if "cannot trade" in self:
             untradable = True
-        if "always tradable" in self:
-            untradable = False
         return untradable
 
     def is_name_prefixed(self):

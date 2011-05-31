@@ -576,6 +576,9 @@ class item_attribute:
         # Workaround until Valve gives sane values
         try:
             int(self.get_value())
+            # WORKAROUND: There is no type set on this for some reason
+            if (self.get_name() == "tradable after date"):
+                self._attribute["description_format"] = "value_is_date"
             if (self.get_value_type() != "date" and
                 self.get_value() > 1000000000 and
                 "float_value" in self._attribute):

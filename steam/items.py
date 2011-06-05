@@ -478,14 +478,27 @@ class item_attribute:
         fattr = str(val)
         ftype = self.get_value_type()
 
-        # I don't think %s2,%s3, etc. needs to be supported since there's
-        # 1 value per attribute.
-        if ftype == "percentage" or ftype == "additive_percentage":
-            intp = val
-            if intp > 1: intp -= 1
-            fattr = str(int(round(intp, 2) * 100))
+        if ftype == "percentage":
+            pval = int(round(val, 2) * 100)
+
+            if self.get_type() == "negative":
+                pval = 0 - (100 - pval)
+            else:
+                pval -= 100
+
+            fattr = str(pval)
+        elif ftype == "additive_percentage":
+            pval = int(round(val, 2) * 100)
+
+            fattr = str(pval)
         elif ftype == "inverted_percentage":
-            fattr = str(100 - int(round(val, 2) * 100))
+            pval = 100 - int(round(val, 2) * 100)
+
+            if self.get_type() == "negative":
+                if self.get_value_max() > 1:
+                    pval = 0 - pval
+
+            fattr = str(pval)
         elif ftype == "additive" or ftype == "particle_index" or ftype == "account_id":
             if int(val) == val: fattr = (str(int(val)))
         elif ftype == "date":

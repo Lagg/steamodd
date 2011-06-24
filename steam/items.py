@@ -199,7 +199,7 @@ class item:
 
         qid = 0
         item = self._item
-        qid = item.get("quality", item.get("item_quality", 0))
+        qid = item.get("quality", self._schema_item.get("item_quality", 0))
         qualities = self._schema.get_qualities()
 
         try:

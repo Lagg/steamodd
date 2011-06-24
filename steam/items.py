@@ -479,7 +479,7 @@ class item_attribute:
         ftype = self.get_value_type()
 
         if ftype == "percentage":
-            pval = int(round(val, 2) * 100)
+            pval = int(round(val * 100))
 
             if self.get_type() == "negative":
                 pval = 0 - (100 - pval)
@@ -488,11 +488,11 @@ class item_attribute:
 
             fattr = str(pval)
         elif ftype == "additive_percentage":
-            pval = int(round(val, 2) * 100)
+            pval = int(round(val * 100))
 
             fattr = str(pval)
         elif ftype == "inverted_percentage":
-            pval = 100 - int(round(val, 2) * 100)
+            pval = 100 - int(round(val * 100))
 
             if self.get_type() == "negative":
                 if self.get_value_max() > 1:

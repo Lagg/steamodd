@@ -87,6 +87,11 @@ class schema:
 
         return self._qualities
 
+    def get_particle_systems(self):
+        """ Returns a dictionary of particle system dicts keyed by ID """
+
+        return self._particles
+
     def _download(self, lang):
         url = ("http://api.steampowered.com/IEconItems_" + self._app_id +
                "/GetSchema/v0001/?key=" + steam.get_api_key() + "&format=json&language=" + lang)
@@ -149,6 +154,10 @@ class schema:
             except KeyError: pass
 
             self._qualities[v] = aquality
+
+        self._particles = {}
+        for particle in schema["result"].get("attribute_controlled_attached_particles", []):
+            self._particles[particle["id"]] = particle
 
 class item:
     """ Stores a single TF2 backpack item """

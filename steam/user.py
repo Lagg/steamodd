@@ -85,26 +85,22 @@ class profile:
         return self._summary_object[size]
 
     def get_status(self):
-        """ Returns the user's status as a string. (or integer if unrecognized)"""
-        status = self._summary_object["personastate"]
-
-        if status == 0:   return "offline"
-        elif status == 1: return "online"
-        elif status == 2: return "busy"
-        elif status == 3: return "away"
-        elif status == 4: return "snooze"
-
-        return status
+        """ Returns the user's status.
+        0: offline
+        1: online
+        2: busy
+        3: away
+        4: snooze
+        """
+        return self._summary_object["personastate"]
 
     def get_visibility(self):
-        """ Returns the visibility setting of the profile """
-        vis = self._summary_object["communityvisibilitystate"]
-
-        if vis == 1: return "private"
-        if vis == 2: return "friends"
-        if vis == 3: return "public"
-
-        return vis
+        """ Returns the visibility setting of the profile.
+        1: private
+        2: friends only
+        3: public
+        """
+        return self._summary_object["communityvisibilitystate"]
 
     # This might be redundant, can we still get an id64 from an unconfigured profile?
     def is_configured(self):
@@ -150,7 +146,7 @@ class profile:
         server is the IP address:port string if they're on a server
         extra is the game name """
         ret = {}
-        if self.get_visibility() == "public":
+        if self.get_visibility() == 3:
             if "gameid" in self._summary_object:
                 ret["id"] = self._summary_object["gameid"]
             if "gameserverip" in self._summary_object:
@@ -165,7 +161,7 @@ class profile:
         country: A two char ISO country code
         state: A two char ISO state code """
         ret = {}
-        if self.get_visibility() == "public":
+        if self.get_visibility() == 3:
             if "loccountrycode" in self._summary_object:
                 ret["country"] = self._summary_object["loccountrycode"]
             if "locstatecode" in self._summary_object:

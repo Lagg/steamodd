@@ -65,7 +65,7 @@ class schema:
         except KeyError: attrs = []
 
         for specattr in attrs:
-            attrid = self._attribute_names[specattr["name"]]
+            attrid = self._attribute_names[specattr["name"].lower()]
             attrdict = self._attributes[attrid]
 
             realattrs.append(dict(attrdict.items() + specattr.items()))
@@ -139,8 +139,9 @@ class schema:
         self._attributes = {}
         self._attribute_names = {}
         for attrib in schema["result"]["attributes"]:
+            # WORKAROUND: Valve apparently does case insensitive lookups on these, so we must match it
             self._attributes[attrib["defindex"]] = attrib
-            self._attribute_names[attrib["name"]] = attrib["defindex"]
+            self._attribute_names[attrib["name"].lower()] = attrib["defindex"]
 
         self._items = {}
         for item in schema["result"]["items"]:

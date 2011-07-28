@@ -93,11 +93,16 @@ class schema:
         return self._particles
 
     def _download(self, lang):
+        # Fetch the schema
         url = ("http://api.steampowered.com/IEconItems_" + self._app_id +
                "/GetSchema/v0001/?key=" + steam.get_api_key() + "&format=json&language=" + lang)
         self._language = lang
 
         return urllib2.urlopen(url).read()
+
+    def _deserialize(self, schema):
+        # Convert the schema to a dict
+        return json.loads(schema)
 
     def __iter__(self):
         return self.nextitem()
@@ -126,10 +131,7 @@ class schema:
         schema = None
         if not lang: lang = "en"
         try:
-            schema = json.loads(self._download(lang))
-        except urllib2.URLError:
-            # Try once more
-            schema = json.loads(self._download(lang))
+            schema = self._deserialize(self._download(lang))
         except Exception as E:
             raise SchemaError(E)
 

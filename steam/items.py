@@ -293,8 +293,8 @@ class item:
 
     def get_slot(self):
         """ Returns the item's slot as a string, this includes "primary",
-        "secondary", "melee", and "head" """
-        return self._schema_item["item_slot"]
+        "secondary", "melee", and "head". Will be None if the the item is unequippable """
+        return self._schema_item.get("item_slot")
 
     def get_class(self):
         """ Returns the item's class

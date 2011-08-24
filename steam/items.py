@@ -92,6 +92,11 @@ class schema:
 
         return self._particles
 
+    def get_kill_ranks(self):
+        """ Returns a list of ranks for weapons with kill tracking """
+
+        return self._kill_ranks
+
     def _download(self, lang):
         # Fetch the schema
         url = ("http://api.steampowered.com/IEconItems_" + self._app_id +
@@ -161,6 +166,8 @@ class schema:
         self._particles = {}
         for particle in schema["result"].get("attribute_controlled_attached_particles", []):
             self._particles[particle["id"]] = particle
+
+        self._kill_ranks = schema["result"].get("kill_eater_ranks", [])
 
 class item:
     """ Stores a single TF2 backpack item """
@@ -375,15 +382,34 @@ class item:
         item_name = self.get_name()
         language = self._schema.get_language()
         prefix = ""
+        suffix = ""
 
         if item_name.find("The ") != -1 and self.is_name_prefixed():
             item_name = item_name[4:]
 
         if custom_name:
             item_name = custom_name
+        else:
+            try: suffix = "#" + str(int(self["unique craft index"].get_value()))
+            except KeyError: pass
 
         if prefixes != None:
             prefix = prefixes.get(quality_str, pretty_quality_str)
+            kill_count = None
+            kill_count_2 = None
+
+            try: kill_count = int(self["kill eater"].get_value())
+            except KeyError: pass
+
+            try: kill_count_2 = int(self["kill eater 2"].get_value())
+            except KeyError: pass
+
+            if kill_count or kill_count_2:
+                for rank in self._schema.get_kill_ranks():
+                    if ((kill_count and kill_count < rank["required_score"]) or
+                        (kill_count_2 and kill_count_2 < rank["required_score"])):
+                        prefix = rank["name"]
+                        break
 
         if prefixes == None or custom_name or (not self.is_name_prefixed() and quality_str == "unique"):
             prefix = ""
@@ -394,8 +420,7 @@ class item:
         if (language != "en" and prefix):
             return item_name + " (" + prefix + ")"
 
-        if prefix: return prefix + " " + item_name
-        else: return item_name
+        return ((prefix or "") + " " + item_name + " " + suffix).strip()
 
     def get_styles(self):
         """ Returns all styles defined for the item """

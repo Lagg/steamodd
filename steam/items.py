@@ -97,6 +97,12 @@ class schema:
 
         return self._kill_ranks
 
+    def get_kill_types(self):
+        """ Returns a dict with keys that are the value of
+        the kill eater type attribute and values that are the name
+        string """
+        return self._kill_types
+
     def _download(self, lang):
         # Fetch the schema
         url = ("http://api.steampowered.com/IEconItems_" + self._app_id +
@@ -168,6 +174,9 @@ class schema:
             self._particles[particle["id"]] = particle
 
         self._kill_ranks = schema["result"].get("kill_eater_ranks", [])
+        self._kill_types = {}
+        for killtype in schema["result"].get("kill_eater_score_types", []):
+            self._kill_types[killtype["type"]] = killtype["type_name"]
 
 class item:
     """ Stores a single TF2 backpack item """

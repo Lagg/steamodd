@@ -415,9 +415,9 @@ class item:
 
             if kill_count or kill_count_2:
                 for rank in self._schema.get_kill_ranks():
+                    prefix = rank["name"]
                     if ((kill_count and kill_count < rank["required_score"]) or
                         (kill_count_2 and kill_count_2 < rank["required_score"])):
-                        prefix = rank["name"]
                         break
 
         if prefixes == None or custom_name or (not self.is_name_prefixed() and quality_str == "unique"):

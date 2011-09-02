@@ -390,6 +390,7 @@ class item:
         custom_name = self.get_custom_name()
         item_name = self.get_name()
         language = self._schema.get_language()
+        rank = self.get_rank()
         prefix = ""
         suffix = ""
 
@@ -404,21 +405,7 @@ class item:
 
         if prefixes != None:
             prefix = prefixes.get(quality_str, pretty_quality_str)
-            kill_count = None
-            kill_count_2 = None
-
-            try: kill_count = int(self["kill eater"].get_value())
-            except KeyError: pass
-
-            try: kill_count_2 = int(self["kill eater 2"].get_value())
-            except KeyError: pass
-
-            if kill_count or kill_count_2:
-                for rank in self._schema.get_kill_ranks():
-                    prefix = rank["name"]
-                    if ((kill_count and kill_count < rank["required_score"]) or
-                        (kill_count_2 and kill_count_2 < rank["required_score"])):
-                        break
+            if rank: prefix = rank["name"]
 
         if prefixes == None or custom_name or (not self.is_name_prefixed() and quality_str == "unique"):
             prefix = ""
@@ -430,6 +417,37 @@ class item:
             return item_name + " (" + prefix + ")"
 
         return ((prefix or "") + " " + item_name + " " + suffix).strip()
+
+    def get_rank(self):
+        """
+        Returns the item's rank (if it has one)
+        as a dict that includes required score, name, and level.
+        """
+
+        kills = []
+
+        if self._rank != {}:
+            # Don't bother doing attribute lookups again
+            return self._rank
+
+        try: kills.append(int(self["kill eater"].get_value()))
+        except KeyError: pass
+
+        try: kills.append(int(self["kill eater 2"].get_value()))
+        except KeyError: pass
+
+        if not kills:
+            self._rank = None
+            return None
+
+        kills.sort(reverse = True)
+
+        for rank in self._schema.get_kill_ranks():
+            self._rank = rank
+            if kills[0] < rank["required_score"]:
+                break
+
+        return self._rank
 
     def get_styles(self):
         """ Returns all styles defined for the item """
@@ -498,6 +516,7 @@ class item:
         self._item = item
         self._schema = schema
         self._schema_item = None
+        self._rank = {}
 
         # Assume it isn't a schema item if it doesn't have a name
         if "item_name" not in self._item:

@@ -50,33 +50,19 @@ class schema:
         is localized to """
         return self._language
 
-    def get_raw_attributes(self, item = None):
-        """ Returns all attributes in the schema or for the item if one is given """
+    def get_attribute_definition(self, attrid):
+        """ Returns the attribute definition dict of a given attribute
+        id, can be the name or the integer ID """
 
-        attrs = []
-        realattrs = []
-        if not item:
-            attrs = self._attributes.values()
-            attrs.sort(key = operator.itemgetter("defindex"))
-            return attrs
+        attrdef = self._attributes.get(attrid)
+        if not attrdef: return self._attributes.get(self._attribute_names.get(attrid.lower()))
+        else: return attrdef
 
-        try:
-            attrs = self._items[item._item["defindex"]]["attributes"]
-        except KeyError: attrs = []
+    def get_attributes(self):
+        """ Returns all attributes in the schema """
 
-        for specattr in attrs:
-            attrid = self._attribute_names[specattr["name"].lower()]
-            attrdict = self._attributes[attrid]
-
-            realattrs.append(dict(attrdict.items() + specattr.items()))
-
-        return realattrs
-
-    def get_attributes(self, item = None):
-        """ Returns all attributes in the schema
-        or the attributes for the item if given"""
-
-        return [item_attribute(attr) for attr in self.get_raw_attributes(item)]
+        return [item_attribute(attr) for attr in sorted(self._attributes.values(),
+                                                        key = operator.itemgetter("defindex"))]
 
     def get_qualities(self):
         """ Returns a list of all possible item qualities,
@@ -188,10 +174,16 @@ class item:
     ITEM_IMAGE_SMALL = "image_url"
     ITEM_IMAGE_LARGE = "image_url_large"
 
+    def _attrib_sort(self, x, y):
+        sortmap = {"neutral" : 1, "positive": 2,
+                   "negative": 3}
+
+        return cmp(sortmap[x["effect_type"]],
+                   sortmap[y["effect_type"]])
+
     def get_attributes(self):
         """ Returns a list of attributes """
 
-        schema_attrs = self._schema.get_raw_attributes(self)
         item_attrs = []
         final_attrs = []
 
@@ -199,25 +191,24 @@ class item:
             try: item_attrs = self._item["attributes"]
             except KeyError: pass
 
-        usedattrs = []
-        for attr in schema_attrs:
-            used = False
-            for iattr in item_attrs:
-                if attr["defindex"] == iattr["defindex"]:
-                    final_attrs.append(dict(attr.items() + iattr.items()))
-                    used = True
-                    usedattrs.append(iattr)
-                    break
-            if not used:
-                final_attrs.append(attr)
+        defaultattrs = {}
+        for attr in self._schema_item.get("attributes", []):
+            attrindex = attr.get("defindex", attr.get("name"))
+            definition = self._schema.get_attribute_definition(attrindex)
+            attrindex = definition["defindex"]
+            defaultattrs[attrindex] = dict(definition.items() + attr.items())
 
         for attr in item_attrs:
-            if attr in usedattrs:
-                continue
-            attrdict = self._schema._attributes[attr["defindex"]]
-            final_attrs.append(dict(attrdict.items() + attr.items()))
+            index = attr["defindex"]
+            if index in defaultattrs:
+                defaultattrs[index] = dict(defaultattrs[index].items() + attr.items())
+            else:
+                defaultattrs[index] = dict(self._schema.get_attribute_definition(index).items() + attr.items())
 
-        return [item_attribute(theattr) for theattr in final_attrs]
+        sortedattrs = defaultattrs.values()
+        sortedattrs.sort(cmp = lambda x, y: cmp(x["defindex"], y["defindex"]))
+        sortedattrs.sort(cmp = self._attrib_sort)
+        return [item_attribute(theattr) for theattr in sortedattrs]
 
     def get_quality(self):
         """ Returns a dict

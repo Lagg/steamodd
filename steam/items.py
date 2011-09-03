@@ -174,18 +174,13 @@ class item:
     ITEM_IMAGE_SMALL = "image_url"
     ITEM_IMAGE_LARGE = "image_url_large"
 
-    def _attrib_sort(self, x, y):
-        sortmap = {"neutral" : 1, "positive": 2,
-                   "negative": 3}
-
-        return cmp(sortmap[x["effect_type"]],
-                   sortmap[y["effect_type"]])
-
     def get_attributes(self):
         """ Returns a list of attributes """
 
         item_attrs = []
         final_attrs = []
+        sortmap = {"neutral" : 1, "positive": 2,
+                   "negative": 3}
 
         if self._item != self._schema_item:
             try: item_attrs = self._item["attributes"]
@@ -206,8 +201,8 @@ class item:
                 defaultattrs[index] = dict(self._schema.get_attribute_definition(index).items() + attr.items())
 
         sortedattrs = defaultattrs.values()
-        sortedattrs.sort(cmp = lambda x, y: cmp(x["defindex"], y["defindex"]))
-        sortedattrs.sort(cmp = self._attrib_sort)
+        sortedattrs.sort(key = operator.itemgetter("defindex"))
+        sortedattrs.sort(key = lambda t: sortmap[t["effect_type"]])
         return [item_attribute(theattr) for theattr in sortedattrs]
 
     def get_quality(self):

@@ -20,17 +20,19 @@ import items
 from collections import OrderedDict
 
 class backpack(items.backpack):
+    _app_id = "620"
+
     def __init__(self, sid = None, schema = None):
-        self._app_id = "620"
         if not schema: schema = item_schema()
         items.backpack.__init__(self, sid, schema)
 
 class item_schema(items.schema):
+    _app_id = "620"
+
     def create_item(self, oitem):
         return item(self, oitem)
 
     def __init__(self, lang = None):
-        self._app_id = "620"
         self.class_bits = OrderedDict([
                 (1<<0, "P-body"),
                 (1<<1, "Atlas")

@@ -624,6 +624,19 @@ class item_attribute:
         else:
             return False
 
+    def get_account_info(self):
+        """ Certain attributes have a user's account information
+        associated with it such as a gifted or crafted item.
+
+        Returns: A dict with two keys: `persona' and `id64'.
+        None if the attribute has no account information attached to it. """
+        account_info = self._attribute.get("account_info")
+        if account_info:
+            return {"persona": account_info.get("personaname", ""),
+                    "id64": account_info["steamid"]}
+        else:
+            return None
+
     def __unicode__(self):
         """ Pretty printing """
         if not self.is_hidden():

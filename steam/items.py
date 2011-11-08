@@ -89,6 +89,12 @@ class schema:
         string """
         return self._kill_types
 
+    def get_classes(self):
+        """ Returns an OrderedDict of classes and identifiers.
+        Only assume that the key is a class identifier and
+        the value is a user friendly string. """
+        return self._class_map
+
     def _download(self, lang):
         # Fetch the schema
         url = ("http://api.steampowered.com/IEconItems_" + self._app_id +
@@ -222,7 +228,8 @@ class item:
             return {"id": 0, "prettystr": "Broken", "str": "ohnoes"}
 
     def get_inventory_token(self):
-        """ Returns the item's inventory token (a bitfield) """
+        """ Returns the item's inventory token (a bitfield),
+        deprecated. """
         return self._item.get("inventory", 0)
 
     def get_position(self):
@@ -237,16 +244,15 @@ class item:
             return inventory_token & 0xFFFF
 
     def get_equipped_classes(self):
-        """ Returns a list of classes (see schema class_bits values) """
-        classes = []
+        """ Returns a list of classes (see schema.get_classes values) """
+        equipped = self._item.get("equipped")
+        classes = self._schema.get_classes()
 
-        inventory_token = self.get_inventory_token()
+        if not equipped: return []
 
-        for k,v in self._schema.class_bits.iteritems():
-            if ((inventory_token & self.equipped_field) >> 16) & k:
-                classes.append(v)
-
-        return classes
+        classes = set([classes.get(slot["class"], "Civilian") for slot in
+                       equipped])
+        return list(classes)
 
     def get_equipable_classes(self):
         """ Returns a list of classes that _can_ use the item. """
@@ -254,7 +260,7 @@ class item:
         sitem = self._schema_item
 
         try: classes = sitem["used_by_classes"]
-        except KeyError: classes = self._schema.class_bits.values()
+        except KeyError: classes = list(set(self._schema.get_classes().values()))
 
         return classes
 

@@ -26,16 +26,16 @@ class TF2Error(items.Error):
 
 class item_schema(items.schema):
     _app_id = "440"
-    class_bits = OrderedDict([
-            (1<<0, "Scout"),
-            (1<<2, "Soldier"),
-            (1<<6, "Pyro"),
-            (1<<3, "Demoman"),
-            (1<<5, "Heavy"),
-            (1<<8, "Engineer"),
-            (1<<4, "Medic"),
-            (1<<1, "Sniper"),
-            (1<<7, "Spy")
+    _class_map = OrderedDict([
+            (1, "Scout"),
+            (3, "Soldier"),
+            (7, "Pyro"),
+            (4, "Demoman"),
+            (6, "Heavy"),
+            (9, "Engineer"),
+            (5, "Medic"),
+            (2, "Sniper"),
+            (8, "Spy")
             ])
 
     def create_item(self, oitem):

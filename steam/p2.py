@@ -28,33 +28,33 @@ class backpack(items.backpack):
 
 class item_schema(items.schema):
     _app_id = "620"
+    _class_map = OrderedDict([
+            (1<<0, "P-body"),
+            (1<<1, "Atlas")
+            ])
 
     def create_item(self, oitem):
         return item(self, oitem)
 
     def __init__(self, lang = None):
-        self.class_bits = OrderedDict([
-                (1<<0, "P-body"),
-                (1<<1, "Atlas")
-                ])
         items.schema.__init__(self, lang)
 
 class item(items.item):
-    def get_equipable_classes(self):
-        classes = items.item.get_equipable_classes(self)
-        realclasses = []
-
-        #Temporary WORKAROUND until the right class names are used
-        for c in classes:
-            if c == None: c = "Atlas"
-            elif c == "eggbot": c = "P-body"
-
-            realclasses.append(c)
-
-        return realclasses
-
     def get_full_item_name(self, prefixes = None):
         return items.item.get_full_item_name(self, None)
+
+    def get_equipped_classes(self):
+        """ The `equipped' field isn't exposed in Portal 2
+        for one (probably silly) reason or another. So we still use the inventory
+        token """
+        inventory_token = self.get_inventory_token()
+        classes = []
+
+        for k,v in self._schema.get_classes().iteritems():
+            if ((inventory_token & self.equipped_field) >> 16) & k:
+                classes.append(v)
+
+        return classes
 
     def __init__(self, schema, item):
         items.item.__init__(self, schema, item)

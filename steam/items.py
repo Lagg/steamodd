@@ -95,13 +95,14 @@ class schema:
         the value is a user friendly string. """
         return self._class_map
 
-    def _download(self, lang):
-        # Fetch the schema
-        url = ("http://api.steampowered.com/IEconItems_" + self._app_id +
-               "/GetSchema/v0001/?key=" + steam.get_api_key() + "&format=json&language=" + lang)
-        self._language = lang
+    def _get_download_url(self):
+        """ Returns the URL to use for
+        fetching the raw schema """
 
-        return urllib2.urlopen(url).read()
+        return self._url
+
+    def _download(self):
+        return urllib2.urlopen(self._get_download_url()).read()
 
     def _deserialize(self, schema):
         # Convert the schema to a dict
@@ -133,8 +134,12 @@ class schema:
 
         schema = None
         if not lang: lang = "en"
+
+        self._language = lang
+        self._url = ("http://api.steampowered.com/IEconItems_" + self._app_id +
+                     "/GetSchema/v0001/?key=" + steam.get_api_key() + "&format=json&language=" + lang)
         try:
-            schema = self._deserialize(self._download(lang))
+            schema = self._deserialize(self._download())
         except Exception as E:
             raise SchemaError(E)
 

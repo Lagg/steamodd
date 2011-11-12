@@ -21,9 +21,9 @@ import tf2
 class item_schema(tf2.item_schema):
     _app_id = "520"
 
-    def _download(self, lang):
+    def _download(self):
         # WORKAROUND garbage characters
-        return tf2.item_schema._download(self, lang).replace("\xc4=", "Engineer")
+        return tf2.item_schema._download(self).replace("\xc4=", "Engineer")
 
     def __init__(self, lang = None):
         tf2.item_schema.__init__(self, lang)

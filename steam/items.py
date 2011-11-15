@@ -364,6 +364,11 @@ class item:
             untradable = True
         return untradable
 
+    def is_uncraftable(self):
+        """ Returns True if the item cannot be crafted, False
+        otherwise """
+        return self._item.get("flag_cannot_craft", False)
+
     def is_name_prefixed(self):
         """ Returns False if the item doesn't use
         a prefix, True otherwise. (e.g. Bonk! Atomic Punch

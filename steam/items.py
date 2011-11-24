@@ -37,6 +37,12 @@ class ItemError(Error):
         self.msg = msg
         self.item = item
 
+class AssetError(Error):
+    def __init__(self, msg, asset = None):
+        Error.__init__(self, msg)
+        self.msg = msg
+        self.asset = asset
+
 class schema:
     """ The base class for the item schema. """
 
@@ -738,3 +744,74 @@ class backpack:
             self._schema = schema()
         if sid:
             self.load(sid)
+
+class assets:
+    """ Class for building asset catalogs """
+
+    def get_price(self, assetindex, nonsale = False):
+        """ Returns a dict containing prices for all available
+        currencies or a single price otherwise. If nonsale is
+        True normal prices will always be returned, even if there
+        is currently a discount """
+
+        try:
+            asset = self._assets[assetindex]
+            price = None
+            currency = self._currency
+            pricedict = asset["prices"]
+
+            if nonsale: pricedict = asset.get("original_prices", asset["prices"])
+
+            if currency:
+                try:
+                    price = float(pricedict[currency.upper()])/100
+                    return price
+                except KeyError:
+                    return None
+            else:
+                decprices = {}
+                for k, v in pricedict.iteritems():
+                    decprices[k] = float(v)/100
+                return decprices
+        except KeyError:
+            raise AssetError("Couldn't find asset " + str(assetindex))
+
+    def get_tags(self, assetindex):
+        """ Returns a dict containing tags and their localized labels as values """
+        tags = {}
+        try:
+            asset = self._assets[assetindex]
+            for k in asset.get("tags").keys():
+                tags[k] = self._tag_map.get(k, k)
+        except KeyError:
+            raise AssetError("Couldn't find asset " + assetindex)
+        return tags
+
+    def __getitem__(self, key):
+        try:
+            return self.get_price(key.get_schema_id())
+        except:
+            try: return self.get_price(key)
+            except: raise KeyError(key)
+
+    def __init__(self, lang = None, currency = None):
+        """ lang: Language of asset tags, defaults to english
+        currency: The iso 4217 currency code, returns all currencies by default """
+
+        if not lang: lang = "en"
+        self._language = lang
+        self._currency = currency
+        self._url = ("http://api.steampowered.com/IEconAssets_" + self._app_id +
+                     "/GetAssetPrices/v0001?key=" + steam.get_api_key() + "&format=json&language=" + self._language)
+        if self._currency: self._url += "&currency=" + self._currency
+
+        try:
+            adict = json.load(urllib2.urlopen(self._url))["result"]
+            self._tag_map = adict["tags"]
+            self._assets = {}
+            for asset in adict["assets"]:
+                self._assets[int(asset["properties"]["def_index"])] = asset
+        except KeyError as E:
+            raise AssetError("Bad asset list")
+        except Exception as E:
+            raise AssetError(E)

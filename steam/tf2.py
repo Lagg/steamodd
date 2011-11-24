@@ -61,6 +61,12 @@ class item(items.item):
     def __init__(self, schema, item):
         items.item.__init__(self, schema, item)
 
+class assets(items.assets):
+    _app_id = "440"
+
+    def __init__(self, lang = None, currency = None):
+        items.assets.__init__(self, lang, currency)
+
 class golden_wrench:
     """ Functions for reading info for the golden wrenches found
     during the Engineer update """

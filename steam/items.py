@@ -787,6 +787,15 @@ class assets:
             raise AssetError("Couldn't find asset " + assetindex)
         return tags
 
+    def _get_download_url(self):
+        return self._url
+
+    def _download(self):
+        return urllib2.urlopen(self._get_download_url()).read()
+
+    def _deserialize(self, assets):
+        return json.loads(assets)
+
     def __getitem__(self, key):
         try:
             return self.get_price(key.get_schema_id())
@@ -806,7 +815,7 @@ class assets:
         if self._currency: self._url += "&currency=" + self._currency
 
         try:
-            adict = json.load(urllib2.urlopen(self._url))["result"]
+            adict = self._deserialize(self._download())["result"]
             self._tag_map = adict["tags"]
             self._assets = {}
             for asset in adict["assets"]:

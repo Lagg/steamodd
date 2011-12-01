@@ -810,16 +810,24 @@ class assets:
         if not lang: lang = "en"
         self._language = lang
         self._currency = currency
-        self._url = ("http://api.steampowered.com/IEconAssets_" + self._app_id +
-                     "/GetAssetPrices/v0001?key=" + steam.get_api_key() + "&format=json&language=" + self._language)
+        self._url = ("http://api.steampowered.com/ISteamEconomy/GetAssetPrices/v0001?" +
+                     "key={0}&format=json&language={1}&appid={2}".format(steam.get_api_key(),
+                                                                         self._language,
+                                                                         self._app_id))
         if self._currency: self._url += "&currency=" + self._currency
 
         try:
             adict = self._deserialize(self._download())["result"]
+            if not adict.get("success", False):
+                raise AssetError("Server failed to return catalog")
+
             self._tag_map = adict["tags"]
             self._assets = {}
             for asset in adict["assets"]:
-                self._assets[int(asset["properties"]["def_index"])] = asset
+                for prop in asset["class"]:
+                    if prop.get("name") == "def_index":
+                        self._assets[int(prop.get("value"))] = asset
+                        break
         except KeyError as E:
             raise AssetError("Bad asset list")
         except Exception as E:

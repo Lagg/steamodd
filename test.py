@@ -1,12 +1,34 @@
-import steam
+import steam, sys
 
-steam.set_api_key("D89B2C0025F1F31EF51575D3FBC50965")
+valid_modes = ["bp", "schema", "assets-catalog"]
 
-test = steam.tf2.item_schema(lang = "en")
+try:
+    testmode = sys.argv[2]
+    testkey = sys.argv[1]
+    if testmode not in valid_modes: raise Exception
+except:
+    sys.stderr.write("Run " + sys.argv[0] + " <apikey> " + "<" + ", ".join(valid_modes) + ">\n")
+    raise SystemExit
 
-testpack = steam.tf2.backpack("stragglerastic", schema = test)
+steam.set_api_key(testkey)
 
-for item in testpack:
-    print("\n\x1b[1m" + str(item) + "\x1b[0m\n")
-    for attr in item:
-        print attr
+test_schema = steam.tf2.item_schema(lang = "en")
+
+def print_item_list(items):
+    for item in items:
+        print("\n\x1b[1m" + str(item) + "\x1b[0m\n")
+        for attr in item:
+            print attr
+
+if testmode == "bp":
+    test_pack = steam.tf2.backpack("stragglerastic", schema = test_schema)
+    print_item_list(test_pack)
+elif testmode == "schema":
+    print_item_list(test_chema)
+elif testmode == "assets-catalog":
+    assets = steam.tf2.assets(currency = "usd")
+    for item in test_schema:
+        try:
+            print("\x1b[1m" + str(item) + "\x1b[0m:\t $" + str(assets[item]))
+        except KeyError:
+            pass

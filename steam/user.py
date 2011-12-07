@@ -16,7 +16,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
-import json, urllib2, steam, time, os, sqlite3
+import json, urllib2, steam, time, os, sqlite3, urllib
 
 class ProfileError(Exception):
     def __init__(self, msg):
@@ -26,29 +26,60 @@ class ProfileError(Exception):
     def __str__(self):
         return str(self.msg)
 
+class VanityError(Exception):
+    def __init__(self, msg, code = None):
+        Exception.__init__(self)
+        self.msg = msg
+        self.code = code
+
+    def __str__(self):
+        return "{0}: {1}".format(self.get_code(), self.msg)
+
+    def get_code(self):
+        return self.code
+
+class vanity_url:
+    """ Class for holding a vanity URL and it's id64 """
+
+    def get_id64(self):
+        try:
+            return self._id64
+        except AttributeError:
+            return None
+
+    def __init__(self, vanity):
+        """ Takes a vanity URL part and tries
+        to resolve it. """
+
+        self._url = ("http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?" +
+                     urllib.urlencode({"key": steam.get_api_key(), "vanityurl": vanity}))
+
+        try:
+            result = json.load(urllib2.urlopen(self._url))["response"]
+            scode = int(result["success"])
+        except Exception as E:
+            raise VanityError(E)
+
+        if scode != 1:
+            raise VanityError(result["message"], scode)
+
+        self._id64 = long(result["steamid"])
+        self._vanity = vanity
+
 class profile:
     """ Functions for reading user account data """
 
-    # Hopefully Valve will provide a request for doing this so we won't
-    # have to use the old API
     def get_id64_from_sid(self, sid):
         """ This uses the old API, caches
         64 bit ID mappings in id64_cache* """
 
         sid = str(sid)
 
-        if sid.isdigit(): return sid
-
         try:
-            prof = urllib2.urlopen(self._old_profile_url.format(sid)).read()
-        except:
-            return None
-
-        if prof.find("<steamID64>") != -1:
-            prof = (prof[prof.find("<steamID64>")+11:
-                             prof.find("</steamID64>")])
-
-            return prof
+            return vanity_url(sid).get_id64()
+        except VanityError as E:
+            if sid.isdigit():
+                return long(sid)
 
     def get_summary(self, sid):
         """ Returns the summary object. The wrapper functions should

@@ -24,7 +24,7 @@ if testmode == "bp":
     test_pack = steam.tf2.backpack("stragglerastic", schema = test_schema)
     print_item_list(test_pack)
 elif testmode == "schema":
-    print_item_list(test_chema)
+    print_item_list(test_schema)
 elif testmode == "assets-catalog":
     assets = steam.tf2.assets(currency = "usd")
     for item in test_schema:

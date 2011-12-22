@@ -43,7 +43,7 @@ class AssetError(Error):
         self.msg = msg
         self.asset = asset
 
-class schema:
+class schema(object):
     """ The base class for the item schema. """
 
     def create_item(self, oitem):
@@ -144,10 +144,8 @@ class schema:
         self._language = lang
         self._url = ("http://api.steampowered.com/IEconItems_" + self._app_id +
                      "/GetSchema/v0001/?key=" + steam.get_api_key() + "&format=json&language=" + lang)
-        try:
-            schema = self._deserialize(self._download())
-        except Exception as E:
-            raise SchemaError(E)
+
+        schema = self._deserialize(self._download())
 
         if not schema or schema["result"]["status"] != 1:
             raise SchemaError("Schema error", schema["result"]["status"])

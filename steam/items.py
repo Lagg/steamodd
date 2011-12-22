@@ -86,8 +86,8 @@ class schema(object):
 
     def get_kill_ranks(self):
         """ Returns a list of ranks for weapons with kill tracking """
-
-        return self._kill_ranks
+        
+        return self._item_ranks
 
     def get_kill_types(self):
         """ Returns a dict with keys that are the value of
@@ -174,7 +174,10 @@ class schema(object):
         for particle in schema["result"].get("attribute_controlled_attached_particles", []):
             self._particles[particle["id"]] = particle
 
-        self._kill_ranks = schema["result"].get("kill_eater_ranks", [])
+        self._item_ranks = {}
+        for rankset in schema["result"].get("item_levels"):
+            self._item_ranks[rankset["name"]] = rankset["levels"]
+
         self._kill_types = {}
         for killtype in schema["result"].get("kill_eater_score_types", []):
             self._kill_types[killtype["type"]] = killtype["type_name"]
@@ -447,8 +450,16 @@ class item:
             return None
 
         kills.sort(reverse = True)
+        
+        #WORKAROUND until it is possible to get the rank set name automatically
+        ranksets = self._schema.get_kill_ranks()
+        rankset = []
+        if self.get_schema_id() == 655:
+            rankset = ranksets["SpiritOfGivingRank"]
+        else:
+            rankset = ranksets["KillEaterRank"]
 
-        for rank in self._schema.get_kill_ranks():
+        for rank in rankset:
             self._rank = rank
             if kills[0] < rank["required_score"]:
                 break

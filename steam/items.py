@@ -175,7 +175,7 @@ class schema(object):
             self._particles[particle["id"]] = particle
 
         self._item_ranks = {}
-        for rankset in schema["result"].get("item_levels"):
+        for rankset in schema["result"].get("item_levels", []):
             self._item_ranks[rankset["name"]] = rankset["levels"]
 
         self._kill_types = {}

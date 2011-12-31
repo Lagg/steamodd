@@ -754,7 +754,7 @@ class backpack:
         if sid:
             self.load(sid)
 
-class assets:
+class assets(object):
     """ Class for building asset catalogs """
 
     def get_price(self, assetindex, nonsale = False):
@@ -839,5 +839,3 @@ class assets:
                         break
         except KeyError as E:
             raise AssetError("Bad asset list")
-        except Exception as E:
-            raise AssetError(E)

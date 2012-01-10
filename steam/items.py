@@ -267,8 +267,10 @@ class item:
 
         if not equipped: return []
 
-        classes = set([classes.get(slot["class"], "Civilian") for slot in
-                       equipped])
+        # Yes I'm stubborn enough to use this for a WORKAROUND
+        classes = set([classes.get(slot["class"]) for slot in
+                       equipped if slot["class"] !=0 and slot["slot"] != 65535])
+
         return list(classes)
 
     def get_equipable_classes(self):

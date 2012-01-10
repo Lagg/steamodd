@@ -17,6 +17,11 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
 import json, os, urllib2, time, steam, operator
+try:
+    from collections import OrderedDict
+    MapDict = OrderedDict
+except ImportError:
+    MapDict = dict
 
 class Error(Exception):
     def __init__(self, msg):
@@ -96,7 +101,7 @@ class schema(object):
         return self._kill_types
 
     def get_classes(self):
-        """ Returns an OrderedDict of classes and identifiers.
+        """ Returns a hopefully ordered dict of classes and identifiers.
         Only assume that the key is a class identifier and
         the value is a user friendly string. """
         return self._class_map

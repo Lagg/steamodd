@@ -17,7 +17,6 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
 import items
-from collections import OrderedDict
 
 class backpack(items.backpack):
     _app_id = "620"
@@ -28,7 +27,7 @@ class backpack(items.backpack):
 
 class item_schema(items.schema):
     _app_id = "620"
-    _class_map = OrderedDict([
+    _class_map = items.MapDict([
             (1<<0, "P-body"),
             (1<<1, "Atlas")
             ])

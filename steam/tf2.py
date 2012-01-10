@@ -16,7 +16,6 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
-from collections import OrderedDict
 import items, urllib2, json
 
 class TF2Error(items.Error):
@@ -26,7 +25,7 @@ class TF2Error(items.Error):
 
 class item_schema(items.schema):
     _app_id = "440"
-    _class_map = OrderedDict([
+    _class_map = items.MapDict([
             (1, "Scout"),
             (3, "Soldier"),
             (7, "Pyro"),

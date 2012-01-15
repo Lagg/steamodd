@@ -69,35 +69,50 @@ class vanity_url:
 class profile:
     """ Functions for reading user account data """
 
-    def get_id64_from_sid(self, sid):
-        """ This uses the old API, caches
-        64 bit ID mappings in id64_cache* """
+    def _download(self):
+        return urllib2.urlopen(self._get_download_url()).read()
 
-        sid = str(sid)
+    def _deserialize(self, data):
+        return json.loads(data)
 
-        try:
-            return vanity_url(sid).get_id64()
-        except VanityError as E:
-            if sid.isdigit():
-                return long(sid)
+    def _get_download_url(self):
+        return self._profile_url + str(self._id64)
 
     def get_summary(self, sid):
-        """ Returns the summary object. The wrapper functions should
-        normally be used instead."""
-        id64 = self.get_id64_from_sid(str(sid).encode("ascii", "replace"))
+        """ Makes a best effort guess at fetching the profile
+        for a given ID """
 
-        if not id64:
-            #Assume it's the 64 bit ID
-            id64 = sid
+        sid = str(sid)
+        if sid.isdigit():
+            try:
+                return self.get_summary_by_id64(sid)
+            except ProfileError:
+                pass
+        return self.get_summary_by_vanity(sid)
 
-        self._id64 = str(id64)
-        self._summary_object = (json.load(urllib2.urlopen(self._profile_url + str(id64)))
-                               ["response"]["players"]["player"][0])
-
-        if not self._summary_object:
-            raise ProfileError("Profile not found")
+    def get_summary_by_id64(self, sid):
+        """ Attempts to fetch a profile assuming sid is a 64 bit ID """
+        self._id64 = str(sid)
+        try:
+            self._summary_object = self._deserialize(self._download())["response"]["players"]["player"][0]
+        except:
+            raise ProfileError("Profile " + self._id64 + " (id64) not found")
 
         return self._summary_object
+
+    def get_summary_by_vanity(self, sid):
+        """ Attempts to fetch a profile assuming sid is a vanity URL part """
+
+        sid = str(sid)
+        lsid = sid.rfind('/')
+        if (lsid + 1) >= len(sid): sid = sid[:lsid]
+        sid = os.path.basename(sid)
+
+        try: self._id64 = vanity_url(sid).get_id64()
+        except VanityError as E:
+            raise ProfileError("Profile id64 fetch for " + sid + " failed with: " + str(E))
+
+        return self.get_summary_by_id64(self._id64)
 
     def get_id64(self):
         """ Returns the 64 bit steam ID (use with other API requests) """
@@ -202,7 +217,6 @@ class profile:
 
     def __init__(self, sid = None):
         """ Creates a profile instance for the given user """
-        self._old_profile_url = "http://steamcommunity.com/id/{0:s}?xml=1"
         self._profile_url = ("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/"
                              "v0001/?key=" + steam.get_api_key() + "&steamids=")
 

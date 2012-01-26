@@ -592,7 +592,7 @@ class item_attribute:
             if int(val) == val: fattr = (str(int(val)))
         elif ftype == "date":
             d = time.gmtime(int(val))
-            fattr = time.strftime("%F %H:%M:%S", d)
+            fattr = time.strftime("%Y-%m-%d %H:%M:%S", d)
 
         return fattr
 

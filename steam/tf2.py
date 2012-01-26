@@ -16,11 +16,16 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
-import items, urllib2, json
+import items, urllib2, json, base, time
 
 class TF2Error(items.Error):
     def __init__(self, msg):
-        items.Error.__init__(self)
+        items.Error.__init__(self, msg)
+        self.msg = msg
+
+class GoldenWrenchError(TF2Error):
+    def __init__(self, msg):
+        TF2Error.__init__(self, msg)
         self.msg = msg
 
 class item_schema(items.schema):
@@ -70,7 +75,16 @@ class golden_wrench:
     """ Functions for reading info for the golden wrenches found
     during the Engineer update """
 
-    _cache_basename = "tf2_golden_wrenches.js"
+
+    def _get_download_url(self):
+        return ("http://api.steampowered.com/ITFItems_440/GetGoldenWrenches/"
+                "v2/?key=" + base.get_api_key() + "&format=json")
+
+    def _download(self):
+        return urllib2.urlopen(self._get_download_url()).read()
+
+    def _deserialize(self, wrenches):
+        return json.loads(wrenches)
 
     def get_wrenches(self):
         """ Returns the list of wrenches """
@@ -98,8 +112,8 @@ class golden_wrench:
 
         return wrench["itemID"]
 
-    def get_serial(self, wrench):
-        """ Returns the serial number of the wrench """
+    def get_craft_number(self, wrench):
+        """ Returns the number of the wrench in the order crafted """
 
         return wrench["wrenchNumber"]
 
@@ -108,15 +122,10 @@ class golden_wrench:
 
         return wrench["steamID"]
     
-    def __init__(self, fresh = False):
+    def __init__(self):
         """ Will rewrite the wrench file if fresh = True """
 
-        self._wrench_url = ("http://api.steampowered.com/ITFItems_440/GetGoldenWrenches/"
-                            "v0001/?key=" + steam.get_api_key() + "&format=json")
-
-        cache = steam.get_cache_file(self._cache_basename)
-        if fresh or not cache:
-            cache = steam.write_cache_file(urllib2.urlopen(self._wrench_url),
-                                           self._cache_basename)
-
-        self._wrench_list = json.load(cache)["results"]["wrenches"]["wrench"]
+        try:
+            self._wrench_list = self._deserialize(self._download())["results"]["wrenches"]
+        except Exception as E:
+            raise GoldenWrenchError("Failed to fetch wrench list: " + str(E))

@@ -16,7 +16,8 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
-import json, os, urllib2, time, steam, operator
+import json, os, urllib2, time, base, operator
+
 try:
     from collections import OrderedDict
     MapDict = OrderedDict
@@ -148,7 +149,7 @@ class schema(object):
 
         self._language = lang
         self._url = ("http://api.steampowered.com/IEconItems_" + self._app_id +
-                     "/GetSchema/v0001/?key=" + steam.get_api_key() + "&format=json&language=" + lang)
+                     "/GetSchema/v0001/?key=" + base.get_api_key() + "&format=json&language=" + lang)
 
         schema = self._deserialize(self._download())
 
@@ -707,11 +708,11 @@ class backpack:
     def load(self, sid):
         """ Loads or refreshes the player backpack for the given steam.user
         Returns a list of items, will be empty if there's nothing in the backpack"""
-        if not isinstance(sid, steam.user.profile):
-            sid = steam.user.profile(sid)
+        if not isinstance(sid, base.user.profile):
+            sid = base.user.profile(sid)
         id64 = sid.get_id64()
         url = ("http://api.steampowered.com/IEconItems_" + self._app_id + "/GetPlayerItems/"
-               "v0001/?key=" + steam.get_api_key() + "&format=json&SteamID=")
+               "v0001/?key=" + base.get_api_key() + "&format=json&SteamID=")
         inv = urllib2.urlopen(url + str(id64)).read()
 
         # Once again I'm doing what Valve should be doing before they generate
@@ -827,7 +828,7 @@ class assets(object):
         self._language = lang
         self._currency = currency
         self._url = ("http://api.steampowered.com/ISteamEconomy/GetAssetPrices/v0001?" +
-                     "key={0}&format=json&language={1}&appid={2}".format(steam.get_api_key(),
+                     "key={0}&format=json&language={1}&appid={2}".format(base.get_api_key(),
                                                                          self._language,
                                                                          self._app_id))
         if self._currency: self._url += "&currency=" + self._currency

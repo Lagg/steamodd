@@ -16,7 +16,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
-import json, urllib2, steam, time, os, sqlite3, urllib
+import json, urllib2, base, time, os, sqlite3, urllib
 
 class ProfileError(Exception):
     def __init__(self, msg):
@@ -52,7 +52,7 @@ class vanity_url:
         to resolve it. """
 
         self._url = ("http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?" +
-                     urllib.urlencode({"key": steam.get_api_key(), "vanityurl": vanity}))
+                     urllib.urlencode({"key": base.get_api_key(), "vanityurl": vanity}))
 
         try:
             result = json.load(urllib2.urlopen(self._url))["response"]
@@ -218,7 +218,7 @@ class profile:
     def __init__(self, sid = None):
         """ Creates a profile instance for the given user """
         self._profile_url = ("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/"
-                             "v0001/?key=" + steam.get_api_key() + "&steamids=")
+                             "v0001/?key=" + base.get_api_key() + "&steamids=")
 
         if isinstance(sid, dict):
             self._summary_object = sid

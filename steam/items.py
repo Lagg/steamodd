@@ -762,47 +762,55 @@ class backpack:
         if sid:
             self.load(sid)
 
-class assets(object):
-    """ Class for building asset catalogs """
+class asset_item:
+    def __init__(self, asset, catalog):
+        self._catalog = catalog
+        self._asset = asset
 
-    def get_price(self, assetindex, nonsale = False):
+    def __unicode__(self):
+        return self.get_name() + " " + str(self.get_price())
+
+    def __str__(self):
+        return unicode(self).encode("utf-8")
+
+    def get_tags(self):
+        """ Returns a dict containing tags and their localized labels as values """
+        tags = {}
+        for k in self._asset.get("tags"):
+            tags[k] = self._catalog._tag_map.get(k, k)
+        return tags
+
+
+    def get_price(self, nonsale = False):
         """ Returns a dict containing prices for all available
         currencies or a single price otherwise. If nonsale is
         True normal prices will always be returned, even if there
         is currently a discount """
 
-        try:
-            asset = self._assets[assetindex]
-            price = None
-            currency = self._currency
-            pricedict = asset["prices"]
+        asset = self._asset
+        price = None
+        currency = self._catalog._currency
+        pricedict = asset["prices"]
 
-            if nonsale: pricedict = asset.get("original_prices", asset["prices"])
+        if nonsale: pricedict = asset.get("original_prices", asset["prices"])
 
-            if currency:
-                try:
-                    price = float(pricedict[currency.upper()])/100
-                    return price
-                except KeyError:
-                    return None
-            else:
-                decprices = {}
-                for k, v in pricedict.iteritems():
-                    decprices[k] = float(v)/100
-                return decprices
-        except KeyError:
-            raise AssetError("Couldn't find asset " + str(assetindex))
+        if currency:
+            try:
+                price = float(pricedict[currency.upper()])/100
+                return price
+            except KeyError:
+                return None
+        else:
+            decprices = {}
+            for k, v in pricedict.iteritems():
+                decprices[k] = float(v)/100
+            return decprices
 
-    def get_tags(self, assetindex):
-        """ Returns a dict containing tags and their localized labels as values """
-        tags = {}
-        try:
-            asset = self._assets[assetindex]
-            for k in asset.get("tags").keys():
-                tags[k] = self._tag_map.get(k, k)
-        except KeyError:
-            raise AssetError("Couldn't find asset " + assetindex)
-        return tags
+    def get_name(self):
+        return self._asset.get("name")
+
+class assets(object):
+    """ Class for building asset catalogs """
 
     def _get_download_url(self):
         return self._url
@@ -815,16 +823,15 @@ class assets(object):
 
     def __getitem__(self, key):
         try:
-            return self.get_price(key.get_schema_id())
+            return self._assets[str(key.get_schema_id())]
         except:
-            try: return self.get_price(key)
-            except: raise KeyError(key)
+            return self._assets[str(key)]
 
     def __iter__(self):
-        return self.nextitem()
+        return self._nextitem()
 
-    def nextitem(self):
-        data = sorted(self._assets.values(), key = operator.itemgetter("name"))
+    def _nextitem(self):
+        data = sorted(self._assets.values(), key = asset_item.get_name)
         iterindex = 0
 
         while iterindex < len(data):
@@ -853,9 +860,6 @@ class assets(object):
             self._tag_map = adict["tags"]
             self._assets = {}
             for asset in adict["assets"]:
-                for prop in asset["class"]:
-                    if prop.get("name") == "def_index":
-                        self._assets[int(prop.get("value"))] = asset
-                        break
+                self._assets[asset["name"]] = asset_item(asset, self)
         except KeyError as E:
             raise AssetError("Bad asset list")

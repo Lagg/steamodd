@@ -827,9 +827,10 @@ class assets(object):
         data = sorted(self._assets.values(), key = operator.itemgetter("name"))
         iterindex = 0
 
-        while iterindex < len(data) - 1:
+        while iterindex < len(data):
+            ydata = data[iterindex]
             iterindex += 1
-            yield data[iterindex]
+            yield ydata
 
     def __init__(self, lang = None, currency = None):
         """ lang: Language of asset tags, defaults to english

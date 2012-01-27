@@ -820,6 +820,17 @@ class assets(object):
             try: return self.get_price(key)
             except: raise KeyError(key)
 
+    def __iter__(self):
+        return self.nextitem()
+
+    def nextitem(self):
+        data = sorted(self._assets.values(), key = operator.itemgetter("name"))
+        iterindex = 0
+
+        while iterindex < len(data) - 1:
+            iterindex += 1
+            yield data[iterindex]
+
     def __init__(self, lang = None, currency = None):
         """ lang: Language of asset tags, defaults to english
         currency: The iso 4217 currency code, returns all currencies by default """

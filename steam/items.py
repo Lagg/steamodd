@@ -107,6 +107,11 @@ class schema(object):
         the value is a user friendly string. """
         return self._class_map
 
+    def get_origin_name(self, origin):
+        """ Returns a localized origin name for a given ID """
+
+        return self._origins[int(origin)]["name"]
+
     def _get_download_url(self):
         """ Returns the URL to use for
         fetching the raw schema """
@@ -187,6 +192,10 @@ class schema(object):
         self._kill_types = {}
         for killtype in schema["result"].get("kill_eater_score_types", []):
             self._kill_types[killtype["type"]] = killtype["type_name"]
+
+        self._origins = {}
+        for origin in schema["result"].get("originNames", []):
+            self._origins[origin["origin"]] = origin
 
 class item:
     """ Stores a single TF2 backpack item """
@@ -504,6 +513,12 @@ class item:
     def get_tool_metadata(self):
         """ Assume this will change. For now returns a dict of various information about tool items """
         return self._schema_item.get("tool")
+
+    def get_origin_name(self):
+        """ Returns the item's localized origin name """
+
+        if "origin" in self._item:
+            return self._schema.get_origin_name(self._item["origin"])
 
     def __iter__(self):
         return self.nextattr()

@@ -94,7 +94,7 @@ class profile:
         """ Attempts to fetch a profile assuming sid is a 64 bit ID """
         self._id64 = str(sid)
         try:
-            self._summary_object = self._deserialize(self._download())["response"]["players"]["player"][0]
+            self._summary_object = self._deserialize(self._download())["response"]["players"][0]
         except:
             raise ProfileError("Profile " + self._id64 + " (id64) not found")
 
@@ -218,7 +218,7 @@ class profile:
     def __init__(self, sid = None):
         """ Creates a profile instance for the given user """
         self._profile_url = ("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/"
-                             "v0001/?key=" + base.get_api_key() + "&steamids=")
+                             "v0002/?key=" + base.get_api_key() + "&steamids=")
 
         if isinstance(sid, dict):
             self._summary_object = sid

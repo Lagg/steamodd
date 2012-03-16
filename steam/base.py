@@ -1,5 +1,5 @@
 import os, json
-import tf2, tf2b, p2, user
+import tf2, tf2b, p2, d2, user
 
 _api_key = None
 

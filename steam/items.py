@@ -520,6 +520,11 @@ class item:
         if "origin" in self._item:
             return self._schema.get_origin_name(self._item["origin"])
 
+    def get_origin_id(self):
+        """ Returns the item's origin ID """
+
+        return self._item.get("origin")
+
     def __iter__(self):
         return self.nextattr()
 

@@ -16,7 +16,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
-import json, os, urllib2, time, base, operator
+import json, os, urllib2, time, base, operator, re
 
 try:
     from collections import OrderedDict
@@ -191,7 +191,7 @@ class schema(object):
 
         self._kill_types = {}
         for killtype in schema["result"].get("kill_eater_score_types", []):
-            self._kill_types[killtype["type"]] = killtype["type_name"]
+            self._kill_types[killtype["type"]] = killtype
 
         self._origins = {}
         for origin in schema["result"].get("originNames", []):
@@ -444,41 +444,64 @@ class item:
 
         return ((prefix or "") + " " + item_name + " " + suffix).strip()
 
+    def get_kill_eaters(self):
+        """
+        Returns a list of tuples containing the proper localized kill eater type strings and their values
+        according to set/type/value "order"
+        """
+
+        # Order matters in how they show up in the tuple
+        eaterspecs = {"type": re.compile("^kill eater score type$|^kill eater score type ([1-9]+)$"),
+                      "count": re.compile("^kill eater$|^kill eater ([1-9]+)$")}
+
+        eaters = {}
+        finalres = []
+
+        for attr in self:
+            for name, spec in eaterspecs.iteritems():
+                regexpmatch = re.match(spec, attr.get_name())
+                if regexpmatch:
+                    matchid = int(regexpmatch.groups()[0] or 0)
+                    value = int(attr.get_value())
+
+                    if matchid not in eaters:
+                        eaters[matchid] = {}
+
+                    eaters[matchid][name] = value
+                    eaters[matchid]["aid"] = attr.get_id()
+
+        ranktypes = self._schema.get_kill_types()
+
+        for k in sorted(eaters.keys()):
+            eater = eaters[k]
+            rank = ranktypes[eater.get("type", 0)]
+            finalres.append((rank["level_data"], rank["type_name"], eater.get("count"), eater["aid"]))
+
+        return finalres
+
     def get_rank(self):
         """
         Returns the item's rank (if it has one)
         as a dict that includes required score, name, and level.
         """
 
-        kills = []
-
         if self._rank != {}:
             # Don't bother doing attribute lookups again
             return self._rank
 
-        try: kills.append(int(self["kill eater"].get_value()))
-        except KeyError: pass
+        eaterlines = self.get_kill_eaters()
 
-        try: kills.append(int(self["kill eater 2"].get_value()))
-        except KeyError: pass
-
-        if not kills:
+        if not eaterlines or eaterlines[0][2] == None:
             self._rank = None
             return None
+        else: eaterlines = eaterlines[0]
 
-        kills.sort(reverse = True)
-        
-        #WORKAROUND until it is possible to get the rank set name automatically
         ranksets = self._schema.get_kill_ranks()
-        rankset = []
-        if self.get_schema_id() == 655:
-            rankset = ranksets["SpiritOfGivingRank"]
-        else:
-            rankset = ranksets["KillEaterRank"]
-
+        rankset = ranksets[eaterlines[0]]
+        realranknum = eaterlines[2]
         for rank in rankset:
             self._rank = rank
-            if kills[0] < rank["required_score"]:
+            if realranknum < rank["required_score"]:
                 break
 
         return self._rank

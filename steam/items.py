@@ -451,9 +451,8 @@ class item:
         """
 
         # Order matters in how they show up in the tuple
-        eaterspecs = {"type": re.compile("^kill eater score type$|^kill eater score type ([1-9]+)$"),
-                      "count": re.compile("^kill eater$|^kill eater ([1-9]+)$")}
-
+        eaterspecs = {"type": "^kill eater user score type ?(?P<utype>\d*)$|^kill eater score type ?(\d*)$",
+                      "count": "^kill eater user ?(?P<utype>\d*)$|^kill eater ?(\d*)$"}
         eaters = {}
         finalres = []
 
@@ -463,6 +462,10 @@ class item:
                 if regexpmatch:
                     matchid = int(regexpmatch.groups()[0] or 0)
                     value = int(attr.get_value())
+
+                    # Ensure no conflicts between ranking this and non-attached attributes
+                    if regexpmatch.group("utype") != None:
+                        matchid += 50
 
                     if matchid not in eaters:
                         eaters[matchid] = {}

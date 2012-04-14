@@ -455,6 +455,10 @@ class item:
                       "count": "^kill eater user ?(?P<b>\d*)$|^kill eater ?(?P<a>\d*)$"}
         eaters = {}
         finalres = []
+        ranktypes = self._schema.get_kill_types()
+
+        if not ranktypes:
+            return []
 
         for attr in self:
             for name, spec in eaterspecs.iteritems():
@@ -475,8 +479,6 @@ class item:
 
                     eaters[matchid][name] = value
                     eaters[matchid]["aid"] = attr.get_id()
-
-        ranktypes = self._schema.get_kill_types()
 
         for k in sorted(eaters.keys()):
             eater = eaters[k]

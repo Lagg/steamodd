@@ -55,7 +55,7 @@ class HttpStale(Error):
         Error.__init__(self, msg)
         self.msg = msg
 
-class HttpStale(Error):
+class HttpError(Error):
     """ Raised for other HTTP codes or results """
     def __init__(self, msg):
         Error.__init__(self, msg)

@@ -29,24 +29,24 @@ class GoldenWrenchError(TF2Error):
         self.msg = msg
 
 class item_schema(items.schema):
-    _app_id = "440"
-    _class_map = items.MapDict([
-            (1, "Scout"),
-            (3, "Soldier"),
-            (7, "Pyro"),
-            (4, "Demoman"),
-            (6, "Heavy"),
-            (9, "Engineer"),
-            (5, "Medic"),
-            (2, "Sniper"),
-            (8, "Spy")
-            ])
-
     def create_item(self, oitem):
         return item(self, oitem)
 
-    def __init__(self, lang = None):
-        items.schema.__init__(self, lang)
+    def __init__(self, appid = None, lang = None, lm = None):
+        items.schema.__init__(self, appid or 440, lang, lm)
+
+        self._class_map = items.MapDict([
+                (1, "Scout"),
+                (3, "Soldier"),
+                (7, "Pyro"),
+                (4, "Demoman"),
+                (6, "Heavy"),
+                (9, "Engineer"),
+                (5, "Medic"),
+                (2, "Sniper"),
+                (8, "Spy")
+                ])
+
 
 class backpack(items.backpack):
     _app_id = "440"
@@ -66,10 +66,8 @@ class item(items.item):
         items.item.__init__(self, schema, item)
 
 class assets(items.assets):
-    _app_id = "440"
-
-    def __init__(self, lang = None, currency = None):
-        items.assets.__init__(self, lang, currency)
+    def __init__(self, appid = None, lang = None, currency = None, lm = None):
+        items.assets.__init__(self, appid or 440, lang, currency, lm)
 
 class golden_wrench_item:
     def get_craft_date(self):

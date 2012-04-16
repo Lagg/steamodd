@@ -26,9 +26,5 @@ class backpack(items.backpack):
         items.backpack.__init__(self, sid, schema)
 
 class item_schema(items.schema):
-    _app_id = "816"
-    _class_map = items.MapDict([
-            ])
-
-    def __init__(self, lang = None):
-        items.schema.__init__(self, lang)
+    def __init__(self, lang = None, lm = None):
+        items.schema.__init__(self, 816, lang, lm)

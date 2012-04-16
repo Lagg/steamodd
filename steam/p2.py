@@ -26,17 +26,16 @@ class backpack(items.backpack):
         items.backpack.__init__(self, sid, schema)
 
 class item_schema(items.schema):
-    _app_id = "620"
-    _class_map = items.MapDict([
-            (1<<0, "P-body"),
-            (1<<1, "Atlas")
-            ])
-
     def create_item(self, oitem):
         return item(self, oitem)
 
-    def __init__(self, lang = None):
-        items.schema.__init__(self, lang)
+    def __init__(self, lang = None, lm = None):
+        items.schema.__init__(self, 620, lang, lm)
+
+        self._class_map = items.MapDict([
+                (1<<0, "P-body"),
+                (1<<1, "Atlas")
+                ])
 
 class item(items.item):
     def get_full_item_name(self, prefixes = None):

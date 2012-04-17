@@ -18,16 +18,17 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import tf2
 
+_APP_ID = 520
+
 class item_schema(tf2.item_schema):
     def _download(self):
         # WORKAROUND garbage characters
         return tf2.item_schema._download(self).replace("\xc4=", "Engineer")
 
     def __init__(self, lang = None, lm = None):
-        tf2.item_schema.__init__(self, 520, lang, lm)
+        tf2.item_schema.__init__(self, _APP_ID, lang, lm)
 
 class backpack(tf2.backpack):
-    _app_id = "520"
-
-    def __init__(self, sid = None, schema = None):
-        tf2.backpack.__init__(self, sid, schema)
+    def __init__(self, sid, schema = None):
+        if not schema: schema = item_schema()
+        tf2.backpack.__init__(self, sid, _APP_ID, schema)

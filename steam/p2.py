@@ -18,19 +18,19 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import items
 
-class backpack(items.backpack):
-    _app_id = "620"
+_APP_ID = 620
 
-    def __init__(self, sid = None, schema = None):
+class backpack(items.backpack):
+    def __init__(self, sid, schema = None):
         if not schema: schema = item_schema()
-        items.backpack.__init__(self, sid, schema)
+        items.backpack.__init__(self, _APP_ID, sid, schema)
 
 class item_schema(items.schema):
     def create_item(self, oitem):
         return item(self, oitem)
 
     def __init__(self, lang = None, lm = None):
-        items.schema.__init__(self, 620, lang, lm)
+        items.schema.__init__(self, _APP_ID, lang, lm)
 
         self._class_map = items.MapDict([
                 (1<<0, "P-body"),

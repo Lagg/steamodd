@@ -798,33 +798,8 @@ class item_attribute:
         except TypeError:
             pass
 
-class backpack:
+class backpack(base_json_request):
     """ Functions for reading player inventory """
-
-    def load(self, sid):
-        """ Loads or refreshes the player backpack for the given steam.user
-        Returns a list of items, will be empty if there's nothing in the backpack"""
-        if not isinstance(sid, base.user.profile):
-            sid = base.user.profile(sid)
-        id64 = sid.get_id64()
-        url = ("http://api.steampowered.com/IEconItems_" + self._app_id + "/GetPlayerItems/"
-               "v0001/?key=" + base.get_api_key() + "&format=json&SteamID=")
-        inv = urllib2.urlopen(url + str(id64)).read()
-
-        # Once again I'm doing what Valve should be doing before they generate
-        # JSON. WORKAROUND
-        self._inventory_object = json.loads(inv.replace("-1.#QNAN0", "0"))
-        result = self._inventory_object["result"]["status"]
-        if result == 8:
-            raise Error("Bad SteamID64 given")
-        elif result == 15:
-            raise Error("Profile set to private")
-        elif result != 1:
-            raise Error("Unknown error")
-
-        itemlist = self._inventory_object["result"]["items"]
-        if len(itemlist) and itemlist[0] == None:
-            self._inventory_object["result"]["items"] = []
 
     def get_total_cells(self):
         """ Returns the total number of cells in the backpack.
@@ -848,15 +823,41 @@ class backpack:
             iterindex += 1
             yield data
 
-    def __init__(self, sid = None, oschema = None):
+    def __init__(self, appid, sid, oschema = None):
         """ Loads the backpack of user sid if given,
         generates a fresh schema object if one is not given. """
 
         self._schema = oschema
+        self._app_id = str(appid)
+        self._profile = sid
+
+        if not isinstance(self._profile, base.user.profile):
+            self._profile = base.user.profile(self._profile)
+
+        url = ("http://api.steampowered.com/IEconItems_{0}/GetPlayerItems/v0001/?key={1}&format=json&SteamID={2}").format(
+            self._app_id,
+            base.get_api_key(),
+            self._profile.get_id64())
+
+        super(backpack, self).__init__(url)
+
         if not self._schema:
             self._schema = schema()
-        if sid:
-            self.load(sid)
+
+        # Once again I'm doing what Valve should be doing before they generate
+        # JSON. WORKAROUND
+        self._inventory_object = self._deserialize(self._download().replace("-1.#QNAN0", "0"))
+        result = self._inventory_object["result"]["status"]
+        if result == 8:
+            raise Error("Bad SteamID64 given")
+        elif result == 15:
+            raise Error("Profile set to private")
+        elif result != 1:
+            raise Error("Unknown error")
+
+        itemlist = self._inventory_object["result"]["items"]
+        if len(itemlist) and itemlist[0] == None:
+            self._inventory_object["result"]["items"] = []
 
 class asset_item:
     def __init__(self, asset, catalog):

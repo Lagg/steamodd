@@ -18,6 +18,8 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import items, urllib2, json, base, time
 
+_APP_ID = 440
+
 class TF2Error(items.Error):
     def __init__(self, msg):
         items.Error.__init__(self, msg)
@@ -33,7 +35,7 @@ class item_schema(items.schema):
         return item(self, oitem)
 
     def __init__(self, appid = None, lang = None, lm = None):
-        items.schema.__init__(self, appid or 440, lang, lm)
+        items.schema.__init__(self, appid or _APP_ID, lang, lm)
 
         self._class_map = items.MapDict([
                 (1, "Scout"),
@@ -49,11 +51,9 @@ class item_schema(items.schema):
 
 
 class backpack(items.backpack):
-    _app_id = "440"
-
-    def __init__(self, sid = None, schema = None):
+    def __init__(self, sid, appid = None, schema = None):
         if not schema: schema = item_schema()
-        items.backpack.__init__(self, sid, schema)
+        items.backpack.__init__(self, appid or _APP_ID, sid, schema)
 
 class item(items.item):
     def get_equipable_classes(self):
@@ -67,7 +67,7 @@ class item(items.item):
 
 class assets(items.assets):
     def __init__(self, appid = None, lang = None, currency = None, lm = None):
-        items.assets.__init__(self, appid or 440, lang, currency, lm)
+        items.assets.__init__(self, appid or _APP_ID, lang, currency, lm)
 
 class golden_wrench_item:
     def get_craft_date(self):
@@ -111,19 +111,9 @@ class golden_wrench_item:
         self._real_item = None
         self._wrench = wrench
 
-class golden_wrench:
+class golden_wrench(items.base_json_request):
     """ Functions for reading info for the golden wrenches found
     during the Engineer update """
-
-    def _get_download_url(self):
-        return ("http://api.steampowered.com/ITFItems_440/GetGoldenWrenches/"
-                "v2/?key=" + base.get_api_key() + "&format=json")
-
-    def _download(self):
-        return urllib2.urlopen(self._get_download_url()).read()
-
-    def _deserialize(self, wrenches):
-        return json.loads(wrenches)
 
     def get_wrench_for_user(self, user):
         """ If the user found a wrench a gw object will be returned
@@ -149,7 +139,11 @@ class golden_wrench:
         return self._idmap[key]
 
     def __init__(self):
-        """ Will rewrite the wrench file if fresh = True """
+        """ Fetch the ever-useful and ever-changing wrench owner list """
+        url = ("http://api.steampowered.com/ITFItems_{0}/GetGoldenWrenches/"
+               + "v2/?key={1}&format=json").format(_APP_ID, base.get_api_key())
+
+        super(golden_wrench, self).__init__(url)
 
         try:
             self._idmap = {}

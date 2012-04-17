@@ -17,7 +17,7 @@ def assets_test():
     assets = steam.tf2.assets(currency = "usd")
     for item in test_schema:
         try:
-            print("\x1b[1m" + str(item) + "\x1b[0m:\t $" + str(assets[item]))
+            print("\x1b[1m" + (str(item) + "\x1b[0m: ").ljust(50) + (str(assets[item])).ljust(50))
         except KeyError:
             pass
 
@@ -25,15 +25,15 @@ def gw_test():
     import time
     wrenches = steam.tf2.golden_wrench()
 
-    for wrench in sorted(wrenches.get_wrenches(), key = wrenches.get_craft_number):
-        print("Verifying wrench #{0}, crafted {1}".format(wrenches.get_craft_number(wrench), time.strftime("%Y-%m-%d %H:%M:%S", wrenches.get_craft_date(wrench))))
+    for wrench in wrenches:
+        print("Verifying wrench #{0}, crafted {1}".format(wrench.get_craft_number(), time.strftime("%Y-%m-%d %H:%M:%S", wrench.get_craft_date())))
         try:
-            owner = steam.user.profile(wrenches.get_owner(wrench))
+            owner = steam.user.profile(wrench.get_owner())
             ownerbp = steam.tf2.backpack(owner)
             wrenchpresent = False
             print(owner.get_persona().encode("utf-8"))
             for item in ownerbp:
-                if item.get_id() == wrenches.get_id(wrench):
+                if item.get_id() == wrench.get_id():
                     wrenchpresent = True
                     print_item_list([item])
                     print('')

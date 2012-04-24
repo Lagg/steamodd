@@ -53,7 +53,7 @@ class item_schema(items.schema):
 class backpack(items.backpack):
     def _deserialize(self, obj):
         # WORKAROUND for truncated float_values in custom texture lo attributes
-        customtexturesub = re.sub('(\s*"float_value": -\d+)\.[^\d]', '\\1.0', obj)
+        customtexturesub = re.sub('(\s*"float_value": -?\d+)\.[^\d]', '\\1.0', obj)
         return json.loads(customtexturesub)
 
     def __init__(self, sid, appid = None, schema = None):

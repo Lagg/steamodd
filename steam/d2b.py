@@ -1,5 +1,5 @@
 """
-Module for reading DOTA 2 data using the Steam API
+Module for reading DOTA 2 (beta) data using the Steam API
 
 Copyright (c) 2010, Anthony Garcia <lagg@lavabit.com>
 
@@ -18,7 +18,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import items
 
-_APP_ID = 570
+_APP_ID = 816
 
 class backpack(items.backpack):
     def __init__(self, sid, schema = None):

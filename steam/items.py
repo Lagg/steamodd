@@ -49,59 +49,7 @@ class AssetError(Error):
         self.msg = msg
         self.asset = asset
 
-class HttpStale(Error):
-    """ Raised for HTTP code 304 """
-    def __init__(self, msg):
-        Error.__init__(self, msg)
-        self.msg = msg
-
-class HttpError(Error):
-    """ Raised for other HTTP codes or results """
-    def __init__(self, msg):
-        Error.__init__(self, msg)
-        self.msg = msg
-
-class base_json_request(object):
-    """ Base class for API requests over HTTP returning JSON """
-
-    def _get_download_url(self):
-        """ Returns the URL used for downloading the JSON data """
-        return self._url
-
-    def _download(self):
-        """ Standard download, does no additional checks """
-        res = urllib2.urlopen(self._get_download_url())
-        self._last_modified = res.headers.get("last-modified")
-        return res.read()
-
-    def _download_cached(self):
-        """ Uses self.last_modified """
-        req = urllib2.Request(self._get_download_url(), headers = {"If-Modified-Since": self.get_last_modified()})
-
-        try:
-            res = urllib2.urlopen(req)
-        except urllib2.HTTPError as e:
-            ecode = e.getcode()
-            if ecode == 304:
-                # No change
-                raise HttpStale(str(self.get_last_modified()))
-            else:
-                raise HttpError("HTTP error " + str(ecode))
-
-        return res.read()
-
-    def _deserialize(self, obj):
-        return json.loads(obj)
-
-    def get_last_modified(self):
-        """ Returns the last-modified header value """
-        return self._last_modified
-
-    def __init__(self, url, last_modified = None):
-        self._last_modified = last_modified
-        self._url = url
-
-class schema(base_json_request):
+class schema(base.json_request):
     """ The base class for the item schema. """
 
     def create_item(self, oitem):
@@ -798,7 +746,7 @@ class item_attribute:
         except TypeError:
             pass
 
-class backpack(base_json_request):
+class backpack(base.json_request):
     """ Functions for reading player inventory """
 
     def get_total_cells(self):
@@ -906,7 +854,7 @@ class asset_item:
     def get_name(self):
         return self._asset.get("name")
 
-class assets(base_json_request):
+class assets(base.json_request):
     """ Class for building asset catalogs """
 
     def __getitem__(self, key):

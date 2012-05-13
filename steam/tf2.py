@@ -116,7 +116,7 @@ class golden_wrench_item:
         self._real_item = None
         self._wrench = wrench
 
-class golden_wrench(items.base_json_request):
+class golden_wrench(base.json_request):
     """ Functions for reading info for the golden wrenches found
     during the Engineer update """
 

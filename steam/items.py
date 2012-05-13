@@ -132,6 +132,9 @@ class schema(base.json_request):
 
         return self.create_item(self._items[realkey])
 
+    def __len__(self):
+        return len(self._items.values())
+
     def __init__(self, appid, lang = None, lm = None):
         """ schema will be used to initialize the schema if given,
         lang can be any ISO language code.
@@ -734,17 +737,11 @@ class item_attribute:
         self._attribute = attribute
 
         # Workaround until Valve gives sane values
-        try:
-            int(self.get_value())
-            # WORKAROUND: There is no type set on this for some reason
-            if (self.get_name() == "tradable after date"):
-                self._attribute["description_format"] = "value_is_date"
-            if (self.get_value_type() != "date" and
-                self.get_value() > 1000000000 and
-                "float_value" in self._attribute):
-                self._attribute["value"] = self._attribute["float_value"]
-        except TypeError:
-            pass
+        if (self.get_value_type() != "date" and
+            self.get_value() > 1000000000 and
+            "float_value" in self._attribute and
+            not self.get_name().startswith("custom texture")):
+            self._attribute["value"] = self._attribute["float_value"]
 
 class backpack(base.json_request):
     """ Functions for reading player inventory """

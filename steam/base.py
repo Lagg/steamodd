@@ -77,4 +77,4 @@ def set_api_key(key):
 
     _api_key = key
 
-import tf2, tf2b, p2, d2, d2b, user
+import tf2, tf2b, p2, d2, d2b, user, remote_storage

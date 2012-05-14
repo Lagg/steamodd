@@ -1,26 +1,29 @@
-import os, json, urllib2
+import os, json, urllib2, socket
 
 _api_key = None
 
 class APIError(Exception):
     def __init__(self, msg):
-        Exception.__init__(self)
         self.msg = msg
-
-    def __str__(self):
-        return repr(self.msg)
-
-class HttpStale(APIError):
-    """ Raised for HTTP code 304 """
-    def __init__(self, msg):
-        APIError.__init__(self, msg)
-        self.msg = msg
+        Exception.__init__(self, msg)
 
 class HttpError(APIError):
     """ Raised for other HTTP codes or results """
     def __init__(self, msg):
-        APIError.__init__(self, msg)
         self.msg = msg
+        APIError.__init__(self, msg)
+
+class HttpStale(HttpError):
+    """ Raised for HTTP code 304 """
+    def __init__(self, msg):
+        self.msg = msg
+        HttpError.__init__(self, msg)
+
+class HttpTimeout(HttpError):
+    """ Raised for timeouts (may not explicitly be caused by HTTP lib) """
+    def __init__(self, msg):
+        self.msg = msg
+        HttpError.__init__(self, msg)
 
 class json_request(object):
     """ Base class for API requests over HTTP returning JSON """
@@ -33,6 +36,7 @@ class json_request(object):
         """ Standard download, does no additional checks """
         try: res = urllib2.urlopen(self._get_download_url())
         except urllib2.HTTPError as E: raise HttpError(str(E.getcode()))
+        except socket.timeout: raise HttpTimeout("Socket level timeout")
 
         self._last_modified = res.headers.get("last-modified")
         return res.read()
@@ -49,7 +53,9 @@ class json_request(object):
                 # No change
                 raise HttpStale(str(self.get_last_modified()))
             else:
-                raise HttpError("HTTP error " + str(ecode))
+                raise HttpError(str(ecode))
+        except socket.timeout:
+            raise HttpTimeout("Socket level timeout")
 
         return res.read()
 

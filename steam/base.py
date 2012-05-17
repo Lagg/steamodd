@@ -32,9 +32,14 @@ class json_request(object):
         """ Returns the URL used for downloading the JSON data """
         return self._url
 
+    def _set_download_url(self, url):
+        self._url = url
+
     def _download(self):
         """ Standard download, does no additional checks """
-        try: res = urllib2.urlopen(self._get_download_url())
+        req = urllib2.Request(self._get_download_url(), headers = {"User-Agent": self._user_agent})
+
+        try: res = urllib2.urlopen(req)
         except urllib2.HTTPError as E: raise HttpError(str(E.getcode()))
         except socket.timeout: raise HttpTimeout("Socket level timeout")
 
@@ -43,7 +48,8 @@ class json_request(object):
 
     def _download_cached(self):
         """ Uses self.last_modified """
-        req = urllib2.Request(self._get_download_url(), headers = {"If-Modified-Since": self.get_last_modified()})
+        req = urllib2.Request(self._get_download_url(), headers = {"If-Modified-Since": self.get_last_modified(),
+                                                                   "User-Agent": self._user_agent})
 
         try:
             res = urllib2.urlopen(req)
@@ -69,6 +75,7 @@ class json_request(object):
     def __init__(self, url, last_modified = None):
         self._last_modified = last_modified
         self._url = url
+        self._user_agent = "Steamodd/2.0"
 
 def get_api_key():
     """ Returns the API key as a string, raises APIError if it's not set """

@@ -16,7 +16,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
-import json, urllib2, base, time, os, sqlite3, urllib
+import base, time, os, urllib
 
 class ProfileError(Exception):
     def __init__(self, msg):
@@ -38,7 +38,7 @@ class VanityError(Exception):
     def get_code(self):
         return self.code
 
-class vanity_url:
+class vanity_url(base.json_request):
     """ Class for holding a vanity URL and it's id64 """
 
     def get_id64(self):
@@ -51,11 +51,13 @@ class vanity_url:
         """ Takes a vanity URL part and tries
         to resolve it. """
 
-        self._url = ("http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?" +
-                     urllib.urlencode({"key": base.get_api_key(), "vanityurl": vanity}))
+        url = ("http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?" +
+               urllib.urlencode({"key": base.get_api_key(), "vanityurl": vanity}))
+
+        super(vanity_url, self).__init__(url)
 
         try:
-            result = json.load(urllib2.urlopen(self._url))["response"]
+            result = self._deserialize(self._download())["response"]
             scode = int(result["success"])
         except Exception as E:
             raise VanityError(E)
@@ -66,53 +68,8 @@ class vanity_url:
         self._id64 = long(result["steamid"])
         self._vanity = vanity
 
-class profile:
+class profile(base.json_request):
     """ Functions for reading user account data """
-
-    def _download(self):
-        return urllib2.urlopen(self._get_download_url()).read()
-
-    def _deserialize(self, data):
-        return json.loads(data)
-
-    def _get_download_url(self):
-        return self._profile_url + str(self._id64)
-
-    def get_summary(self, sid):
-        """ Makes a best effort guess at fetching the profile
-        for a given ID """
-
-        sid = str(sid)
-        if sid.isdigit():
-            try:
-                return self.get_summary_by_id64(sid)
-            except ProfileError:
-                pass
-        return self.get_summary_by_vanity(sid)
-
-    def get_summary_by_id64(self, sid):
-        """ Attempts to fetch a profile assuming sid is a 64 bit ID """
-        self._id64 = str(sid)
-        try:
-            self._summary_object = self._deserialize(self._download())["response"]["players"][0]
-        except:
-            raise ProfileError("Profile " + self._id64 + " (id64) not found")
-
-        return self._summary_object
-
-    def get_summary_by_vanity(self, sid):
-        """ Attempts to fetch a profile assuming sid is a vanity URL part """
-
-        sid = str(sid)
-        lsid = sid.rfind('/')
-        if (lsid + 1) >= len(sid): sid = sid[:lsid]
-        sid = os.path.basename(sid)
-
-        try: self._id64 = vanity_url(sid).get_id64()
-        except VanityError as E:
-            raise ProfileError("Profile id64 fetch for " + sid + " failed with: " + str(E))
-
-        return self.get_summary_by_id64(self._id64)
 
     def get_id64(self):
         """ Returns the 64 bit steam ID (use with other API requests) """
@@ -215,15 +172,32 @@ class profile:
 
             return ret
 
-    def __init__(self, sid = None):
+    def __init__(self, sid):
         """ Creates a profile instance for the given user """
-        self._profile_url = ("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/"
-                             "v0002/?key=" + base.get_api_key() + "&steamids=")
+        url = ("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/"
+               "v2/?key=" + base.get_api_key() + "&steamids=")
 
-        if isinstance(sid, dict):
-            self._summary_object = sid
-        elif sid:
-            self.get_summary(sid)
+        sid = str(sid)
+        lsid = sid.rfind('/')
+        if (lsid + 1) >= len(sid): sid = sid[:lsid]
+        sid = os.path.basename(sid)
+        result = None
+
+        super(profile, self).__init__(url + sid)
+
+        if sid.isdigit():
+            result = self._deserialize(self._download())["response"]["players"]
+
+        if not result or not result[0]:
+            try: sid = str(vanity_url(sid).get_id64())
+            except VanityError as E:
+                raise ProfileError("Profile id64 fetch for " + sid + " failed with: " + str(E))
+
+            self._set_download_url(url + sid)
+            result = self._deserialize(self._download())["response"]["players"]
+
+        self._id64 = long(sid)
+        self._summary_object = result[0]
 
     AVATAR_SMALL = "avatar"
     AVATAR_MEDIUM = "avatarmedium"

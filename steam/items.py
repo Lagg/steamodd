@@ -193,7 +193,7 @@ class schema(base.json_request):
         for origin in res["result"].get("originNames", []):
             self._origins[origin["origin"]] = origin
 
-class item:
+class item(object):
     """ Stores a single TF2 backpack item """
     # The bitfield in the inventory token where
     # equipped classes are stored
@@ -591,19 +591,16 @@ class item:
         self._rank = {}
 
         # Assume it isn't a schema item if it doesn't have a name
-        if "item_name" not in self._item:
+        if schema and "item_name" not in self._item:
             try:
                 sitem = schema._items[self._item["defindex"]]
                 self._schema_item = sitem
             except KeyError:
-                pass
+                raise ItemError("Item has no corresponding schema entry")
         else:
             self._schema_item = item
 
-        if not self._schema_item:
-            raise ItemError("Item has no corresponding schema entry")
-
-class item_attribute:
+class item_attribute(object):
     """ Wrapper around item attributes """
 
     def get_value_formatted(self, value = None):
@@ -789,9 +786,7 @@ class backpack(base.json_request):
         if not self._schema:
             self._schema = schema()
 
-        # Once again I'm doing what Valve should be doing before they generate
-        # JSON. WORKAROUND
-        self._inventory_object = self._deserialize(self._download().replace("-1.#QNAN0", "0"))
+        self._inventory_object = self._deserialize(self._download())
         result = self._inventory_object["result"]["status"]
         if result == 8:
             raise Error("Bad SteamID64 given")

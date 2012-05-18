@@ -114,7 +114,7 @@ class backpack(base.json_request):
         try:
             if user: self._ctx = backpack_context(user)[104700]
         except KeyError:
-            raise ItemError("No SMNC inventory available for " + user.get_persona())
+            raise base.items.ItemError("No SMNC inventory available for this user")
 
         downloadlist = []
         url = "{0}json/{1}/".format(self._ctx["base_url"], self._ctx["appid"])

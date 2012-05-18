@@ -16,6 +16,8 @@ class scriptParser(HTMLParser):
             ctx = re.match("var g_rgAppContextData = (.+);", data.strip())
             if ctx:
                 self._ctxJSON = json.loads(ctx.groups()[0])
+            else:
+                raise base.user.ProfileError("No inventory information available")
 
     def get_inventory_json(self):
         return self._ctxJSON
@@ -48,10 +50,13 @@ class backpack_context(base.json_request):
         return self._contexts.keys()
 
     def _deserialize(self, data):
-        parser = scriptParser()
-        parser.feed(data)
+        # parser = scriptParser()
+        # parser.feed(data)
 
-        return parser.get_inventory_json()
+        # return parser.get_inventory_json()
+        contexts = re.search("var g_rgAppContextData = (.+);", data)
+        if contexts:
+            return json.loads(contexts.groups()[0])
 
     def __getitem__(self, key):
         res = self.get_app(key)
@@ -72,6 +77,8 @@ class backpack_context(base.json_request):
         super(backpack_context, self).__init__(url)
 
         self._contexts = self._deserialize(self._download())
+        if not self._contexts:
+            raise base.user.ProfileError("No inventory information available for " + self._profile.get_persona())
 
 class backpack(base.json_request):
     def get_total_cells(self):
@@ -104,7 +111,10 @@ class backpack(base.json_request):
             user = app.get_id64()
 
         # TODO first mode selection if user is passed
-        if user: self._ctx = backpack_context(user)[104700]
+        try:
+            if user: self._ctx = backpack_context(user)[104700]
+        except KeyError:
+            raise ItemError("No SMNC inventory available for " + user.get_persona())
 
         downloadlist = []
         url = "{0}json/{1}/".format(self._ctx["base_url"], self._ctx["appid"])
@@ -150,6 +160,10 @@ class item_attribute(base.items.item_attribute):
 
         return desc or " "
 
+    def get_description_color(self):
+        """ Returns description color as an RGB tuple """
+        return self._attribute.get("color")
+
     def is_hidden(self):
         # Never anything but this, but could have a use for child classes
         return False
@@ -170,16 +184,18 @@ class item_attribute(base.items.item_attribute):
 
 class item(base.items.item):
     def get_quality(self):
-        nc = self._item["name_color"]
-
         for tag in self._get_category("Quality"):
             # Could maybe unpack hex values into ad-hoc ID.
             return {"id": 0, "prettystr": tag["name"], "str": tag["internal_name"]}
 
-        return {"id": 0, "prettystr": nc, "str": nc}
+        return {"id": 0, "prettystr": "Normal", "str": "normal"}
 
     def get_name(self):
         return self._item["name"]
+
+    def get_name_color(self):
+        """ Returns the name color as an RGB tuple """
+        return self._item.get("name_color")
 
     def get_full_item_name(self, prefixes = {}):
         return self.get_name()

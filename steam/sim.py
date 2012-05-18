@@ -201,7 +201,7 @@ class item(base.items.item):
         return self.get_name()
 
     def is_untradable(self):
-        return bool(not self._item["tradable"])
+        return bool(not self._item.get("tradable"))
 
     def get_quantity(self):
         return int(self._item["amount"])
@@ -234,7 +234,7 @@ class item(base.items.item):
         return self._item.get("type", "")
 
     def get_image(self, size):
-        smallicon = self._item["icon_url"]
+        smallicon = self._item.get("icon_url")
 
         if not smallicon:
             return ""

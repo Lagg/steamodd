@@ -186,7 +186,7 @@ class profile(base.json_request):
         super(profile, self).__init__(url + sid)
 
         if sid.isdigit():
-            result = self._deserialize(self._download())["response"]["players"]
+            result = self._deserialize(self._download().decode("utf-8", errors="ignore"))["response"]["players"]
 
         if not result or not result[0]:
             try: sid = str(vanity_url(sid).get_id64())

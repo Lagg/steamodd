@@ -1,4 +1,5 @@
 from HTMLParser import HTMLParser
+from xml.sax import saxutils
 import re
 import json
 import base
@@ -155,10 +156,12 @@ class item_attribute(base.items.item_attribute):
         return self._attribute.get("color", "neutral")
 
     def get_description(self):
-        # This should be fine for all uses since %s tokens aren't there
         desc = self._attribute.get("value")
 
-        return desc or " "
+        if desc:
+            return saxutils.unescape(desc)
+        else:
+            return " "
 
     def get_description_color(self):
         """ Returns description color as an RGB tuple """
@@ -183,6 +186,10 @@ class item_attribute(base.items.item_attribute):
         super(item_attribute, self).__init__(attribute)
 
 class item(base.items.item):
+    def get_color(self):
+        """ Returns the color associated with the item as a hex RGB tuple """
+        return self._item.get("background_color")
+
     def get_quality(self):
         for tag in self._get_category("Quality"):
             # Could maybe unpack hex values into ad-hoc ID.
@@ -191,7 +198,7 @@ class item(base.items.item):
         return {"id": 0, "prettystr": "Normal", "str": "normal"}
 
     def get_name(self):
-        return self._item["name"]
+        return saxutils.unescape(self._item["name"])
 
     def get_name_color(self):
         """ Returns the name color as an RGB tuple """

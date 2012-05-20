@@ -140,7 +140,7 @@ class schema(base.json_request):
         lang can be any ISO language code.
         lm will be used to generate an HTTP If-Modified-Since header. """
 
-        self._language = lang or "en"
+        self._language = base.get_language(lang)[0]
         self._class_map = MapDict()
         self._app_id = str(appid)
 
@@ -432,10 +432,10 @@ class item(object):
         if prefixes == None or custom_name or (not self.is_name_prefixed() and quality_str == "unique"):
             prefix = ""
 
-        if ((prefixes == None or language != "en") and (quality_str == "unique" or quality_str == "normal")):
+        if ((prefixes == None or language != "en_US") and (quality_str == "unique" or quality_str == "normal")):
             prefix = ""
 
-        if (language != "en" and prefix):
+        if (language != "en_US" and prefix):
             return item_name + " (" + prefix + ")"
 
         return ((prefix or "") + " " + item_name + " " + suffix).strip()
@@ -874,7 +874,7 @@ class assets(base.json_request):
         """ lang: Language of asset tags, defaults to english
         currency: The iso 4217 currency code, returns all currencies by default """
 
-        self._language = lang or "en"
+        self._language = base.get_language(lang)[0]
         self._currency = currency
         self._app_id = appid
 

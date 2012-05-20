@@ -2,6 +2,32 @@ import os, json, urllib2, socket
 
 _api_key = None
 
+# Supported API languages (where applicable)
+_languages = {"da_DK": "Danish",
+              "nl_NL": "Dutch",
+              "en_US": "English",
+              "fi_FI": "Finnish",
+              "fr_FR": "French",
+              "de_DE": "German",
+              "hu_HU": "Hungarian",
+              "it_IT": "Italian",
+              "ja_JP": "Japanese",
+              "ko_KR": "Korean",
+              "no_NO": "Norwegian",
+              "pl_PL": "Polish",
+              "pt_PT": "Portuguese",
+              "pt_BR": "Brazilian Portuguese",
+              "ro_RO": "Romanian",
+              "ru_RU": "Russian",
+              "zh_CN": "Simplified Chinese",
+              "es_ES": "Spanish",
+              "sv_SE": "Swedish",
+              "zh_TW": "Traditional Chinese",
+              "tr_TR": "Turksih"}
+
+# Changeable if desired
+_default_language = "en_US"
+
 class APIError(Exception):
     def __init__(self, msg):
         self.msg = msg
@@ -24,6 +50,17 @@ class HttpTimeout(HttpError):
     def __init__(self, msg):
         self.msg = msg
         HttpError.__init__(self, msg)
+
+class LangError(APIError):
+    """ Base loc error class """
+    def __init__(self, lang, msg = None):
+        self.msg = lang + ": " + str(msg)
+        APIError.__init__(self, self.msg)
+
+class LangErrorUnsupported(LangError):
+    """ Raised for invalid languages passed to related calls """
+    def __init__(self, lang):
+        LangError.__init__(self, lang, "Unsupported")
 
 class json_request(object):
     """ Base class for API requests over HTTP returning JSON """
@@ -84,6 +121,31 @@ def get_api_key():
         raise APIError("API key not set")
 
     return _api_key
+
+def get_language(code = None):
+    """ Returns tuple of (code, label) for a given language.
+    raises LangErrorUnsupported if invalid, returns default if no code given """
+
+    lang = None
+
+    try:
+        if not code:
+            lang = (_default_language, _languages[_default_language])
+        else:
+            for k, v in _languages.iteritems():
+                lk = k.lower()
+                lc = code.lower()
+
+                if (lk == lc or
+                    lk.find('_') != -1 and lk.split('_')[0] == lc):
+                    lang = (k, v)
+    except KeyError:
+        pass
+
+    if not lang:
+        raise LangErrorUnsupported(code)
+    else:
+        return lang
 
 def set_api_key(key):
     global _api_key

@@ -69,7 +69,7 @@ except:
 
 steam.set_api_key(testkey)
 
-test_schema = steamodd_game_module.item_schema(lang = "en")
+test_schema = steamodd_game_module.item_schema()
 
 try:
     tests[testmode]()

@@ -758,10 +758,10 @@ class backpack(base.json_request):
 
     def nextitem(self):
         iterindex = 0
-        iterdata = self._inventory_object["result"]["items"]
+        iterdata = self._items
 
         while(iterindex < len(iterdata)):
-            data = self._schema.create_item(iterdata[iterindex])
+            data = iterdata[iterindex]
             iterindex += 1
             yield data
 
@@ -772,6 +772,7 @@ class backpack(base.json_request):
         self._schema = oschema
         self._app_id = str(appid)
         self._profile = sid
+        self._items = []
 
         if not isinstance(self._profile, base.user.profile):
             self._profile = base.user.profile(self._profile)
@@ -796,8 +797,10 @@ class backpack(base.json_request):
             raise Error("Unknown error")
 
         itemlist = self._inventory_object["result"]["items"]
-        if len(itemlist) and itemlist[0] == None:
-            self._inventory_object["result"]["items"] = []
+        for item in itemlist:
+            if not item: continue
+
+            self._items.append(self._schema.create_item(item))
 
 class asset_item:
     def __init__(self, asset, catalog):

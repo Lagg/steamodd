@@ -180,7 +180,7 @@ class item_attribute(base.items.item_attribute):
     def get_value_min(self):
         return 0
     def get_value_type(self):
-        return "value_is_additive"
+        return self._attribute.get("type", "additive")
 
     def __init__(self, attribute):
         super(item_attribute, self).__init__(attribute)
@@ -241,15 +241,23 @@ class item(base.items.item):
         return self._item.get("type", "")
 
     def get_image(self, size):
+        """ If not one of the standard ITEM_* constants,
+        the given string will be used in the request.
+
+        Syntax is W[f]xH[f] where f is a flag scaling up to the
+        given dimension until at the max size, and padding the rest with alpha/transparency """
         smallicon = self._item.get("icon_url")
 
         if not smallicon:
             return ""
 
-        if size == self.ITEM_IMAGE_SMALL:
-            return self._cdn_url + smallicon + "/96x96"
-        elif size == self.ITEM_IMAGE_LARGE:
-            return self._cdn_url + smallicon + "/512x512"
+        fullurl = self._cdn_url + smallicon
+        dims = size
+
+        if size == self.ITEM_IMAGE_SMALL: dims = "96fx96f"
+        elif size == self.ITEM_IMAGE_LARGE: dims = "512fx512f"
+
+        return fullurl + '/' + dims
 
     def get_id(self):
         return long(self._item["id"])

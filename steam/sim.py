@@ -132,7 +132,11 @@ class backpack(base.json_request):
         for sec in downloadlist:
             super(backpack, self).__init__(url + sec)
 
-            inventorysection = self._deserialize(self._download())
+            json = self._download()
+
+            if not json: raise base.HttpError("Empty inventory information returned")
+
+            inventorysection = self._deserialize(json)
 
             itemdescs = inventorysection["rgDescriptions"]
             for k, v in inventorysection["rgInventory"].iteritems():

@@ -16,7 +16,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
-import items, urllib2, json, base, time, re
+import items, urllib2, json, base, time
 
 _APP_ID = 440
 
@@ -49,13 +49,7 @@ class item_schema(items.schema):
                 (8, "Spy")
                 ])
 
-
 class backpack(items.backpack):
-    def _deserialize(self, obj):
-        # WORKAROUND for truncated float_values in custom texture lo attributes
-        customtexturesub = re.sub('(\s*"float_value": -?\d+)\.[^\d]', '\\1.0', obj)
-        return json.loads(customtexturesub)
-
     def __init__(self, sid, appid = None, schema = None):
         if not schema: schema = item_schema()
         items.backpack.__init__(self, appid or _APP_ID, sid, schema)

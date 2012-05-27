@@ -1,4 +1,4 @@
-import os, json, urllib2, socket
+import os, json, urllib2, socket, re
 
 _api_key = None
 
@@ -27,6 +27,11 @@ _languages = {"da_DK": "Danish",
 
 # Changeable if desired
 _default_language = "en_US"
+
+# Don't remember where this came from, or even if I wrote it. But thank
+# you unnamed hero, or me. Not sure.
+control_chars = ''.join(map(unichr, range(0,32) + range(127,160)))
+replace_exp = re.compile('[' + re.escape(control_chars) + ']')
 
 class APIError(Exception):
     def __init__(self, msg):
@@ -103,7 +108,13 @@ class json_request(object):
         return res.read()
 
     def _deserialize(self, obj):
-        return json.loads(obj)
+        try:
+            return json.loads(obj)
+        except ValueError:
+            return json.loads(self._strip_control_chars(obj).decode("utf-8", errors = "replace"))
+
+    def _strip_control_chars(self, s):
+        return replace_exp.sub('', s)
 
     def get_last_modified(self):
         """ Returns the last-modified header value """

@@ -141,7 +141,7 @@ class backpack(base.json_request):
             itemdescs = inventorysection["rgDescriptions"]
             for k, v in inventorysection["rgInventory"].iteritems():
                 fullitem = dict(v.items() + itemdescs[v["classid"] + "_" + v["instanceid"]].items())
-                finalitem = item(fullitem)
+                finalitem = item(fullitem, contexts[sec])
                 self._inventory_object.append(finalitem)
 
 class item_attribute(base.items.item_attribute):
@@ -190,6 +190,10 @@ class item_attribute(base.items.item_attribute):
         super(item_attribute, self).__init__(attribute)
 
 class item(base.items.item):
+    def get_category_name(self):
+        """ Returns the category name that the item is a member of """
+        return self._ctx.get("name", self._ctx["id"])
+
     def get_color(self):
         """ Returns the color associated with the item as a hex RGB tuple """
         return self._item.get("background_color")
@@ -309,8 +313,9 @@ class item(base.items.item):
 
         return cats
 
-    def __init__(self, theitem):
+    def __init__(self, theitem, context):
         self._cdn_url = "http://cdn.steamcommunity.com/economy/image/"
+        self._ctx = context
 
         super(item, self).__init__(None, theitem)
 

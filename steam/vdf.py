@@ -67,7 +67,7 @@ def scan(stream):
     return deque(stack)
 
 def cast_to_num(string):
-    num = re.match("(-?\d+\.?\d*)", string, flags = re.UNICODE)
+    num = re.match("^\s*(-?\d+\.?\d*)\s*$", string, flags = re.UNICODE)
     if num:
         catch = num.groups()[0]
         if catch.find('.') != -1: return float(catch)

@@ -81,12 +81,12 @@ class json_request(object):
         """ Standard download, does no additional checks """
         req = urllib2.Request(self._get_download_url(), headers = {"User-Agent": self._user_agent})
 
-        try: res = urllib2.urlopen(req)
+        try:
+            res = urllib2.urlopen(req)
+            self._last_modified = res.headers.get("last-modified")
+            return res.read()
         except urllib2.HTTPError as E: raise HttpError(str(E.getcode()))
         except socket.timeout: raise HttpTimeout("Socket level timeout")
-
-        self._last_modified = res.headers.get("last-modified")
-        return res.read()
 
     def _download_cached(self):
         """ Uses self.last_modified """
@@ -95,6 +95,7 @@ class json_request(object):
 
         try:
             res = urllib2.urlopen(req)
+            return res.read()
         except urllib2.HTTPError as e:
             ecode = e.getcode()
             if ecode == 304:
@@ -104,8 +105,6 @@ class json_request(object):
                 raise HttpError(str(ecode))
         except socket.timeout:
             raise HttpTimeout("Socket level timeout")
-
-        return res.read()
 
     def _deserialize(self, obj):
         try:

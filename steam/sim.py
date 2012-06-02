@@ -98,6 +98,9 @@ class backpack(base.json_request):
     def __iter__(self):
         return self.nextitem()
 
+    def __len__(self):
+        return len(self._inventory_object)
+
     def __init__(self, app, schema = None, section = None):
         """ app: A valid app object as returned by backpack_context.get_app
         section: The inventory section to retrieve, if not given all items will be returned """

@@ -756,6 +756,9 @@ class backpack(base.json_request):
     def __iter__(self):
         return self.nextitem()
 
+    def __len__(self):
+        return len(self._items)
+
     def nextitem(self):
         iterindex = 0
         iterdata = self._items

@@ -734,11 +734,7 @@ class item_attribute(object):
     def __init__(self, attribute):
         self._attribute = attribute
 
-        # Workaround until Valve gives sane values
-        if (self.get_value_type() != "date" and
-            self.get_value() > 1000000000 and
-            "float_value" in self._attribute and
-            not self.get_name().startswith("custom texture")):
+        if not self._attribute.get("stored_as_integer") and "float_value" in self._attribute:
             self._attribute["value"] = self._attribute["float_value"]
 
 class backpack(base.json_request):

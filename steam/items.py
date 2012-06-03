@@ -453,8 +453,6 @@ class item(object):
         finalres = []
         ranktypes = self._schema.get_kill_types()
 
-        if not ranktypes:
-            return []
 
         for attr in self:
             for name, spec in eaterspecs.iteritems():
@@ -478,7 +476,7 @@ class item(object):
 
         for k in sorted(eaters.keys()):
             eater = eaters[k]
-            rank = ranktypes[eater.get("type", 0)]
+            rank = ranktypes.get(eater.get("type", 0), {"level_data": "KillEaterRanks", "type_name": "Kills"})
             finalres.append((rank["level_data"], rank["type_name"], eater.get("count"), eater["aid"]))
 
         return finalres
@@ -501,7 +499,10 @@ class item(object):
         else: eaterlines = eaterlines[0]
 
         ranksets = self._schema.get_kill_ranks()
-        rankset = ranksets[eaterlines[0]]
+        try:
+            rankset = ranksets[eaterlines[0]]
+        except KeyError:
+            rankset = [{"level": 0, "required_score": 0, "name": "Strange"}]
         realranknum = eaterlines[2]
         for rank in rankset:
             self._rank = rank

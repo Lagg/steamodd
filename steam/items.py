@@ -734,7 +734,7 @@ class item_attribute(object):
     def __init__(self, attribute):
         self._attribute = attribute
 
-        if "float_value" in self._attribute:
+        if "float_value" in self._attribute and self.get_value_type() != "date":
             fattr = self._attribute["float_value"]
             isint = self._attribute.get("stored_as_integer")
 

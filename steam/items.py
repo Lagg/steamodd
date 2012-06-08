@@ -734,8 +734,12 @@ class item_attribute(object):
     def __init__(self, attribute):
         self._attribute = attribute
 
-        if not self._attribute.get("stored_as_integer") and "float_value" in self._attribute:
-            self._attribute["value"] = self._attribute["float_value"]
+        if "float_value" in self._attribute:
+            fattr = self._attribute["float_value"]
+            isint = self._attribute.get("stored_as_integer")
+
+            if (not isint) or (isint and (round(fattr) == fattr) and fattr != 0.0):
+                self._attribute["value"] = fattr
 
 class backpack(base.json_request):
     """ Functions for reading player inventory """

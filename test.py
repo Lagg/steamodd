@@ -7,7 +7,7 @@ def print_item_list(items):
             print attr
 
 def bp_test():
-    test_pack = steamodd_game_module.backpack("stragglerastic", schema = test_schema)
+    test_pack = steamodd_game_module.backpack(steam.user.vanity_url("stragglerastic"), schema = test_schema)
     print_item_list(test_pack)
 
 def schema_test():
@@ -55,11 +55,11 @@ try:
     mod = "tf2"
     testmode = sys.argv[2]
     testkey = sys.argv[1]
+    modesep = testmode.rfind('-')
 
-    moded = testmode.split('-')
-    if len(moded) > 1:
-        mod = moded[1]
-        testmode = moded[0]
+    if modesep != -1:
+        mod = testmode[modesep + 1:]
+        testmode = testmode[:modesep]
 
     tests[testmode]
     steamodd_game_module = getattr(steam, mod)
@@ -71,7 +71,8 @@ steam.set_api_key(testkey)
 
 test_schema = steamodd_game_module.item_schema()
 
-try:
-    tests[testmode]()
-except KeyError:
+test = tests.get(testmode)
+if not test:
     sys.stderr.write(testmode + " is not a valid name, need one of " + ", ".join(tests) + "\n")
+else:
+    tests[testmode]()

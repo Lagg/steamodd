@@ -26,15 +26,27 @@ class UGCError(base.APIError):
 class user_ugc(base.json_request):
     def get_file_size(self):
         """ Size in bytes """
-        return self._data["size"]
+
+        return self._get("size")
 
     def get_local_filename(self):
         """ Local filename is what the user named it, not the URL """
-        return self._data["filename"]
+
+        return self._get("filename")
 
     def get_url(self):
         """ UGC link """
-        return self._data["url"]
+
+        return self._get("url")
+
+    def _deserialize(self, data):
+        res = super(user_ugc, self)._deserialize(data)
+
+        if "status" in res:
+            if res["status"]["code"] == 9:
+                raise UGCError("Code 9")
+
+        return res["data"]
 
     def __init__(self, appid, ugcid64, user = None):
         uid = None
@@ -49,17 +61,3 @@ class user_ugc(base.json_request):
         if uid: url += "&steamid=" + str(uid)
 
         super(user_ugc, self).__init__(url)
-
-        try:
-            details = self._deserialize(self._download())
-        except base.HttpError as E:
-            # Throws when the ID isn't malformed, but wrong for the user.
-            # ... Or some other nonsense
-            raise UGCError("HTTP " + str(E))
-
-        if "status" in details:
-            if details["status"]["code"] == 9:
-                raise UGCError("Code 9")
-
-        self._data = details["data"]
-

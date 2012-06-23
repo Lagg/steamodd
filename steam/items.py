@@ -16,7 +16,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
-import json, os, urllib2, time, base, operator, re
+import json, os, time, base, operator, re
 
 try:
     from collections import OrderedDict
@@ -49,6 +49,11 @@ class AssetError(Error):
         self.msg = msg
         self.asset = asset
 
+class BackpackError(Error):
+    def __init__(self, msg):
+        Error.__init__(self, msg)
+        self.msg = msg
+
 class schema(base.json_request):
     """ The base class for the item schema. """
 
@@ -66,14 +71,19 @@ class schema(base.json_request):
         """ Returns the attribute definition dict of a given attribute
         id, can be the name or the integer ID """
 
-        attrdef = self._attributes.get(attrid)
-        if not attrdef: return self._attributes.get(self._attribute_names.get(attrid.lower()))
+        obj = self._get()
+        attrs = obj["attributes"]
+        attrdef = attrs.get(attrid)
+
+        if not attrdef: return attrs.get(obj["attribute_names"].get(attrid.lower()))
         else: return attrdef
 
     def get_attributes(self):
         """ Returns all attributes in the schema """
 
-        return [item_attribute(attr) for attr in sorted(self._attributes.values(),
+        attrs = self._get("attributes")
+
+        return [item_attribute(attr) for attr in sorted(attrs.values(),
                                                         key = operator.itemgetter("defindex"))]
 
     def get_qualities(self):
@@ -83,23 +93,23 @@ class schema(base.json_request):
         id is the numerical quality (e.g. 8)
         str is the non-pretty string (e.g. developer) """
 
-        return self._qualities
+        return self._get("qualities")
 
     def get_particle_systems(self):
         """ Returns a dictionary of particle system dicts keyed by ID """
 
-        return self._particles
+        return self._get("particles")
 
     def get_kill_ranks(self):
         """ Returns a list of ranks for weapons with kill tracking """
         
-        return self._item_ranks
+        return self._get("item_ranks")
 
     def get_kill_types(self):
         """ Returns a dict with keys that are the value of
         the kill eater type attribute and values that are the name
         string """
-        return self._kill_types
+        return self._get("kill_types")
 
     def get_classes(self):
         """ Returns a hopefully ordered dict of classes and identifiers.
@@ -110,14 +120,68 @@ class schema(base.json_request):
     def get_origin_name(self, origin):
         """ Returns a localized origin name for a given ID """
 
-        return self._origins[int(origin)]["name"]
+        return self._get("origins")[int(origin)]["name"]
+
+    def _deserialize(self, data):
+        res = super(schema, self)._deserialize(data)
+        obj = {}
+
+        if not res or res["result"]["status"] != 1:
+            raise SchemaError("Schema error", res["result"]["status"])
+
+        attributes = {}
+        attribute_names = {}
+        for attrib in res["result"]["attributes"]:
+            # WORKAROUND: Valve apparently does case insensitive lookups on these, so we must match it
+            attributes[attrib["defindex"]] = attrib
+            attribute_names[attrib["name"].lower()] = attrib["defindex"]
+        obj["attributes"] = attributes
+        obj["attribute_names"] = attribute_names
+
+        items = {}
+        for item in res["result"]["items"]:
+            items[item["defindex"]] = item
+        obj["items"] = items
+
+        qualities = {}
+        for k,v in res["result"]["qualities"].iteritems():
+            aquality = {"id": v, "str": k, "prettystr": k}
+
+            try: aquality["prettystr"] = res["result"]["qualityNames"][aquality["str"]]
+            except KeyError: pass
+
+            qualities[v] = aquality
+        obj["qualities"] = qualities
+
+        particles = {}
+        for particle in res["result"].get("attribute_controlled_attached_particles", []):
+            particles[particle["id"]] = particle
+        obj["particles"] = particles
+
+        item_ranks = {}
+        for rankset in res["result"].get("item_levels", []):
+            item_ranks[rankset["name"]] = rankset["levels"]
+        obj["item_ranks"] = item_ranks
+
+        kill_types = {}
+        for killtype in res["result"].get("kill_eater_score_types", []):
+            kill_types[killtype["type"]] = killtype
+        obj["kill_types"] = kill_types
+
+        origins = {}
+        for origin in res["result"].get("originNames", []):
+            origins[origin["origin"]] = origin
+        obj["origins"] = origins
+
+        return obj
 
     def __iter__(self):
         return self.nextitem()
 
     def nextitem(self):
+        obj = self._get()
         iterindex = 0
-        iterdata = self._items.values()
+        iterdata = obj["items"].values()
         iterdata.sort(key = operator.itemgetter("defindex"))
 
         while(iterindex < len(iterdata)):
@@ -126,14 +190,16 @@ class schema(base.json_request):
             yield data
 
     def __getitem__(self, key):
+        obj = self._get()
         realkey = None
         try: realkey = key["defindex"]
         except: realkey = key
 
-        return self.create_item(self._items[realkey])
+        return self.create_item(obj["items"][realkey])
 
     def __len__(self):
-        return len(self._items.values())
+        obj = self._get()
+        return len(obj["items"].values())
 
     def __init__(self, appid, lang = None, lm = None):
         """ schema will be used to initialize the schema if given,
@@ -147,51 +213,6 @@ class schema(base.json_request):
         super(schema, self).__init__("http://api.steampowered.com/IEconItems_" + self._app_id +
                                      "/GetSchema/v0001/?key=" + base.get_api_key() + "&format=json&language=" + self._language,
                                      last_modified = lm)
-
-        downloadfunc = None
-        if lm: downloadfunc = self._download_cached
-        else: downloadfunc = self._download
-
-        res = self._deserialize(downloadfunc())
-
-        if not res or res["result"]["status"] != 1:
-            raise SchemaError("Schema error", res["result"]["status"])
-
-        self._attributes = {}
-        self._attribute_names = {}
-        for attrib in res["result"]["attributes"]:
-            # WORKAROUND: Valve apparently does case insensitive lookups on these, so we must match it
-            self._attributes[attrib["defindex"]] = attrib
-            self._attribute_names[attrib["name"].lower()] = attrib["defindex"]
-
-        self._items = {}
-        for item in res["result"]["items"]:
-            self._items[item["defindex"]] = item
-
-        self._qualities = {}
-        for k,v in res["result"]["qualities"].iteritems():
-            aquality = {"id": v, "str": k, "prettystr": k}
-
-            try: aquality["prettystr"] = res["result"]["qualityNames"][aquality["str"]]
-            except KeyError: pass
-
-            self._qualities[v] = aquality
-
-        self._particles = {}
-        for particle in res["result"].get("attribute_controlled_attached_particles", []):
-            self._particles[particle["id"]] = particle
-
-        self._item_ranks = {}
-        for rankset in res["result"].get("item_levels", []):
-            self._item_ranks[rankset["name"]] = rankset["levels"]
-
-        self._kill_types = {}
-        for killtype in res["result"].get("kill_eater_score_types", []):
-            self._kill_types[killtype["type"]] = killtype
-
-        self._origins = {}
-        for origin in res["result"].get("originNames", []):
-            self._origins[origin["origin"]] = origin
 
 class item(object):
     """ Stores a single TF2 backpack item """
@@ -594,7 +615,7 @@ class item(object):
         # Assume it isn't a schema item if it doesn't have a name
         if schema and "item_name" not in self._item:
             try:
-                sitem = schema._items[self._item["defindex"]]
+                sitem = schema._get("items")[self._item["defindex"]]
                 self._schema_item = sitem
             except KeyError:
                 raise ItemError("Item has no corresponding schema entry")
@@ -748,7 +769,9 @@ class backpack(base.json_request):
         """ Returns the total number of cells in the backpack.
         This can be used to determine if the user has bought a backpack
         expander. """
-        return self._inventory_object["result"].get("num_backpack_slots", 0)
+
+        cells = self._get("cells")
+        return cells
 
     def set_schema(self, schema):
         """ Sets a new schema to be used on inventory items """
@@ -758,53 +781,63 @@ class backpack(base.json_request):
         return self.nextitem()
 
     def __len__(self):
-        return len(self._items)
+        items = self._get("items")
+        return len(items)
 
     def nextitem(self):
         iterindex = 0
-        iterdata = self._items
+        iterdata = self._get("items")
 
         while(iterindex < len(iterdata)):
             data = iterdata[iterindex]
             iterindex += 1
             yield data
 
-    def __init__(self, appid, sid, oschema = None):
+    def _deserialize(self, data):
+        res = super(backpack, self)._deserialize(data)
+        obj = {}
+
+        status = res["result"]["status"]
+
+        if status == 8:
+            raise BackpackError("Bad SteamID64 given")
+        elif status == 15:
+            raise BackpackError("Profile set to private")
+        elif status != 1:
+            raise BackpackError("Unknown error")
+
+        items = res["result"]["items"]
+        obj = {
+            "items": [self._schema.create_item(item) for item in items if item],
+            "cells": res.get("num_backpack_slots", len(items))
+            }
+
+        return obj
+
+    def _get(self, value = None):
+        if not self._schema:
+            self._schema = schema()
+
+        return super(backpack, self)._get(value)
+
+    def __init__(self, appid, profile, oschema = None):
         """ Loads the backpack of user sid if given,
         generates a fresh schema object if one is not given. """
 
         self._schema = oschema
         self._app_id = str(appid)
-        self._profile = sid
-        self._items = []
 
-        if not isinstance(self._profile, base.user.profile):
-            self._profile = base.user.profile(self._profile)
+        try:
+            sid = profile.get_id64()
+        except:
+            sid = str(profile)
 
         url = ("http://api.steampowered.com/IEconItems_{0}/GetPlayerItems/v0001/?key={1}&format=json&SteamID={2}").format(
             self._app_id,
             base.get_api_key(),
-            self._profile.get_id64())
+            sid)
 
         super(backpack, self).__init__(url)
-
-        if not self._schema:
-            self._schema = schema()
-
-        self._inventory_object = self._deserialize(self._download())
-        result = self._inventory_object["result"]["status"]
-        if result == 8:
-            raise Error("Bad SteamID64 given")
-        elif result == 15:
-            raise Error("Profile set to private")
-        elif result != 1:
-            raise Error("Unknown error")
-
-        itemlist = self._inventory_object["result"]["items"]
-        for item in itemlist:
-            if not item: continue
-
-            self._items.append(self._schema.create_item(item))
 
 class asset_item:
     def __init__(self, asset, catalog):
@@ -821,7 +854,7 @@ class asset_item:
         """ Returns a dict containing tags and their localized labels as values """
         tags = {}
         for k in self._asset.get("tags"):
-            tags[k] = self._catalog._tag_map.get(k, k)
+            tags[k] = self._catalog.get_tag_map().get(k, k)
         return tags
 
 
@@ -833,7 +866,7 @@ class asset_item:
 
         asset = self._asset
         price = None
-        currency = self._catalog._currency
+        currency = self._catalog.get_currency()
         pricedict = asset["prices"]
 
         if nonsale: pricedict = asset.get("original_prices", asset["prices"])
@@ -856,23 +889,57 @@ class asset_item:
 class assets(base.json_request):
     """ Class for building asset catalogs """
 
+    def get_currency(self):
+        """ Returns the currency, this will be None if no
+        preference is set """
+
+        return self._currency
+
+    def get_tag_map(self):
+        """ Returns a dict containing internal tag names and
+        their labels """
+
+        return self._get("tags")
+
     def __getitem__(self, key):
+        assets = self._get("assets")
+
         try:
-            return self._assets[str(key.get_schema_id())]
+            return assets[str(key.get_schema_id())]
         except:
-            return self._assets[str(key)]
+            return assets[str(key)]
 
     def __iter__(self):
         return self._nextitem()
 
     def _nextitem(self):
-        data = sorted(self._assets.values(), key = asset_item.get_name)
+        assets = self._get("assets")
+        data = sorted(assets.values(), key = asset_item.get_name)
         iterindex = 0
 
         while iterindex < len(data):
             ydata = data[iterindex]
             iterindex += 1
             yield ydata
+
+    def _deserialize(self, data):
+        obj = {"assets": {}}
+        res = super(assets, self)._deserialize(data)
+
+        if "result" not in res: raise AssetError("Bad asset list")
+        else: res = res["result"]
+
+        if not res.get("success", False): raise AssetError("Asset server error")
+
+        try:
+            obj["tags"] = res["tags"]
+
+            for asset in res["assets"]:
+                obj["assets"][asset["name"]] = asset_item(asset, self)
+        except KeyError as E:
+            raise AssetError("Missing key in asset catalog: " + str(E))
+
+        return obj
 
     def __init__(self, appid, lang = None, currency = None, lm = None):
         """ lang: Language of asset tags, defaults to english
@@ -889,21 +956,3 @@ class assets(base.json_request):
         if self._currency: url += "&currency=" + self._currency
 
         super(assets, self).__init__(url, lm)
-
-        downloadfunc = None
-        if lm: downloadfunc = self._download_cached
-        else: downloadfunc = self._download
-
-        res = self._deserialize(downloadfunc())
-
-        try:
-            adict = self._deserialize(self._download())["result"]
-            if not adict.get("success", False):
-                raise AssetError("Server failed to return catalog")
-
-            self._tag_map = adict["tags"]
-            self._assets = {}
-            for asset in adict["assets"]:
-                self._assets[asset["name"]] = asset_item(asset, self)
-        except KeyError as E:
-            raise AssetError("Bad asset list")

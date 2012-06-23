@@ -1,27 +1,8 @@
-from HTMLParser import HTMLParser
 from xml.sax import saxutils
 import re
 import json
 import base
-
-class scriptParser(HTMLParser):
-    def __init__(self):
-        HTMLParser.__init__(self)
-        self._currentTag = None
-
-    def handle_starttag(self, tag, attrs):
-        self._currentTag = tag
-
-    def handle_data(self, data):
-        if self._currentTag == "script":
-            ctx = re.match("var g_rgAppContextData = (.+);", data.strip())
-            if ctx:
-                self._ctxJSON = json.loads(ctx.groups()[0])
-            else:
-                raise base.user.ProfileError("No inventory information available")
-
-    def get_inventory_json(self):
-        return self._ctxJSON
+import pycurl
 
 class backpack_context(base.json_request):
     """ Reads in inventory contexts and other information
@@ -34,9 +15,9 @@ class backpack_context(base.json_request):
         res = None
 
         try:
-            res = self._contexts[keystr]
+            res = self._get(keystr)
         except KeyError:
-            for k, v in self._contexts.iteritems():
+            for k, v in self._get().iteritems():
                 if "name" in v and v["name"].lower() == keystr.lower():
                     res = v
                     break
@@ -48,16 +29,14 @@ class backpack_context(base.json_request):
     def get_app_list(self):
         """ Returns a list of valid app IDs """
 
-        return self._contexts.keys()
+        return self._get().keys()
 
     def _deserialize(self, data):
-        # parser = scriptParser()
-        # parser.feed(data)
-
-        # return parser.get_inventory_json()
         contexts = re.search("var g_rgAppContextData = (.+);", data)
-        if contexts:
+        try:
             return json.loads(contexts.groups()[0])
+        except:
+            raise base.items.BackpackError("No inventory information available for this user")
 
     def __getitem__(self, key):
         res = self.get_app(key)
@@ -67,28 +46,23 @@ class backpack_context(base.json_request):
         return res
 
     def __init__(self, user):
+        try:
+            sid = user.get_id64()
+        except:
+            sid = user
 
-        if not isinstance(user, base.user.profile):
-            self._profile = base.user.profile(user)
-        else:
-            self._profile = user
-
-        url = "http://steamcommunity.com/profiles/{0}/inventory/".format(self._profile.get_id64())
+        url = "http://steamcommunity.com/profiles/{0}/inventory/".format(sid)
 
         super(backpack_context, self).__init__(url)
-
-        self._contexts = self._deserialize(self._download())
-        if not self._contexts:
-            raise base.user.ProfileError("No inventory information available for " + self._profile.get_persona())
 
 class backpack(base.json_request):
     def get_total_cells(self):
         """ Returns the total amount of "cells" which in this case is just an amount of items """
-        return self._total_cells
+        return self._get("cells")
 
     def nextitem(self):
         iterindex = 0
-        iterdata = self._inventory_object
+        iterdata = self._get("items")
 
         while iterindex < len(iterdata):
             data = iterdata[iterindex]
@@ -99,43 +73,41 @@ class backpack(base.json_request):
         return self.nextitem()
 
     def __len__(self):
-        return len(self._inventory_object)
+        return len(self._get("items"))
 
-    def __init__(self, app, schema = None, section = None):
-        """ app: A valid app object as returned by backpack_context.get_app
-        section: The inventory section to retrieve, if not given all items will be returned """
+    def _get(self, value = None):
+        if self._object:
+            if value: return self._object[value]
+            else: return self._object
 
-        self._inventory_object = []
-        self._ctx = app
-        user = None
-
-        if isinstance(app, str):
-            user = base.user.profile(app).get_id64()
-        elif isinstance(app, base.user.profile):
-            user = app.get_id64()
-
-        # TODO first mode selection if user is passed
-        try:
-            if user: self._ctx = backpack_context(user)[104700]
-        except KeyError:
-            raise base.items.ItemError("No SMNC inventory available for this user")
-
+        self._object = {"section": self._section, "cells": 0, "items": []}
+        section = self._get("section")
         downloadlist = []
         url = "{0}json/{1}/".format(self._ctx["base_url"], self._ctx["appid"])
         contexts = self._ctx["rgContexts"]
+        items = []
 
         if section != None:
             sec = str(section)
             downloadlist.append(sec)
-            self._total_cells = contexts[sec]["asset_count"]
+            self._object["cells"] = contexts[sec]["asset_count"]
         else:
             downloadlist = [str(k) for k in contexts.keys()]
-            self._total_cells = self._ctx["asset_count"]
+            self._object["cells"] = self._ctx["asset_count"]
+
+        downloader = base.json_request_multi(connsize = len(downloadlist))
 
         for sec in downloadlist:
-            super(backpack, self).__init__(url + sec)
+            req = base.json_request(url + sec)
+            req.section = sec
+            downloader.add(req)
 
-            json = self._download()
+        requests = downloader.download()
+        downloader.close()
+
+        for page in requests:
+            json = page._download()
+            sec = page.section
 
             if not json: raise base.HttpError("Empty inventory information returned")
 
@@ -145,7 +117,34 @@ class backpack(base.json_request):
             for k, v in inventorysection["rgInventory"].iteritems():
                 fullitem = dict(v.items() + itemdescs[v["classid"] + "_" + v["instanceid"]].items())
                 finalitem = item(fullitem, contexts[sec])
-                self._inventory_object.append(finalitem)
+                items.append(finalitem)
+
+        self._object["items"] = items
+
+        if value:
+            return self._object[value]
+        else:
+            return self._object
+
+    def __init__(self, app, schema = None, section = None):
+        """ app: A valid app object as returned by backpack_context.get_app
+        section: The inventory section to retrieve, if not given all items will be returned """
+
+        self._object = {}
+        self._section = section
+        self._ctx = app
+        user = None
+
+        try:
+            user = app.get_id64()
+        except AttributeError:
+            pass
+
+        # TODO first mode selection if user is passed
+        try:
+            if user: self._ctx = backpack_context(user)[104700]
+        except KeyError:
+            raise base.items.ItemError("No SMNC inventory available for this user")
 
 class item_attribute(base.items.item_attribute):
     def get_class(self):

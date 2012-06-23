@@ -16,7 +16,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
-import items, urllib2, json, base, time
+import items, json, base, time
 
 _APP_ID = 440
 
@@ -126,8 +126,9 @@ class golden_wrench(base.json_request):
         return self._nextitem()
 
     def _nextitem(self):
+        obj = self._get()
         iterindex = 0
-        data = sorted(set(self._idmap.values()), key = golden_wrench_item.get_craft_number)
+        data = sorted(set(obj.values()), key = golden_wrench_item.get_craft_number)
 
         while iterindex < len(data):
             ydata = data[iterindex]
@@ -135,7 +136,24 @@ class golden_wrench(base.json_request):
             yield ydata
 
     def __getitem__(self, key):
-        return self._idmap[key]
+        return self._get(key)
+
+    def _deserialize(self, data):
+        res = super(golden_wrench, self)._deserialize(data)
+        obj = {}
+
+        try:
+            wrenches = res["results"]["wrenches"]
+
+            for wrench in wrenches:
+                witem = golden_wrench_item(wrench)
+
+                obj[witem.get_craft_number()] = witem
+                obj[witem.get_id()] = witem
+        except Exception as E:
+            raise GoldenWrenchError("Failed to build wrench list: " + str(E))
+
+        return obj
 
     def __init__(self):
         """ Fetch the ever-useful and ever-changing wrench owner list """
@@ -143,14 +161,3 @@ class golden_wrench(base.json_request):
                + "v2/?key={1}&format=json").format(_APP_ID, base.get_api_key())
 
         super(golden_wrench, self).__init__(url)
-
-        try:
-            self._idmap = {}
-            for wrench in self._deserialize(self._download())["results"]["wrenches"]:
-                rw = golden_wrench_item(wrench)
-
-                self._idmap[rw.get_craft_number()] = rw
-                self._idmap[rw.get_id()] = rw
-
-        except Exception as E:
-            raise GoldenWrenchError("Failed to fetch wrench list: " + str(E))

@@ -109,7 +109,10 @@ class json_request(object):
             lm = self.get_last_modified()
             if lm: curl_sync.setopt(pycurl.HTTPHEADER, ["if-modified-since: " + lm])
 
-        curl_sync.perform()
+        try:
+            curl_sync.perform()
+        except pycurl.error as E:
+            raise HttpError(str(E))
 
         code = curl_sync.getinfo(pycurl.RESPONSE_CODE)
 

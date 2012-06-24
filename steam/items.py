@@ -809,7 +809,7 @@ class backpack(base.json_request):
         items = res["result"]["items"]
         obj = {
             "items": [self._schema.create_item(item) for item in items if item],
-            "cells": res.get("num_backpack_slots", len(items))
+            "cells": res["result"].get("num_backpack_slots", len(items))
             }
 
         return obj

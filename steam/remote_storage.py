@@ -48,6 +48,12 @@ class user_ugc(base.json_request):
 
         return res["data"]
 
+    def _get(self, value = None):
+        try:
+            return super(user_ugc, self)._get(value)
+        except base.APIError as E:
+            raise UGCError(str(E))
+
     def __init__(self, appid, ugcid64, user = None):
         uid = None
 

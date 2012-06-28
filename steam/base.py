@@ -91,7 +91,7 @@ class json_request(object):
         obj.setopt(pycurl.FOLLOWLOCATION, 1)
         obj.setopt(pycurl.NOSIGNAL, 1)
         obj.setopt(pycurl.CONNECTTIMEOUT, self._connect_timeout)
-        obj.setopt(pycurl.TIMEOUT, 30)
+        obj.setopt(pycurl.TIMEOUT, self._timeout)
 
         return obj
 
@@ -167,11 +167,12 @@ class json_request(object):
         """ Returns the last-modified header value """
         return self._last_modified
 
-    def __init__(self, url, last_modified = None):
+    def __init__(self, url, last_modified = None, timeout = 3, data_timeout = 15):
         self._last_modified = last_modified
         self._url = url
         self._user_agent = "Steamodd/2.0"
-        self._connect_timeout = 3
+        self._connect_timeout = timeout
+        self._timeout = data_timeout
         self._body = ""
         self._header = ""
         self._object = {}
@@ -204,6 +205,7 @@ class json_request_multi(object):
                 conn.setopt(pycurl.HEADERFUNCTION, req._set_header)
                 conn.setopt(pycurl.USERAGENT, req._user_agent)
                 conn.setopt(pycurl.CONNECTTIMEOUT, req._connect_timeout)
+                conn.setopt(pycurl.TIMEOUT, req._timeout)
 
                 conn.req = req
 

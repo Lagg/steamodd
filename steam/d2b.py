@@ -18,8 +18,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import items
 
-# Maybe time to change to 205790
-_APP_ID = 816
+_APP_ID = 205790
 
 class backpack(items.backpack):
     def __init__(self, sid, schema = None):

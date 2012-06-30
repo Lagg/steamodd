@@ -325,9 +325,6 @@ class item_schema(base.json_request):
     def __iter__(self):
         while False: yield None
 
-    def get_classes(self):
-        return {}
-
     def get_attributes(self):
         return []
 

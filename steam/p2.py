@@ -32,11 +32,6 @@ class item_schema(items.schema):
     def __init__(self, lang = None, lm = None):
         items.schema.__init__(self, _APP_ID, lang, lm)
 
-        self._class_map = items.MapDict([
-                (1<<0, "P-body"),
-                (1<<1, "Atlas")
-                ])
-
 class item(items.item):
     def get_full_item_name(self, prefixes = None):
         return items.item.get_full_item_name(self, None)
@@ -48,9 +43,9 @@ class item(items.item):
         inventory_token = self.get_inventory_token()
         classes = []
 
-        for k,v in self._schema.get_classes().iteritems():
-            if ((inventory_token & self.equipped_field) >> 16) & k:
-                classes.append(v)
+        equipped = ((inventory_token & self.equipped_field) >> 16)
+        if equipped == 3: classes = [1, 2]
+        elif equipped > 0: classes = [equipped]
 
         return classes
 

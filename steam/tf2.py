@@ -37,18 +37,6 @@ class item_schema(items.schema):
     def __init__(self, appid = None, lang = None, lm = None):
         items.schema.__init__(self, appid or _APP_ID, lang, lm)
 
-        self._class_map = items.MapDict([
-                (1, "Scout"),
-                (3, "Soldier"),
-                (7, "Pyro"),
-                (4, "Demoman"),
-                (6, "Heavy"),
-                (9, "Engineer"),
-                (5, "Medic"),
-                (2, "Sniper"),
-                (8, "Spy")
-                ])
-
 class backpack(items.backpack):
     def __init__(self, sid, appid = None, schema = None):
         if not schema: schema = item_schema()

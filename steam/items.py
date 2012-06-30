@@ -18,12 +18,6 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 import json, os, time, base, operator, re
 
-try:
-    from collections import OrderedDict
-    MapDict = OrderedDict
-except ImportError:
-    MapDict = dict
-
 class Error(Exception):
     def __init__(self, msg):
         Exception.__init__(self)
@@ -110,12 +104,6 @@ class schema(base.json_request):
         the kill eater type attribute and values that are the name
         string """
         return self._get("kill_types")
-
-    def get_classes(self):
-        """ Returns a hopefully ordered dict of classes and identifiers.
-        Only assume that the key is a class identifier and
-        the value is a user friendly string. """
-        return self._class_map
 
     def get_origin_name(self, origin):
         """ Returns a localized origin name for a given ID """
@@ -207,7 +195,6 @@ class schema(base.json_request):
         lm will be used to generate an HTTP If-Modified-Since header. """
 
         self._language = base.get_language(lang)[0]
-        self._class_map = MapDict()
         self._app_id = str(appid)
 
         super(schema, self).__init__("http://api.steampowered.com/IEconItems_" + self._app_id +
@@ -288,14 +275,13 @@ class item(object):
             return inventory_token & 0xFFFF
 
     def get_equipped_classes(self):
-        """ Returns a list of classes (see schema.get_classes values) """
+        """ Returns a list of classes """
         equipped = self._item.get("equipped")
-        classes = self._schema.get_classes()
 
         if not equipped: return []
 
         # Yes I'm stubborn enough to use this for a WORKAROUND
-        classes = set([classes.get(slot["class"], slot["class"]) for slot in
+        classes = set([slot["class"] for slot in
                        equipped if slot["class"] !=0 and slot["slot"] != 65535])
 
         return list(classes)
@@ -306,7 +292,7 @@ class item(object):
         sitem = self._schema_item
 
         try: classes = sitem["used_by_classes"]
-        except KeyError: classes = list(set(self._schema.get_classes().values()))
+        except KeyError: classes = self.get_equipped_classes()
 
         return classes
 

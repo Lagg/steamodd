@@ -331,5 +331,5 @@ class item_schema(base.json_request):
     def get_particle_systems(self):
         return {}
 
-    def __init__(self, lang = None, lm = None):
+    def __init__(self, **kwargs):
         self._app_id = 0

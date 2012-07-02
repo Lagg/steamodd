@@ -34,8 +34,8 @@ class item_schema(items.schema):
     def create_item(self, oitem):
         return item(self, oitem)
 
-    def __init__(self, appid = None, lang = None, lm = None):
-        items.schema.__init__(self, appid or _APP_ID, lang, lm)
+    def __init__(self, appid = None, **kwargs):
+        items.schema.__init__(self, appid or _APP_ID, **kwargs)
 
 class backpack(items.backpack):
     def __init__(self, sid, appid = None, schema = None):
@@ -53,8 +53,8 @@ class item(items.item):
         items.item.__init__(self, schema, item)
 
 class assets(items.assets):
-    def __init__(self, appid = None, lang = None, currency = None, lm = None):
-        items.assets.__init__(self, appid or _APP_ID, lang, currency, lm)
+    def __init__(self, appid = None, **kwargs):
+        items.assets.__init__(self, appid or _APP_ID, **kwargs)
 
 class golden_wrench_item:
     def get_craft_date(self):

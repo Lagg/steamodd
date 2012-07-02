@@ -26,5 +26,5 @@ class backpack(items.backpack):
         items.backpack.__init__(self, _APP_ID, sid, schema)
 
 class item_schema(items.schema):
-    def __init__(self, lang = None, lm = None):
-        items.schema.__init__(self, _APP_ID, lang, lm)
+    def __init__(self, **kwargs):
+        items.schema.__init__(self, _APP_ID, **kwargs)

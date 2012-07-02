@@ -29,8 +29,8 @@ class item_schema(items.schema):
     def create_item(self, oitem):
         return item(self, oitem)
 
-    def __init__(self, lang = None, lm = None):
-        items.schema.__init__(self, _APP_ID, lang, lm)
+    def __init__(self, **kwargs):
+        items.schema.__init__(self, _APP_ID, **kwargs)
 
 class item(items.item):
     def get_full_item_name(self, prefixes = None):

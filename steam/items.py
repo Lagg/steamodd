@@ -189,7 +189,7 @@ class schema(base.json_request):
         obj = self._get()
         return len(obj["items"].values())
 
-    def __init__(self, appid, lang = None, lm = None):
+    def __init__(self, appid, lang = None, **kwargs):
         """ schema will be used to initialize the schema if given,
         lang can be any ISO language code.
         lm will be used to generate an HTTP If-Modified-Since header. """
@@ -199,7 +199,7 @@ class schema(base.json_request):
 
         super(schema, self).__init__("http://api.steampowered.com/IEconItems_" + self._app_id +
                                      "/GetSchema/v0001/?key=" + base.get_api_key() + "&format=json&language=" + self._language,
-                                     last_modified = lm)
+                                     **kwargs)
 
 class item(object):
     """ Stores a single TF2 backpack item """
@@ -927,7 +927,7 @@ class assets(base.json_request):
 
         return obj
 
-    def __init__(self, appid, lang = None, currency = None, lm = None):
+    def __init__(self, appid, lang = None, currency = None, **kwargs):
         """ lang: Language of asset tags, defaults to english
         currency: The iso 4217 currency code, returns all currencies by default """
 
@@ -941,4 +941,4 @@ class assets(base.json_request):
                                                                    self._app_id))
         if self._currency: url += "&currency=" + self._currency
 
-        super(assets, self).__init__(url, lm)
+        super(assets, self).__init__(url, **kwargs)

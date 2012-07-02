@@ -25,8 +25,8 @@ class item_schema(tf2.item_schema):
         # WORKAROUND garbage characters
         return tf2.item_schema._download(self, *args, **kwargs).replace("\xc4=", "Engineer")
 
-    def __init__(self, lang = None, lm = None):
-        tf2.item_schema.__init__(self, _APP_ID, lang, lm)
+    def __init__(self, **kwargs):
+        tf2.item_schema.__init__(self, _APP_ID, **kwargs)
 
 class backpack(tf2.backpack):
     def __init__(self, sid, schema = None):

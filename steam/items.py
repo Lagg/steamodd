@@ -126,13 +126,10 @@ class schema(base.json_request):
         obj["attributes"] = attributes
         obj["attribute_names"] = attribute_names
 
-        items = {}
-        for item in res["result"]["items"]:
-            items[item["defindex"]] = item
-        obj["items"] = items
+        obj["items"] = dict([(item["defindex"], item) for item in res["result"]["items"]])
 
         qualities = {}
-        for k,v in res["result"]["qualities"].iteritems():
+        for k, v in res["result"]["qualities"].iteritems():
             aquality = {"id": v, "str": k, "prettystr": k}
 
             try: aquality["prettystr"] = res["result"]["qualityNames"][aquality["str"]]
@@ -141,25 +138,17 @@ class schema(base.json_request):
             qualities[v] = aquality
         obj["qualities"] = qualities
 
-        particles = {}
-        for particle in res["result"].get("attribute_controlled_attached_particles", []):
-            particles[particle["id"]] = particle
-        obj["particles"] = particles
+        obj["particles"] = dict([(particle["id"], particle) for particle in
+                                 res["result"].get("attribute_controlled_attached_particles", [])])
 
-        item_ranks = {}
-        for rankset in res["result"].get("item_levels", []):
-            item_ranks[rankset["name"]] = rankset["levels"]
-        obj["item_ranks"] = item_ranks
+        obj["item_ranks"] = dict([(rankset["name"], rankset["levels"]) for rankset in
+                                  res["result"].get("item_levels", [])])
 
-        kill_types = {}
-        for killtype in res["result"].get("kill_eater_score_types", []):
-            kill_types[killtype["type"]] = killtype
-        obj["kill_types"] = kill_types
+        obj["kill_types"] = dict([(killtype["type"], killtype) for killtype in
+                                  res["result"].get("kill_eater_score_types", [])])
 
-        origins = {}
-        for origin in res["result"].get("originNames", []):
-            origins[origin["origin"]] = origin
-        obj["origins"] = origins
+        obj["origins"] = dict([(origin["origin"], origin) for origin in
+                               res["result"].get("originNames", [])])
 
         return obj
 
@@ -457,7 +446,6 @@ class item(object):
         eaterspecs = {"type": "^kill eater user score type ?(?P<b>\d*)$|^kill eater score type ?(?P<a>\d*)$",
                       "count": "^kill eater user ?(?P<b>\d*)$|^kill eater ?(?P<a>\d*)$"}
         eaters = {}
-        finalres = []
         ranktypes = self._schema.get_kill_types()
 
 
@@ -481,12 +469,15 @@ class item(object):
                     eaters[matchid][name] = value
                     eaters[matchid]["aid"] = attr.get_id()
 
-        for k in sorted(eaters.keys()):
-            eater = eaters[k]
-            rank = ranktypes.get(eater.get("type", 0), {"level_data": "KillEaterRanks", "type_name": "Kills"})
-            finalres.append((rank["level_data"], rank["type_name"], eater.get("count"), eater["aid"]))
+        eaterlist = []
+        for key in eaters.keys():
+            eater = eaters[key]
+            count = eater.get("count")
 
-        return finalres
+            if count != None:
+                rank = ranktypes.get(eater.get("type", 0), {"level_data": "KillEaterRanks", "type_name": "Count"})
+                eaterlist.append((rank["level_data"], rank["type_name"], count, eater["aid"]))
+        return eaterlist
 
     def get_rank(self):
         """
@@ -520,11 +511,9 @@ class item(object):
 
     def get_styles(self):
         """ Returns all styles defined for the item """
-        styles = self._schema_item.get("styles")
+        styles = self._schema_item.get("styles", [])
 
-        if not styles: return []
-
-        return [style["name"] for style in styles]
+        return map(operator.itemgetter("name"), styles)
 
     def get_current_style_id(self):
         """ Returns the style ID of the item if it has one, this is used as an index """
@@ -542,7 +531,7 @@ class item(object):
     def get_capabilities(self):
         """ Returns a list of capabilities, these are flags for what the item can do or be done with """
         caps = self._schema_item.get("capabilities")
-        if caps: return [k for k in caps.keys()]
+        if caps: return caps.keys()
         else: return []
 
     def get_tool_metadata(self):
@@ -838,10 +827,9 @@ class asset_item:
 
     def get_tags(self):
         """ Returns a dict containing tags and their localized labels as values """
-        tags = {}
-        for k in self._asset.get("tags"):
-            tags[k] = self._catalog.get_tag_map().get(k, k)
-        return tags
+
+        return dict([(t, self._catalog.get_tag_map().get(t, t)) for t in
+                     self._asset.get("tags")])
 
 
     def get_price(self, nonsale = False):
@@ -864,10 +852,7 @@ class asset_item:
             except KeyError:
                 return None
         else:
-            decprices = {}
-            for k, v in pricedict.iteritems():
-                decprices[k] = float(v)/100
-            return decprices
+            return dict([(p[0], float(p[1]) / 100) for p in pricedict.iteritems()])
 
     def get_name(self):
         return self._asset.get("name")
@@ -919,9 +904,8 @@ class assets(base.json_request):
 
         try:
             obj["tags"] = res["tags"]
-
-            for asset in res["assets"]:
-                obj["assets"][asset["name"]] = asset_item(asset, self)
+            obj["assets"] = dict([(asset["name"], asset_item(asset, self)) for asset in
+                                  res["assets"]])
         except KeyError as E:
             raise AssetError("Missing key in asset catalog: " + str(E))
 

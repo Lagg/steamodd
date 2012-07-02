@@ -3,6 +3,7 @@ import re
 import json
 import base
 import pycurl
+import operator
 
 class backpack_context(base.json_request):
     """ Reads in inventory contexts and other information
@@ -236,12 +237,8 @@ class item(base.items.item):
 
     def get_equipable_classes(self):
         # Needs supported tags
-        classes = []
-        
-        for tag in self._get_category("Class"):
-            classes.append(tag["name"])
 
-        return classes
+        return map(operator.itemgetter("name"), self._get_category("Class"))
 
     def get_schema_id(self):
         # Kind of unsupported (class ID possible?) TODO

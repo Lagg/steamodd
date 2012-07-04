@@ -126,7 +126,8 @@ class schema(base.json_request):
         obj["attributes"] = attributes
         obj["attribute_names"] = attribute_names
 
-        obj["items"] = dict([(item["defindex"], item) for item in res["result"]["items"]])
+        items = res["result"]["items"]
+        obj["items"] = dict(zip(map(operator.itemgetter("defindex"), items), items))
 
         qualities = {}
         for k, v in res["result"]["qualities"].iteritems():
@@ -138,17 +139,18 @@ class schema(base.json_request):
             qualities[v] = aquality
         obj["qualities"] = qualities
 
-        obj["particles"] = dict([(particle["id"], particle) for particle in
-                                 res["result"].get("attribute_controlled_attached_particles", [])])
+        particles = res["result"].get("attribute_controlled_attached_particles", [])
+        obj["particles"] = dict(zip(map(operator.itemgetter("id"), particles), particles))
 
-        obj["item_ranks"] = dict([(rankset["name"], rankset["levels"]) for rankset in
-                                  res["result"].get("item_levels", [])])
+        levels = res["result"].get("item_levels", [])
+        obj["item_ranks"] = dict(zip(map(operator.itemgetter("name"), levels),
+                                     map(operator.itemgetter("levels"), levels)))
 
-        obj["kill_types"] = dict([(killtype["type"], killtype) for killtype in
-                                  res["result"].get("kill_eater_score_types", [])])
+        killtypes = res["result"].get("kill_eater_score_types", [])
+        obj["kill_types"] = dict(zip(map(operator.itemgetter("type"), killtypes), killtypes))
 
-        obj["origins"] = dict([(origin["origin"], origin) for origin in
-                               res["result"].get("originNames", [])])
+        origins = res["result"].get("originNames", [])
+        obj["origins"] = dict(zip(map(operator.itemgetter("origin"), origins), origins))
 
         return obj
 

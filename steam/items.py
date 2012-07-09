@@ -287,6 +287,20 @@ class item(object):
 
         return classes
 
+    def get_equipped_slots(self, cid = None):
+        """ If cid is given returns the slot ID
+        for the class if it is equipped. Otherwise
+        returns a dict of class and slot IDs """
+
+        equipped = self._item.get("equipped")
+        if not equipped: return {}
+
+        slots = dict(zip(map(operator.itemgetter("class"), equipped),
+                         map(operator.itemgetter("slot"), equipped)))
+
+        if cid: return slots.get(cid)
+        else: return slots
+
     def get_schema_id(self):
         """ Returns the item's ID in the schema. """
         return self._item["defindex"]
@@ -324,7 +338,9 @@ class item(object):
 
     def get_slot(self):
         """ Returns the item's slot as a string, this includes "primary",
-        "secondary", "melee", and "head". Will be None if the the item is unequippable """
+        "secondary", "melee", and "head". Note that this is the slot
+        of the item as it appears in the schema, and not necessarily
+        the actual equipable slot. (see get_equipped_slots)"""
         return self._schema_item.get("item_slot")
 
     def get_class(self):

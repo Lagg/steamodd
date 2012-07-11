@@ -4,13 +4,8 @@ wrote to test out the new API and find stuff I could complain about.
 There are still some hacky spots but overall the modules should be
 usable in a project.
 
-Be sure to set your api key and language before using any of the module functions.
-It can be defined in the core config file which is currently in $XDG_CONFIG_HOME/
-steammod.rc.d/core.js in GNU/Linux systems and %APPDATA%/steammod/steammod.rc.d/core.js
-on Windows.
-
-You can also set it directly in your code by calling steam.set_api_key and
-steam.set_language
+Before most of the functions will complete successfully you will need to
+call steam.set_api_key and pass your key to it.
 
 If you don't have an API key it's easy to register for one at
 http://steamcommunity.com/dev/apikey
@@ -21,4 +16,7 @@ Contributing
 If you would like to contribute please send a patch with the change
 and your email and name in AUTHORS.
 
-Also consider joining http://steamcommunity.com/groups/gutc
+Third-party modules
+===================
+
+* pycurl - High performance HTTP requests

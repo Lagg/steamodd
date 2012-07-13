@@ -583,6 +583,7 @@ class item(object):
                 raise ItemError("Item has no corresponding schema entry")
         else:
             self._schema_item = item
+            if not schema: return
 
         self._quality_map = schema.get_qualities().get(
             self._item.get("quality",

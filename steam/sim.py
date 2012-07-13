@@ -2,7 +2,6 @@ from xml.sax import saxutils
 import re
 import json
 import base
-import pycurl
 import operator
 
 class backpack_context(base.json_request):
@@ -322,11 +321,19 @@ class item_schema(base.json_request):
     def __iter__(self):
         while False: yield None
 
+    def _get(self, value = None):
+        return None
+
     def get_attributes(self):
         return []
 
     def get_particle_systems(self):
         return {}
 
-    def __init__(self, **kwargs):
+    def get_qualities(self):
+        return {}
+
+    def __init__(self, lang = None, **kwargs):
         self._app_id = 0
+        self._language = base.get_language(lang)[0]
+        self._item_type = item

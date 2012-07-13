@@ -31,11 +31,8 @@ class GoldenWrenchError(TF2Error):
         self.msg = msg
 
 class item_schema(items.schema):
-    def create_item(self, oitem):
-        return item(self, oitem)
-
     def __init__(self, appid = None, **kwargs):
-        items.schema.__init__(self, appid or _APP_ID, **kwargs)
+        items.schema.__init__(self, appid or _APP_ID, item_type = item, **kwargs)
 
 class backpack(items.backpack):
     def __init__(self, sid, appid = None, schema = None):

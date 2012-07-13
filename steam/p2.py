@@ -26,11 +26,8 @@ class backpack(items.backpack):
         items.backpack.__init__(self, _APP_ID, sid, schema)
 
 class item_schema(items.schema):
-    def create_item(self, oitem):
-        return item(self, oitem)
-
     def __init__(self, **kwargs):
-        items.schema.__init__(self, _APP_ID, **kwargs)
+        items.schema.__init__(self, _APP_ID, item_type = item, **kwargs)
 
 class item(items.item):
     def get_full_item_name(self, prefixes = None):

@@ -51,11 +51,6 @@ class BackpackError(Error):
 class schema(base.json_request):
     """ The base class for the item schema. """
 
-    def create_item(self, oitem):
-        """ Builds an item using this schema instance and returns it """
-
-        return item(self, oitem)
-
     def get_language(self):
         """ Returns the ISO code of the language the instance
         is localized to """
@@ -164,7 +159,7 @@ class schema(base.json_request):
         iterdata.sort(key = operator.itemgetter("defindex"))
 
         while(iterindex < len(iterdata)):
-            data = self.create_item(iterdata[iterindex])
+            data = self._item_type(self, iterdata[iterindex])
             iterindex += 1
             yield data
 
@@ -174,19 +169,20 @@ class schema(base.json_request):
         try: realkey = key["defindex"]
         except: realkey = key
 
-        return self.create_item(obj["items"][realkey])
+        return self._item_type(self, obj["items"][realkey])
 
     def __len__(self):
         obj = self._get()
         return len(obj["items"].values())
 
-    def __init__(self, appid, lang = None, **kwargs):
+    def __init__(self, appid, lang = None, item_type = None, **kwargs):
         """ schema will be used to initialize the schema if given,
         lang can be any ISO language code.
         lm will be used to generate an HTTP If-Modified-Since header. """
 
         self._language = base.get_language(lang)[0]
         self._app_id = str(appid)
+        self._item_type = item_type or item
 
         super(schema, self).__init__("http://api.steampowered.com/IEconItems_" + self._app_id +
                                      "/GetSchema/v0001/?key=" + base.get_api_key() + "&format=json&language=" + self._language,
@@ -205,30 +201,11 @@ class item(object):
     def get_attributes(self):
         """ Returns a list of attributes """
 
-        item_attrs = []
-        final_attrs = []
+        overridden_attrs = self._attributes
         sortmap = {"neutral" : 1, "positive": 2,
                    "negative": 3}
 
-        if self._item != self._schema_item:
-            try: item_attrs = self._item["attributes"]
-            except KeyError: pass
-
-        defaultattrs = {}
-        for attr in self._schema_item.get("attributes", []):
-            attrindex = attr.get("defindex", attr.get("name"))
-            definition = self._schema.get_attribute_definition(attrindex)
-            attrindex = definition["defindex"]
-            defaultattrs[attrindex] = dict(definition.items() + attr.items())
-
-        for attr in item_attrs:
-            index = attr["defindex"]
-            if index in defaultattrs:
-                defaultattrs[index] = dict(defaultattrs[index].items() + attr.items())
-            else:
-                defaultattrs[index] = dict(self._schema.get_attribute_definition(index).items() + attr.items())
-
-        sortedattrs = defaultattrs.values()
+        sortedattrs = overridden_attrs.values()
         sortedattrs.sort(key = operator.itemgetter("defindex"))
         sortedattrs.sort(key = lambda t: sortmap[t["effect_type"]])
         return [item_attribute(theattr) for theattr in sortedattrs]
@@ -239,15 +216,7 @@ class item(object):
         id is the numerical quality (e.g. 8)
         str is the non-pretty string (e.g. developer) """
 
-        qid = 0
-        item = self._item
-        qid = item.get("quality", self._schema_item.get("item_quality", 0))
-        qualities = self._schema.get_qualities()
-
-        try:
-            return qualities[qid]
-        except KeyError:
-            return {"id": 0, "prettystr": "Broken", "str": "ohnoes"}
+        return self._quality_map
 
     def get_inventory_token(self):
         """ Returns the item's inventory token (a bitfield),
@@ -384,7 +353,7 @@ class item(object):
         """ Returns the item in the container, if there is one.
         This will be a standard item object. """
         rawitem = self._item.get("contained_item")
-        if rawitem: return self._schema.create_item(rawitem)
+        if rawitem: return self._schema._item_type(self._schema, rawitem)
 
     def is_untradable(self):
         """ Returns True if the item cannot be traded, False
@@ -425,7 +394,7 @@ class item(object):
         pretty_quality_str = self.get_quality()["prettystr"]
         custom_name = self.get_custom_name()
         item_name = self.get_name()
-        language = self._schema.get_language()
+        language = self._language
         rank = self.get_rank()
         prefix = ""
         suffix = ""
@@ -464,7 +433,7 @@ class item(object):
         eaterspecs = {"type": "^kill eater user score type ?(?P<b>\d*)$|^kill eater score type ?(?P<a>\d*)$",
                       "count": "^kill eater user ?(?P<b>\d*)$|^kill eater ?(?P<a>\d*)$"}
         eaters = {}
-        ranktypes = self._schema.get_kill_types()
+        ranktypes = self._kill_types
 
 
         for attr in self:
@@ -514,11 +483,10 @@ class item(object):
             return None
         else: eaterlines = eaterlines[0]
 
-        ranksets = self._schema.get_kill_ranks()
-        try:
-            rankset = ranksets[eaterlines[0]]
-        except KeyError:
-            rankset = [{"level": 0, "required_score": 0, "name": "Strange"}]
+        rankset = self._ranks.get(
+            eaterlines[0],
+            [{"level": 0, "required_score": 0, "name": "Strange"}])
+
         realranknum = eaterlines[2]
         for rank in rankset:
             self._rank = rank
@@ -559,8 +527,7 @@ class item(object):
     def get_origin_name(self):
         """ Returns the item's localized origin name """
 
-        if "origin" in self._item:
-            return self._schema.get_origin_name(self._item["origin"])
+        return self._origin
 
     def get_origin_id(self):
         """ Returns the item's origin ID """
@@ -601,9 +568,11 @@ class item(object):
 
     def __init__(self, schema, item):
         self._item = item
-        self._schema = schema
         self._schema_item = None
+        self._schema = schema
         self._rank = {}
+        self._origin = None
+        self._attributes = {}
 
         # Assume it isn't a schema item if it doesn't have a name
         if schema and "item_name" not in self._item:
@@ -614,6 +583,33 @@ class item(object):
                 raise ItemError("Item has no corresponding schema entry")
         else:
             self._schema_item = item
+
+        self._quality_map = schema.get_qualities().get(
+            self._item.get("quality",
+                           self._schema_item.get("item_quality", 0)),
+            {"id": 0, "prettystr": "Broken", "str": "ohnoes"})
+
+        self._language = schema.get_language()
+
+        if "origin" in self._item:
+            self._origin = schema.get_origin_name(self._item["origin"])
+
+        self._ranks = schema.get_kill_ranks()
+        self._kill_types = schema.get_kill_types()
+
+        for attr in self._schema_item.get("attributes", []):
+            attrindex = attr.get("defindex", attr.get("name"))
+            definition = schema.get_attribute_definition(attrindex)
+            attrindex = definition["defindex"]
+            self._attributes[attrindex] = dict(definition.items() + attr.items())
+
+        if self._item != self._schema_item:
+            for attr in self._item.get("attributes", []):
+                index = attr["defindex"]
+                if index in self._attributes:
+                    self._attributes[index] = dict(self._attributes[index].items() + attr.items())
+                else:
+                    self._attributes[index] = dict(schema.get_attribute_definition(index).items() + attr.items())
 
 class item_attribute(object):
     """ Wrapper around item attributes """
@@ -766,10 +762,6 @@ class backpack(base.json_request):
         cells = self._get("cells")
         return cells
 
-    def set_schema(self, schema):
-        """ Sets a new schema to be used on inventory items """
-        self._schema = schema
-
     def __iter__(self):
         return self.nextitem()
 
@@ -801,24 +793,25 @@ class backpack(base.json_request):
 
         items = res["result"]["items"]
         obj = {
-            "items": [self._schema.create_item(item) for item in items if item],
+            "items": [self._schema._item_type(self._schema, item) for item in items if item],
             "cells": res["result"].get("num_backpack_slots", len(items))
             }
 
         return obj
 
     def _get(self, value = None):
-        if not self._schema:
-            self._schema = schema()
-
         return super(backpack, self)._get(value)
 
-    def __init__(self, appid, profile, oschema = None):
+    def __init__(self, appid, profile, schema = None):
         """ Loads the backpack of user sid if given,
         generates a fresh schema object if one is not given. """
 
-        self._schema = oschema
         self._app_id = str(appid)
+
+        if not schema:
+            self._schema = schema(appid)
+        else:
+            self._schema = schema
 
         try:
             sid = profile.get_id64()

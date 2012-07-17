@@ -22,7 +22,6 @@ _APP_ID = 205790
 
 class backpack(items.backpack):
     def __init__(self, sid, schema = None):
-        if not schema: schema = item_schema()
         items.backpack.__init__(self, _APP_ID, sid, schema)
 
 class item_schema(items.schema):

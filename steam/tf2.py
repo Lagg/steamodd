@@ -36,7 +36,6 @@ class item_schema(items.schema):
 
 class backpack(items.backpack):
     def __init__(self, sid, appid = None, schema = None):
-        if not schema: schema = item_schema()
         items.backpack.__init__(self, appid or _APP_ID, sid, schema)
 
 class item(items.item):

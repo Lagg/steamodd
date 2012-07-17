@@ -30,5 +30,4 @@ class item_schema(tf2.item_schema):
 
 class backpack(tf2.backpack):
     def __init__(self, sid, schema = None):
-        if not schema: schema = item_schema()
         tf2.backpack.__init__(self, sid, _APP_ID, schema)

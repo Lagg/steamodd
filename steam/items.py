@@ -64,8 +64,13 @@ class schema(base.json_request):
         attrs = obj["attributes"]
         attrdef = attrs.get(attrid)
 
-        if not attrdef: return attrs.get(obj["attribute_names"].get(attrid.lower()))
+        if not attrdef: return attrs.get(self._get_attribute_id_for_value(attrid))
         else: return attrdef
+
+    def _get_attribute_id_for_value(self, value):
+        """ Returns None if value didn't map to ID dict """
+
+        return self._get("attribute_names").get(str(value).lower())
 
     def get_attributes(self):
         """ Returns all attributes in the schema """
@@ -159,7 +164,7 @@ class schema(base.json_request):
         iterdata.sort(key = operator.itemgetter("defindex"))
 
         while(iterindex < len(iterdata)):
-            data = self._item_type(self, iterdata[iterindex])
+            data = self._item_type(iterdata[iterindex], self)
             iterindex += 1
             yield data
 
@@ -169,7 +174,7 @@ class schema(base.json_request):
         try: realkey = key["defindex"]
         except: realkey = key
 
-        return self._item_type(self, obj["items"][realkey])
+        return self._item_type(obj["items"][realkey], self)
 
     def __len__(self):
         obj = self._get()
@@ -207,7 +212,7 @@ class item(object):
 
         sortedattrs = overridden_attrs.values()
         sortedattrs.sort(key = operator.itemgetter("defindex"))
-        sortedattrs.sort(key = lambda t: sortmap[t["effect_type"]])
+        sortedattrs.sort(key = lambda t: sortmap[t.get("effect_type", "neutral")])
         return [item_attribute(theattr) for theattr in sortedattrs]
 
     def get_quality(self):
@@ -251,10 +256,8 @@ class item(object):
         classes = []
         sitem = self._schema_item
 
-        try: classes = sitem["used_by_classes"]
-        except KeyError: classes = self.get_equipped_classes()
-
-        return classes
+        return sitem.get("used_by_classes",
+                         self.get_equipped_classes())
 
     def get_equipped_slots(self, cid = None):
         """ If cid is given returns the slot ID
@@ -276,21 +279,18 @@ class item(object):
 
     def get_name(self):
         """ Returns the item's undecorated name """
-        return self._schema_item["item_name"]
+        return self._schema_item.get("item_name", str(self.get_id()))
 
     def get_type(self):
         """ Returns the item's type. e.g. "Kukri" for the Tribalman's Shiv.
         If Valve failed to provide a translation the type will be the token without
         the hash prefix. """
-        return self._schema_item["item_type_name"]
+        return self._schema_item.get("item_type_name", "")
 
     def get_image(self, size):
         """ Returns the URL to the item's image, size should be one of
         ITEM_IMAGE_* """
-        try:
-            return self._schema_item[size]
-        except KeyError:
-            raise ItemError("Bad item image size given")
+        return self._schema_item.get(size, "")
 
     def get_id(self):
         """ Returns the item's unique serial number if it has one """
@@ -353,7 +353,7 @@ class item(object):
         """ Returns the item in the container, if there is one.
         This will be a standard item object. """
         rawitem = self._item.get("contained_item")
-        if rawitem: return self._schema._item_type(self._schema, rawitem)
+        if rawitem: return self.__class__(rawitem, self._schema)
 
     def is_untradable(self):
         """ Returns True if the item cannot be traded, False
@@ -362,10 +362,8 @@ class item(object):
         # sometimes, "cannot trade" is there somtimes
         # and then there's "always tradable". Opposed to
         # only occasionally tradable when it feels like it.
-        untradable = self._item.get("flag_cannot_trade", False)
-        if "cannot trade" in self:
-            untradable = True
-        return untradable
+        # Attr 153 = cannot trade
+        return self._item.get("flag_cannot_trade", False) or (153 in self)
 
     def is_uncraftable(self):
         """ Returns True if the item cannot be crafted, False
@@ -405,7 +403,8 @@ class item(object):
         if custom_name:
             item_name = custom_name
         else:
-            try: suffix = "#" + str(int(self["unique craft index"].get_value()))
+            # 229 = unique craft index
+            try: suffix = "#" + str(int(self[229].get_value()))
             except KeyError: pass
 
         if prefixes != None:
@@ -566,51 +565,62 @@ class item(object):
     def __str__(self):
         return unicode(self).encode("utf-8")
 
-    def __init__(self, schema, item):
+    def __init__(self, item, schema = None):
         self._item = item
         self._schema_item = None
         self._schema = schema
         self._rank = {}
+        self._ranks = {}
+        self._kill_types = {}
         self._origin = None
         self._attributes = {}
 
-        # Assume it isn't a schema item if it doesn't have a name
-        if schema and "item_name" not in self._item:
-            try:
-                sitem = schema._get("items")[self._item["defindex"]]
-                self._schema_item = sitem
-            except KeyError:
-                raise ItemError("Item has no corresponding schema entry")
+        if schema:
+            items = schema._get("items")
+            if items: self._schema_item = items.get(self._item["defindex"], self._item)
         else:
-            self._schema_item = item
-            if not schema: return
+            self._schema_item = self._item
 
-        self._quality_map = schema.get_qualities().get(
-            self._item.get("quality",
-                           self._schema_item.get("item_quality", 0)),
-            {"id": 0, "prettystr": "Broken", "str": "ohnoes"})
+        qualityid = self._item.get("quality", self._schema_item.get("item_quality", 0))
+        self._quality_map = {"id": qualityid, "prettystr": "S-{0:02}".format(qualityid), "str": "q{0:02}".format(qualityid)}
+        if schema:
+            self._quality_map = schema.get_qualities().get(qualityid, self._quality_map)
 
-        self._language = schema.get_language()
+        if schema: self._language = schema.get_language()
+        else: self._language = "en_US"
 
-        if "origin" in self._item:
-            self._origin = schema.get_origin_name(self._item["origin"])
+        originid = self._item.get("origin")
+        if schema and originid:
+            self._origin = schema.get_origin_name(originid)
+        elif originid:
+            self._origin = str(originid)
 
-        self._ranks = schema.get_kill_ranks()
-        self._kill_types = schema.get_kill_types()
+        if schema:
+            self._ranks = schema.get_kill_ranks()
+            self._kill_types = schema.get_kill_types()
 
         for attr in self._schema_item.get("attributes", []):
-            attrindex = attr.get("defindex", attr.get("name"))
-            definition = schema.get_attribute_definition(attrindex)
-            attrindex = definition["defindex"]
-            self._attributes[attrindex] = dict(definition.items() + attr.items())
+            index = attr.get("defindex")
+
+            if schema and not index:
+                index = schema._get_attribute_id_for_value(attr.get("name"))
+
+            self._attributes.setdefault(index, {})
+
+            if schema:
+                self._attributes[index].update(schema.get_attribute_definition(index))
+
+            self._attributes[index].update(attr)
 
         if self._item != self._schema_item:
             for attr in self._item.get("attributes", []):
                 index = attr["defindex"]
-                if index in self._attributes:
-                    self._attributes[index] = dict(self._attributes[index].items() + attr.items())
-                else:
-                    self._attributes[index] = dict(schema.get_attribute_definition(index).items() + attr.items())
+                self._attributes.setdefault(index, {})
+
+                if schema:
+                    self._attributes[index].update(schema.get_attribute_definition(index))
+
+                self._attributes[index].update(attr)
 
 class item_attribute(object):
     """ Wrapper around item attributes """
@@ -666,10 +676,10 @@ class item_attribute(object):
 
     def get_name(self):
         """ Returns the attributes name """
-        return self._attribute["name"]
+        return self._attribute.get("name", str(self.get_id()))
 
     def get_class(self):
-        return self._attribute["attribute_class"]
+        return self._attribute.get("attribute_class")
 
     def get_id(self):
         return self._attribute["defindex"]
@@ -677,16 +687,16 @@ class item_attribute(object):
     def get_value_min(self):
         """ Returns the minimum value for the attribute (not all attributes
         stay above this) """
-        return self._attribute["min_value"]
+        return self._attribute.get("min_value", self.get_value())
 
     def get_value_max(self):
         """ Returns the maximum value for the attribute (not all attributes
         stay below this) """
-        return self._attribute["max_value"]
+        return self._attribute.get("max_value", self.get_value())
 
     def get_type(self):
         """ Returns the attribute effect type (positive, negative, or neutral) """
-        return self._attribute["effect_type"]
+        return self._attribute.get("effect_type")
 
     def get_value(self):
         """ Returns the attribute's value, use get_value_type to determine
@@ -745,11 +755,13 @@ class item_attribute(object):
     def __init__(self, attribute):
         self._attribute = attribute
 
-        if "float_value" in self._attribute and self.get_value_type() != "date":
+        if "float_value" in self._attribute:
             fattr = self._attribute["float_value"]
             isint = self._attribute.get("stored_as_integer")
 
-            if (not isint) or (isint and (round(fattr) == fattr) and fattr != 0.0):
+            # No way to determine this built in. Might be a problem
+            if not isint:
+                self._attribute["int_value"] = self._attribute["value"]
                 self._attribute["value"] = fattr
 
 class backpack(base.json_request):
@@ -794,7 +806,7 @@ class backpack(base.json_request):
 
         items = res["result"]["items"]
         obj = {
-            "items": [self._schema._item_type(self._schema, item) for item in items if item],
+            "items": [self._item_type(item, self._schema) for item in items if item],
             "cells": res["result"].get("num_backpack_slots", len(items))
             }
 
@@ -803,16 +815,15 @@ class backpack(base.json_request):
     def _get(self, value = None):
         return super(backpack, self)._get(value)
 
-    def __init__(self, appid, profile, schema = None):
+    def __init__(self, appid, profile, schema = None, item_type = None):
         """ Loads the backpack of user sid if given,
-        generates a fresh schema object if one is not given. """
+        items will only have identifiers if schema is not given. """
 
         self._app_id = str(appid)
+        self._schema = schema
+        self._item_type = item_type or item
 
-        if not schema:
-            self._schema = schema(appid)
-        else:
-            self._schema = schema
+        if self._schema and not item_type: self._item_type = self._schema._item_type
 
         try:
             sid = profile.get_id64()

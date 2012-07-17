@@ -315,7 +315,7 @@ class item(base.items.item):
         self._cdn_url = "http://cdn.steamcommunity.com/economy/image/"
         self._ctx = context
 
-        super(item, self).__init__(None, theitem)
+        super(item, self).__init__(theitem)
 
 class item_schema(base.json_request):
     def __iter__(self):

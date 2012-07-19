@@ -138,7 +138,7 @@ class backpack(base.json_request):
         try:
             user = app.get_id64()
         except AttributeError:
-            pass
+            user = str(app)
 
         # TODO first mode selection if user is passed
         try:

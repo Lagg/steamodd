@@ -1,78 +1,130 @@
-import steam, sys
+import steam, sys, unittest, argparse
 
-def print_item_list(items):
-    for item in items:
-        print("\n\x1b[1m" + str(item) + "\x1b[0m\n")
-        for attr in item:
-            print attr
+parser = argparse.ArgumentParser(description = "Steamodd test suite")
+parser.add_argument("-k", "--key", help = "The API key to use in requests", required = True)
+parser.add_argument("-l", "--language", help = "Language ISO code", default = "en_US")
+parser.add_argument("-m", "--module", help = "Submodule to load classes from", default = "tf2")
+args = parser.parse_args()
 
-def bp_test():
-    test_pack = steamodd_game_module.backpack(steam.user.vanity_url("stragglerastic"), schema = test_schema)
-    print_item_list(test_pack)
+module = args.module
+apikey = args.key
+language = args.language
 
-def schema_test():
-    print_item_list(test_schema)
+steam.set_api_key(apikey)
 
-def assets_test():
-    assets = steamodd_game_module.assets(currency = "usd")
-    for item in test_schema:
-        try:
-            print("\x1b[1m" + (str(item) + "\x1b[0m: ").ljust(50) + (str(assets[item])).ljust(50))
-        except KeyError:
-            pass
+mod = getattr(steam, module)
+schema = mod.item_schema(lang = language)
 
-def gw_test():
-    import time
-    wrenches = steamodd_game_module.golden_wrench()
+class TestSchema(unittest.TestCase):
+    def test_item_lookup(self):
+        iid = 0
+        item = schema[iid]
+        self.assertEquals(item.get_schema_id(), iid)
+        with self.assertRaises(KeyError):
+            schema[-1]
 
-    for wrench in wrenches:
-        print("Verifying wrench #{0}, crafted {1}".format(wrench.get_craft_number(), time.strftime("%Y-%m-%d %H:%M:%S", wrench.get_craft_date())))
-        try:
-            owner = steam.user.profile(wrench.get_owner())
-            ownerbp = steamodd_game_module.backpack(owner)
-            wrenchpresent = False
-            print(owner.get_persona().encode("utf-8"))
-            for item in ownerbp:
-                if item.get_id() == wrench.get_id():
-                    wrenchpresent = True
-                    print_item_list([item])
-                    print('')
-                    break
+    def test_attr_name_map(self):
+        mappedid = schema._get_attribute_id_for_value("DAMage PeNalty")
 
-            if not wrenchpresent:
-                print("\x1b[1mWrench missing\x1b[0m")
-        except steam.items.Error as E:
-            print(str(E))
+        self.assertEquals(mappedid, 1)
+        self.assertIsNone(schema._get_attribute_id_for_value(1))
 
-tests = {"bp": bp_test,
-         "schema": schema_test,
-         "assets-catalog": assets_test,
-         "golden-wrenches": gw_test}
+    def test_attr_lookup(self):
+        attr = schema.get_attribute_definition("DAMage PENALTY")
+        nattr = schema.get_attribute_definition(1)
 
-steamodd_game_module = None
+        self.assertEquals(attr, nattr)
 
-try:
-    mod = "tf2"
-    testmode = sys.argv[2]
-    testkey = sys.argv[1]
-    modesep = testmode.rfind('-')
+    def test_origin(self):
+        self.assertTrue(schema.get_origin_name(3))
+        self.assertIsNone(schema.get_origin_name("meh"))
+        self.assertIsNone(schema.get_origin_name(None))
+        self.assertIsNone(schema.get_origin_name(-324))
 
-    if modesep != -1:
-        mod = testmode[modesep + 1:]
-        testmode = testmode[:modesep]
+class TestSchemaItems(unittest.TestCase):
+    def setUp(self):
+        self._schema = schema
 
-    tests[testmode]
-    steamodd_game_module = getattr(steam, mod)
-except:
-    sys.stderr.write("Run " + sys.argv[0] + " <apikey> " + "<" + "-<mode>, ".join(tests) + "-<mode>>\n")
-    raise SystemExit
+    def test_known_quality(self):
+        for item in self._schema:
+            quality = item.get_quality()
+            self.assertTrue(quality)
+            self.assertNotRegexpMatches(quality["str"], "^q\d+$")
 
-steam.set_api_key(testkey)
+    def test_equippable_by(self):
+        for item in self._schema:
+            classes = item.get_equipable_classes()
+            self.assertItemsEqual(classes, filter(None, classes))
 
-test_schema = steamodd_game_module.item_schema()
+    def test_name(self):
+        for item in self._schema:
+            name = item.get_name()
+            self.assertIsInstance(name, unicode)
+            self.assertNotEqual(name, str(item.get_id()))
 
-test = tests.get(testmode)
-if not test:
-    sys.stderr.write(testmode + " is not a valid name, need one of " + ", ".join(tests) + "\n")
-else:
-    tests[testmode]()
+    def test_type(self):
+        for item in self._schema:
+            self.assertIsInstance(item.get_type(), unicode)
+
+    def test_proper_name(self):
+        for item in self._schema:
+            name = item.get_full_item_name().encode("utf-8")
+            quality = item.get_quality()
+            rank = item.get_rank()
+            q = quality["prettystr"]
+
+            if rank: q = rank["name"]
+
+            en_exp = "^{0}\s.+".format(q)
+            other_exp = "^{0}\s+[(]{1}[)].*".format(item.get_name().encode("utf-8"), q)
+
+            if not item.is_name_prefixed():
+                if self._schema.get_language() == "en_US":
+                    self.assertNotRegexpMatches(name, en_exp)
+                else:
+                    self.assertNotRegexpMatches(name, other_exp)
+            else:
+                if self._schema.get_language() == "en_US":
+                    self.assertRegexpMatches(name, en_exp)
+                else:
+                    self.assertRegexpMatches(name, other_exp)
+
+class TestSchemaItemAttributes(unittest.TestCase):
+    def setUp(self):
+        self._schema = schema
+
+    def test_value_formatter(self):
+        for item in self._schema:
+            for attr in item:
+                self.assertIsInstance(attr.get_value_formatted(), str)
+
+    def test_description_formatter(self):
+        for item in self._schema:
+            for attr in item:
+                desc = attr.get_description_formatted()
+                rawval = attr.get_value_formatted()
+
+                if not desc or attr.get_description().find("%s1") <= -1: continue
+
+                self.assertRegexpMatches(desc, rawval)
+
+    def test_value_types(self):
+        for item in self._schema:
+            for attr in item:
+                self.assertIsInstance(attr.get_value_int(), int)
+                self.assertIsInstance(attr.get_value_float(), float)
+
+    def test_description_encoding(self):
+        for item in self._schema:
+            for attr in item:
+                self.assertIsInstance(str(attr), str)
+
+if __name__ == "__main__":
+    suite = unittest.TestSuite()
+    loader = unittest.TestLoader()
+    tests = (TestSchema, TestSchemaItems, TestSchemaItemAttributes)
+
+    for test in tests:
+        suite.addTest(loader.loadTestsFromTestCase(test))
+
+    unittest.TextTestRunner(verbosity = 2).run(suite)

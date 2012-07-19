@@ -108,7 +108,13 @@ class schema(base.json_request):
     def get_origin_name(self, origin):
         """ Returns a localized origin name for a given ID """
 
-        return self._get("origins")[int(origin)]["name"]
+        try: oid = int(origin)
+        except (ValueError, TypeError): return None
+
+        omap = self._get("origins")
+
+        if omap:
+            return omap.get(oid, {}).get("name")
 
     def _deserialize(self, data):
         res = super(schema, self)._deserialize(data)
@@ -381,46 +387,47 @@ class item(object):
         Generates a prefixed item name and is custom name-aware.
 
         Will use an alternate prefix dict if given,
-        following the format of "non-localized quality": "alternate prefix"
+        following the format of "<quality ID (int or string type)>": "<alternate prefix>"
 
         If you want prefixes stripped entirely call with prefixes = None
         If you want to selectively strip prefixes set the alternate prefix value to
         None in the dict
 
         """
-        quality_str = self.get_quality()["str"]
-        pretty_quality_str = self.get_quality()["prettystr"]
+        quality = self.get_quality()
+        quality_str = quality["str"]
+        pretty_quality_str = quality["prettystr"]
+        qid = quality["id"]
         custom_name = self.get_custom_name()
         item_name = self.get_name()
-        language = self._language
+        english = (self._language == "en_US")
         rank = self.get_rank()
+        prefixed = self.is_name_prefixed()
         prefix = ""
         suffix = ""
+        pfinal = ""
 
-        if item_name.find("The ") != -1 and self.is_name_prefixed():
-            item_name = item_name[4:]
+        if not custom_name:
+            # 229 = unique craft index
+            try:
+                craftno = self[229].get_value()
+                if craftno > 0: suffix = "#" + str(craftno)
+            except KeyError: pass
+
+            if item_name.startswith("The ") and prefixed:
+                item_name = item_name[4:]
 
         if custom_name:
             item_name = custom_name
-        else:
-            # 229 = unique craft index
-            try: suffix = "#" + str(int(self[229].get_value()))
-            except KeyError: pass
+        elif prefixes != None and prefixed:
+            pfinal = prefixes.get(quality_str, prefixes.get(qid, pretty_quality_str)) or ""
 
-        if prefixes != None:
-            prefix = prefixes.get(quality_str, pretty_quality_str)
-            if rank: prefix = rank["name"]
+        if rank and not custom_name: pfinal = rank["name"]
 
-        if prefixes == None or custom_name or (not self.is_name_prefixed() and quality_str == "unique"):
-            prefix = ""
+        if english: prefix = pfinal
+        elif pfinal: suffix = '(' + pfinal + ') ' + suffix
 
-        if ((prefixes == None or language != "en_US") and (quality_str == "unique" or quality_str == "normal")):
-            prefix = ""
-
-        if (language != "en_US" and prefix):
-            return item_name + " (" + prefix + ")"
-
-        return ((prefix or "") + " " + item_name + " " + suffix).strip()
+        return (prefix + " " + item_name + " " + suffix).strip()
 
     def get_kill_eaters(self):
         """
@@ -440,7 +447,7 @@ class item(object):
                 regexpmatch = re.match(spec, attr.get_name())
                 if regexpmatch:
                     matchid = None
-                    value = int(attr.get_value())
+                    value = attr.get_value()
                     matchgroup = regexpmatch.groupdict()
 
                     # Ensure no conflicts between ranking this and non-attached attributes
@@ -590,7 +597,7 @@ class item(object):
         else: self._language = "en_US"
 
         originid = self._item.get("origin")
-        if schema and originid:
+        if schema:
             self._origin = schema.get_origin_name(originid)
         elif originid:
             self._origin = str(originid)
@@ -701,7 +708,17 @@ class item_attribute(object):
     def get_value(self):
         """ Returns the attribute's value, use get_value_type to determine
         the type. """
-        return self._attribute.get("value")
+        # No way to determine which value to use without schema, could be problem
+        if self._isint:
+            return self.get_value_int()
+        else:
+            return self.get_value_float()
+
+    def get_value_int(self):
+        return int(self._attribute.get("value", 0))
+
+    def get_value_float(self):
+        return float(self._attribute.get("float_value", self._attribute.get("value", 0)))
 
     def get_description(self):
         """ Returns the attribute's description string, if
@@ -754,15 +771,7 @@ class item_attribute(object):
 
     def __init__(self, attribute):
         self._attribute = attribute
-
-        if "float_value" in self._attribute:
-            fattr = self._attribute["float_value"]
-            isint = self._attribute.get("stored_as_integer")
-
-            # No way to determine this built in. Might be a problem
-            if not isint:
-                self._attribute["int_value"] = self._attribute["value"]
-                self._attribute["value"] = fattr
+        self._isint = self._attribute.get("stored_as_integer", False)
 
 class backpack(base.json_request):
     """ Functions for reading player inventory """

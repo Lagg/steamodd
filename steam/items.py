@@ -776,6 +776,11 @@ class item_attribute(object):
 class backpack(base.json_request):
     """ Functions for reading player inventory """
 
+    def attach_schema(self, schema):
+        """ Applies `schema' to the backpack """
+
+        self._schema = schema
+
     def get_total_cells(self):
         """ Returns the total number of cells in the backpack.
         This can be used to determine if the user has bought a backpack
@@ -796,7 +801,7 @@ class backpack(base.json_request):
         iterdata = self._get("items")
 
         while(iterindex < len(iterdata)):
-            data = iterdata[iterindex]
+            data = self._item_type(iterdata[iterindex], self._schema)
             iterindex += 1
             yield data
 
@@ -815,7 +820,7 @@ class backpack(base.json_request):
 
         items = res["result"]["items"]
         obj = {
-            "items": [self._item_type(item, self._schema) for item in items if item],
+            "items": filter(None, items),
             "cells": res["result"].get("num_backpack_slots", len(items))
             }
 

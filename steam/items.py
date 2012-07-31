@@ -80,6 +80,11 @@ class schema(base.json_request):
         return [item_attribute(attr) for attr in sorted(attrs.values(),
                                                         key = operator.itemgetter("defindex"))]
 
+    def get_origins(self):
+        """ Returns a map of all origins """
+
+        return self._get("origins")
+
     def get_qualities(self):
         """ Returns a list of all possible item qualities,
         each element will be a dict.
@@ -111,7 +116,7 @@ class schema(base.json_request):
         try: oid = int(origin)
         except (ValueError, TypeError): return None
 
-        omap = self._get("origins")
+        omap = self.get_origins()
 
         if omap:
             return omap.get(oid, {}).get("name")
@@ -275,6 +280,9 @@ class item(object):
 
         slots = dict(zip(map(operator.itemgetter("class"), equipped),
                          map(operator.itemgetter("slot"), equipped)))
+        # WORKAROUND: I don't think Valve uses 0 as a real ID, probably off by one error
+        try: del slots[0]
+        except KeyError: pass
 
         if cid: return slots.get(cid)
         else: return slots

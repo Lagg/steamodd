@@ -158,8 +158,9 @@ class item_attribute(base.items.item_attribute):
         return "make my name useful"
 
     def get_type(self):
-        # Maybe map the tuples to a dict representing the 3 Valve ones if available TODO
-        return self._attribute.get("color", "neutral")
+        # Because Valve uses this same data on web pages, it's /probably/ trustworthy,
+        # so long as they have fixed all the XSS bugs...
+        return "html"
 
     def get_description(self):
         desc = self._attribute.get("value")
@@ -244,7 +245,7 @@ class item(base.items.item):
         return self._item["classid"]
 
     def get_type(self):
-        return self._item.get("type", "")
+        return self._item.get("type", '')
 
     def get_image(self, size):
         """ If not one of the standard ITEM_* constants,

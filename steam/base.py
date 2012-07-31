@@ -256,7 +256,7 @@ class json_request_multi(object):
         self._multi = pycurl.CurlMulti()
         self._reqs = []
 
-        for i in range(connsize):
+        for i in xrange(connsize):
             single = pycurl.Curl()
 
             single.setopt(pycurl.FOLLOWLOCATION, 1)

@@ -319,6 +319,9 @@ class item(base.items.item):
         super(item, self).__init__(theitem)
 
 class item_schema(base.json_request):
+    def __getitem__(self, key):
+        raise KeyError(key)
+
     def __iter__(self):
         while False: yield None
 

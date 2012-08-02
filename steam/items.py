@@ -27,9 +27,10 @@ class Error(Exception):
         return str(self.msg)
 
 class SchemaError(Error):
-    def __init__(self, msg, status = 0):
+    def __init__(self, msg, status = None):
         Error.__init__(self, msg)
         self.msg = msg
+        self.code = status
 
 class ItemError(Error):
     def __init__(self, msg, item = None):
@@ -124,9 +125,13 @@ class schema(base.json_request):
     def _deserialize(self, data):
         res = super(schema, self)._deserialize(data)
         obj = {}
+        code = None
 
-        if not res or res["result"]["status"] != 1:
-            raise SchemaError("Schema error", res["result"]["status"])
+        try: code = res["result"]["status"]
+        except KeyError: pass
+
+        if not res or code != 1:
+            raise SchemaError("Schema error", code)
 
         attributes = {}
         attribute_names = {}

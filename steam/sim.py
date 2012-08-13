@@ -109,11 +109,16 @@ class backpack(base.json_request):
             json = page._download()
             sec = page.section
 
-            if not json: raise base.HttpError("Empty inventory information returned")
+            try:
+                inventorysection = self._deserialize(json)
+            except ValueError:
+                raise base.HttpError("Empty context data returned")
 
-            inventorysection = self._deserialize(json)
+            try:
+                itemdescs = inventorysection["rgDescriptions"]
+            except KeyError:
+                raise base.BackpackError("Steam returned inventory with missing context")
 
-            itemdescs = inventorysection["rgDescriptions"]
             for k, v in inventorysection["rgInventory"].iteritems():
                 fullitem = dict(v.items() + itemdescs[v["classid"] + "_" + v["instanceid"]].items())
                 finalitem = item(fullitem, contexts[sec])
@@ -144,7 +149,7 @@ class backpack(base.json_request):
         try:
             if user: self._ctx = backpack_context(user)[104700]
         except KeyError:
-            raise base.items.ItemError("No SMNC inventory available for this user")
+            raise base.items.BackpackError("No SMNC inventory available for this user")
 
 class item_attribute(base.items.item_attribute):
     def get_class(self):

@@ -32,6 +32,8 @@ class SchemaError(Error):
         self.msg = msg
         self.code = status
 
+        if status: self.msg += ": {0}".format(status)
+
 class ItemError(Error):
     def __init__(self, msg, item = None):
         Error.__init__(self, msg)

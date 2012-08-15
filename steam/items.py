@@ -952,7 +952,7 @@ class assets(base.json_request):
         if "result" not in res: raise AssetError("Bad asset list")
         else: res = res["result"]
 
-        if not res.get("success", False): raise AssetError("Asset server error")
+        if not res.get("success", False): raise AssetError(res.get("error", "Server error"))
 
         try:
             obj["tags"] = res["tags"]

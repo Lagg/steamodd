@@ -147,7 +147,10 @@ class json_request(object):
         try:
             return json.loads(obj)
         except ValueError:
-            return json.loads(self._strip_control_chars(obj).decode("utf-8", errors = "replace"))
+            try:
+                return json.loads(self._strip_control_chars(obj).decode("utf-8", errors = "replace"))
+            except ValueError:
+                return {}
 
     def _strip_control_chars(self, s):
         return replace_exp.sub('', s)

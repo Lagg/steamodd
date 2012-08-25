@@ -117,7 +117,7 @@ class backpack(base.json_request):
             try:
                 itemdescs = inventorysection["rgDescriptions"]
             except KeyError:
-                raise base.BackpackError("Steam returned inventory with missing context")
+                raise base.items.BackpackError("Steam returned inventory with missing context")
 
             for k, v in inventorysection["rgInventory"].iteritems():
                 fullitem = dict(v.items() + itemdescs[v["classid"] + "_" + v["instanceid"]].items())

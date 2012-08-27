@@ -437,7 +437,7 @@ class item(object):
         elif prefixes != None and prefixed:
             pfinal = prefixes.get(quality_str, prefixes.get(qid, pretty_quality_str)) or ""
 
-        if rank and not custom_name: pfinal = rank["name"]
+        if rank and not custom_name and quality_str == "strange": pfinal = rank["name"]
 
         if english: prefix = pfinal
         elif pfinal: suffix = '(' + pfinal + ') ' + suffix

@@ -283,16 +283,20 @@ class item(object):
         returns a dict of class and slot IDs """
 
         equipped = self._item.get("equipped")
+        slots = {}
         if not equipped: return {}
 
-        slots = dict(zip(map(operator.itemgetter("class"), equipped),
-                         map(operator.itemgetter("slot"), equipped)))
-        # WORKAROUND: I don't think Valve uses 0 as a real ID, probably off by one error
-        try: del slots[0]
-        except KeyError: pass
+        for eq in equipped:
+            cls = eq["class"]
+            slot = eq["slot"]
 
-        if cid: return slots.get(cid)
-        else: return slots
+            # WORKAROUND: 0 is probably an off-by-one error
+            # WORKAROUND: 65535 actually serves a purpose (according to Valve)
+            if cls != 0 and slot != 65535:
+                if cls == cid: return slot
+                slots[cls] = slot
+
+        return slots
 
     def get_schema_id(self):
         """ Returns the item's ID in the schema. """

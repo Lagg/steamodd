@@ -22,14 +22,15 @@ class backpack_context(base.json_request):
                     res = v
                     break
 
-        if res: res["base_url"] = self._get_download_url()
-
         return res
 
     def get_app_list(self):
         """ Returns a list of valid app IDs """
 
         return self._get().keys()
+
+    def get_user_id64(self):
+        return self._user
 
     def _deserialize(self, data):
         contexts = re.search("var g_rgAppContextData = (.+);", data)
@@ -45,13 +46,28 @@ class backpack_context(base.json_request):
 
         return res
 
+    def __iter__(self):
+        iterindex = 0
+
+        if not self._ctx:
+            self._ctx = sorted(self._get().values(), key = operator.itemgetter("appid"))
+
+        iterdata = self._ctx
+
+        while iterindex < len(iterdata):
+            data = iterdata[iterindex]
+            iterindex += 1
+            yield data
+
     def __init__(self, user):
+        self._ctx = None
         try:
             sid = user.get_id64()
         except:
             sid = user
 
         url = "http://steamcommunity.com/profiles/{0}/inventory/".format(sid)
+        self._user = sid
 
         super(backpack_context, self).__init__(url)
 
@@ -83,7 +99,8 @@ class backpack(base.json_request):
         self._object = {"section": self._section, "cells": 0, "items": []}
         section = self._get("section")
         downloadlist = []
-        url = "{0}json/{1}/".format(self._ctx["base_url"], self._ctx["appid"])
+        invstr = "http://steamcommunity.com/profiles/{0}/inventory/json/{1}/"
+        url = invstr.format(self._user, self._ctx["appid"])
         contexts = self._ctx["rgContexts"]
         items = []
 
@@ -131,25 +148,20 @@ class backpack(base.json_request):
         else:
             return self._object
 
-    def __init__(self, app, schema = None, section = None):
+    def __init__(self, user, app, schema = None, section = None):
         """ app: A valid app object as returned by backpack_context.get_app
         section: The inventory section to retrieve, if not given all items will be returned """
 
         self._object = {}
         self._section = section
         self._ctx = app
-        user = None
 
         try:
-            user = app.get_id64()
-        except AttributeError:
-            user = str(app)
+            sid = user.get_id64()
+        except:
+            sid = user
 
-        # TODO first mode selection if user is passed
-        try:
-            if user: self._ctx = backpack_context(user)[104700]
-        except KeyError:
-            raise base.items.BackpackError("No SMNC inventory available for this user")
+        self._user = sid
 
 class item_attribute(base.items.item_attribute):
     def get_class(self):
@@ -275,8 +287,7 @@ class item(base.items.item):
         return long(self._item["id"])
 
     def get_level(self):
-        # TODO (currently not in its own field, but included in type)
-        return 0
+        return None
 
     def get_slot(self):
         # (present sometimes in the form of tags) TODO

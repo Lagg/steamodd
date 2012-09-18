@@ -194,6 +194,9 @@ class profile(base.json_request):
 
         return obj
 
+    def __str__(self):
+        return self.get_persona() or str(self.get_id64())
+
     def __init__(self, sid):
         """ Creates a profile instance for the given user """
         url = ("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/"

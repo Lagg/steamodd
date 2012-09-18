@@ -34,8 +34,10 @@ class backpack_context(base.json_request):
 
     def _deserialize(self, data):
         contexts = re.search("var g_rgAppContextData = (.+);", data)
+
         try:
-            return json.loads(contexts.groups()[0])
+            match = contexts.group(1)
+            return json.loads(match)
         except:
             raise base.items.BackpackError("No inventory information available for this user")
 
@@ -136,7 +138,11 @@ class backpack(base.json_request):
             except KeyError:
                 raise base.items.BackpackError("Steam returned inventory with missing context")
 
-            for k, v in inventorysection["rgInventory"].iteritems():
+            inv = inventorysection.get("rgInventory")
+            if not inv:
+                continue
+
+            for k, v in inv.iteritems():
                 fullitem = dict(v.items() + itemdescs[v["classid"] + "_" + v["instanceid"]].items())
                 finalitem = item(fullitem, contexts[sec])
                 items.append(finalitem)
@@ -155,6 +161,9 @@ class backpack(base.json_request):
         self._object = {}
         self._section = section
         self._ctx = app
+
+        if not app:
+            raise base.items.BackpackError("No inventory available")
 
         try:
             sid = user.get_id64()
@@ -253,9 +262,8 @@ class item(base.items.item):
         return []
 
     def get_equipable_classes(self):
-        # Needs supported tags
-
-        return map(operator.itemgetter("name"), self._get_category("Class"))
+        # might as well be unsupported
+        return []
 
     def get_schema_id(self):
         # Kind of unsupported (class ID possible?) TODO

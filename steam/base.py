@@ -173,7 +173,7 @@ class json_request(object):
     def __init__(self, url, last_modified = None, timeout = 3, data_timeout = 15):
         self._last_modified = last_modified
         self._url = url
-        self._user_agent = "Steamodd/2.0"
+        self._user_agent = "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; Valve Steam Client/1983; ) AppleWebKit/535.15 (KHTML, like Gecko) Chrome/18.0.989.0 Safari/535.11"
         self._connect_timeout = timeout
         self._timeout = data_timeout
         self._body = ""

@@ -149,7 +149,7 @@ class schema(base.json_request):
 
         qualities = {}
         for k, v in res["result"]["qualities"].iteritems():
-            aquality = {"id": v, "str": k, "prettystr": k}
+            aquality = {"id": v, "str": k.lower(), "prettystr": k}
 
             try: aquality["prettystr"] = res["result"]["qualityNames"][aquality["str"]]
             except KeyError: pass

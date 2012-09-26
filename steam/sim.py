@@ -122,7 +122,6 @@ class backpack(base.json_request):
             downloader.add(req)
 
         requests = downloader.download()
-        downloader.close()
 
         for page in requests:
             json = page._download()

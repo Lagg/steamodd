@@ -70,18 +70,22 @@ class LangErrorUnsupported(LangError):
 class json_request(object):
     """ Base class for API requests over HTTP returning JSON """
 
+    def _append_body(self, data):
+        self._body += data
+
+    def _append_header(self, data):
+        self._header += data
+
+    def _clear_buffers(self):
+        self._body = ''
+        self._header = ''
+
     def _get_download_url(self):
         """ Returns the URL used for downloading the JSON data """
         return self._url
 
     def _set_download_url(self, url):
         self._url = url
-
-    def _set_header(self, data):
-        self._header += data
-
-    def _set_body(self, data):
-        self._body += data
 
     def _init_curl_single(self):
         """ Returns a new libcurl single/easy object """
@@ -92,6 +96,8 @@ class json_request(object):
         obj.setopt(pycurl.NOSIGNAL, 1)
         obj.setopt(pycurl.CONNECTTIMEOUT, self._connect_timeout)
         obj.setopt(pycurl.TIMEOUT, self._timeout)
+        obj.setopt(pycurl.WRITEFUNCTION, self._append_body)
+        obj.setopt(pycurl.HEADERFUNCTION, self._append_header)
 
         return obj
 
@@ -102,8 +108,6 @@ class json_request(object):
 
         curl_sync = self._init_curl_single()
         curl_sync.setopt(pycurl.URL, self._get_download_url())
-        curl_sync.setopt(pycurl.WRITEFUNCTION, self._set_body)
-        curl_sync.setopt(pycurl.HEADERFUNCTION, self._set_header)
 
         if use_lm:
             lm = self.get_last_modified()
@@ -183,32 +187,55 @@ class json_request(object):
 class json_request_multi(object):
     """ Builds stacks of json_request-like objects and downloads them concurrently """
 
+    def __del__(self):
+        self._multi.close()
+
     def add(self, request):
+        """ Adds the request to the list,
+        remember that this is in place, object methods
+        and properties will change """
         self._reqs.append(request)
 
+    def clear_queue(self):
+        self._reqs = []
+
     def download(self):
-        reqs = self._reqs[:]
         finished = 0
+        reqs = self._reqs[:]
         reqcount = len(reqs)
-        conns = self._conns[:]
-        newreqs = []
+
+        cs = reqcount
+        if self._connsize:
+            cs = min(reqcount, self._connsize)
+
+        self._multi.handles = []
+        for i in xrange(cs):
+            conn = pycurl.Curl()
+            conn.setopt(pycurl.FOLLOWLOCATION, 1)
+            conn.setopt(pycurl.NOSIGNAL, 1)
+            self._multi.handles.append(conn)
+
+        conns = self._multi.handles[:]
 
         while finished < reqcount:
             while reqs and conns:
                 req = reqs.pop()
-                conn = conns.pop()
                 lm = req.get_last_modified()
                 url = req._get_download_url()
+
+                req._clear_buffers()
 
                 if lm:
                     conn.setopt(pycurl.HTTPHEADER, ["if-modified-since: " + lm])
 
-                conn.setopt(pycurl.URL, url)
-                conn.setopt(pycurl.WRITEFUNCTION, req._set_body)
-                conn.setopt(pycurl.HEADERFUNCTION, req._set_header)
+                # TODO: req._init_curl_single
+                conn = conns.pop()
                 conn.setopt(pycurl.USERAGENT, req._user_agent)
                 conn.setopt(pycurl.CONNECTTIMEOUT, req._connect_timeout)
                 conn.setopt(pycurl.TIMEOUT, req._timeout)
+                conn.setopt(pycurl.WRITEFUNCTION, req._append_body)
+                conn.setopt(pycurl.HEADERFUNCTION, req._append_header)
+                conn.setopt(pycurl.URL, url)
 
                 conn.req = req
 
@@ -229,13 +256,12 @@ class json_request_multi(object):
                     hdict = req._make_header_dict(req._header)
                     req._last_modified = hdict.get("last-modified")
 
-                    newreqs.append(req)
-
                     self._multi.remove_handle(handle)
                     conns.append(handle)
 
                 for handle, code, msg in err:
                     print code, msg
+
                     self._multi.remove_handle(handle)
                     conns.append(handle)
 
@@ -244,29 +270,15 @@ class json_request_multi(object):
 
             self._multi.select(1)
 
-        return newreqs
-
-    def close(self):
-        for conn in self._conns:
+        for conn in self._multi.handles:
             conn.close()
-        self._multi.close()
 
-    def __del__(self):
-        self.close()
+        return self._reqs
 
-    def __init__(self, connsize = 10):
-        self._conns = []
+    def __init__(self, connsize = None):
         self._multi = pycurl.CurlMulti()
         self._reqs = []
-
-        for i in xrange(connsize):
-            single = pycurl.Curl()
-
-            single.setopt(pycurl.FOLLOWLOCATION, 1)
-            single.setopt(pycurl.NOSIGNAL, 1)
-            single.setopt(pycurl.TIMEOUT, 240)
-
-            self._conns.append(single)
+        self._connsize = connsize
 
 def get_api_key():
     """ Returns the API key as a string, raises APIError if it's not set """

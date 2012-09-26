@@ -438,7 +438,7 @@ class item(object):
 
         if custom_name:
             item_name = custom_name
-        elif prefixes != None and prefixed:
+        elif prefixes != None and (prefixed or not prefixed and quality_str != "unique"):
             pfinal = prefixes.get(quality_str, prefixes.get(qid, pretty_quality_str)) or ""
 
         if rank and not custom_name and quality_str == "strange": pfinal = rank["name"]

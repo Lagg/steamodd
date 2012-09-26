@@ -828,7 +828,10 @@ class backpack(base.json_request):
         res = super(backpack, self)._deserialize(data)
         obj = {}
 
-        status = res["result"]["status"]
+        try:
+            status = res["result"]["status"]
+        except KeyError:
+            raise BackpackError("Steam failed to return inventory data")
 
         if status == 8:
             raise BackpackError("Bad SteamID64 given")

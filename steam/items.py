@@ -834,9 +834,9 @@ class backpack(base.json_request):
             raise BackpackError("Steam failed to return inventory data")
 
         if status == 8:
-            raise BackpackError("Bad SteamID64 given")
+            raise base.user.ProfileError("Bad SteamID64 given")
         elif status == 15:
-            raise BackpackError("Profile set to private")
+            raise base.user.ProfileError("Profile set to private")
         elif status != 1:
             raise BackpackError("Unknown error")
 

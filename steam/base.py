@@ -318,4 +318,4 @@ def set_api_key(key):
 
     _api_key = key
 
-import items, tf2, tf2b, p2, d2, d2b, user, remote_storage, sim
+import items, tf2, tf2b, p2, d2, d2b, user, remote_storage, sim, vdf

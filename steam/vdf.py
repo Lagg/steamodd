@@ -16,95 +16,74 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 """
 
-from collections import deque
-import re
-import cStringIO
+STRING = '"'
+NODE_OPEN = '{'
+NODE_CLOSE = '}'
+COMMENT = '/'
+CR = '\r'
+LF = '\n'
 
-def NODE_STRING(match):
-    return cast_to_num(match)
+def _symtostr(line, i):
+    opening = i + 1
+    closing = 0
 
-def NODE_OPENER(match):
-    pass
+    ci = line.find('"', opening)
+    while ci != -1:
+        if line[ci - 1] != '\\':
+            closing = ci
+            break
+        ci = line.find('"', ci + 1)
 
-def NODE_CLOSER(match):
-    pass
+    finalstr = line[opening:closing]
+    return finalstr, i + len(finalstr) + 1
 
-def NODE_COMMENT(match):
-    comment = match.strip()
-    return comment
-
-def NEWLINE(match):
-    pass
-
-# This isn't a dict because order is important.
-# Backwards token stack = not gewd
-grammar = [
-    ('"([^"]*)"', NODE_STRING),
-    ('{', NODE_OPENER),
-    ('}', NODE_CLOSER),
-    ('//(.*)$', NODE_COMMENT),
-    ('\Z', NEWLINE)
-]
-
-def scan(stream):
-    stack = []
-
-    line = stream.readline()
-    while line:
-        for tok in grammar:
-            match = re.findall(tok[0], line, flags = re.UNICODE)
-            for m in match:
-                func = tok[1]
-                token = []
-
-                token.append(func.__name__)
-                value = func(m)
-                if value != None:
-                    token.append(value)
-                stack.append(token)
-        line = stream.readline()
-
-    return deque(stack)
-
-def cast_to_num(string):
-    num = re.match("^\s*(-?\d+\.?\d*)\s*$", string, flags = re.UNICODE)
-    if num:
-        catch = num.groups()[0]
-        if catch.find('.') != -1: return float(catch)
-        else: return int(catch)
-    else:
-        return string
-
-def read_node(stack):
+def _parse(stream, ptr = 0):
+    i = ptr
+    laststr = None
+    lasttok = None
     deserialized = {}
-    lastpop = None
-    laststring = None
 
-    while stack:
-        t = stack.popleft()
+    while i < len(stream):
+        c = stream[i]
 
-        if t[0] == "NODE_STRING":
-            laststring = t[1]
-            if lastpop and lastpop[0] == "NODE_STRING":
-                deserialized[lastpop[1]] = t[1]
-        elif t[0] == "NODE_OPENER":
-            res = read_node(stack)
-            deserialized[laststring] = res
-        elif t[0] == "NODE_CLOSER":
-            return deserialized
-        elif t[0] == "NODE_COMMENT":
-            continue
+        if c == STRING:
+            string, i = _symtostr(stream, i)
+            if lasttok == STRING:
+                deserialized[laststr] = string
+            laststr = string
+        elif c == NODE_OPEN:
+            deserialized[laststr], i = _parse(stream, i + 1)
+        elif c == NODE_CLOSE:
+            return deserialized, i
+        elif c == COMMENT:
+            if (i + 1) < len(stream) and stream[i + 1] == '/':
+                i = stream.find('\n', i)
+        elif c == CR or c == LF:
+            ni = i + 1
+            if ni < len(stream) and stream[ni] == LF:
+                i = ni
+            if lasttok != LF:
+                c = LF
+        else:
+            c = lasttok
 
-        lastpop = t
+        lasttok = c
+        i += 1
 
-    return deserialized
+    return deserialized, i
 
-def parse(stack):
-    return read_node(stack)
+def _run_parse_encoded(string):
+    encoded = string
+    try:
+        encoded = str.decode(encoded, "utf-16")
+    except:
+        pass
 
-def load(stream):
-    res = parse(scan(stream))
+    res, ptr = _parse(encoded)
     return res
 
+def load(stream):
+    return _run_parse_encoded(stream.read())
+
 def loads(string):
-    return load(cStringIO.StringIO(string))
+    return _run_parse_encoded(string)

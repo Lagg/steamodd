@@ -73,11 +73,10 @@ def _parse(stream, ptr = 0):
     return deserialized, i
 
 def _run_parse_encoded(string):
-    encoded = string
     try:
-        encoded = str.decode(encoded, "utf-16")
-    except:
-        pass
+        encoded = unicode(string, "ascii")
+    except UnicodeDecodeError:
+        encoded = unicode(string, "utf-16")
 
     res, ptr = _parse(encoded)
     return res

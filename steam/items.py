@@ -487,7 +487,7 @@ class item(object):
                     eaters[matchid]["aid"] = attr.get_id()
 
         eaterlist = []
-        defaultleveldata = "KillEaterRanks"
+        defaultleveldata = "KillEaterRank"
         for key in eaters.keys():
             eater = eaters[key]
             count = eater.get("count")

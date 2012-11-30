@@ -54,6 +54,9 @@ class BackpackError(Error):
 class schema(base.json_request):
     """ The base class for the item schema. """
 
+    def get_client_schema_url(self):
+        return self._get("client_schema")
+
     def get_language(self):
         """ Returns the ISO code of the language the instance
         is localized to """
@@ -169,6 +172,8 @@ class schema(base.json_request):
 
         origins = res["result"].get("originNames", [])
         obj["origins"] = dict(zip(map(operator.itemgetter("origin"), origins), origins))
+
+        obj["client_schema"] = res["result"].get("items_game_url")
 
         return obj
 
@@ -482,13 +487,14 @@ class item(object):
                     eaters[matchid]["aid"] = attr.get_id()
 
         eaterlist = []
+        defaultleveldata = "KillEaterRanks"
         for key in eaters.keys():
             eater = eaters[key]
             count = eater.get("count")
 
             if count != None:
-                rank = ranktypes.get(eater.get("type", 0), {"level_data": "KillEaterRanks", "type_name": "Count"})
-                eaterlist.append((rank["level_data"], rank["type_name"], count, eater["aid"]))
+                rank = ranktypes.get(eater.get("type", 0), {"level_data": defaultleveldata, "type_name": "Count"})
+                eaterlist.append((rank.get("level_data", defaultleveldata), rank["type_name"], count, eater["aid"]))
         return eaterlist
 
     def get_rank(self):

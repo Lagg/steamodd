@@ -352,6 +352,9 @@ class item(object):
         This includes hat, craft_bar, or craft_token. """
         return self._schema_item.get("craft_class")
 
+    def get_craft_material_type(self):
+        return self._schema_item.get("craft_material_type")
+
     def get_custom_name(self):
         """ Returns the item's custom name if it has one. """
         return self._item.get("custom_name")

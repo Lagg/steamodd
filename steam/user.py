@@ -26,6 +26,10 @@ class ProfileError(Exception):
     def __str__(self):
         return str(self.msg)
 
+class ProfileNotFound(ProfileError):
+    def __init__(self, msg):
+        ProfileError.__init__(self, msg)
+
 class VanityError(Exception):
     def __init__(self, msg, code = None):
         Exception.__init__(self)
@@ -188,7 +192,7 @@ class profile(base.json_request):
             if res and res[0] != None:
                 obj = res[0]
             else:
-                raise ProfileError("Profile not found")
+                raise ProfileNotFound("Profile not found")
         except KeyError:
             raise ProfileError("Bad player profile results returned")
 

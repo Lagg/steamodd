@@ -19,4 +19,5 @@ and your email and name in AUTHORS.
 Third-party modules
 ===================
 
-* pycurl - High performance HTTP requests
+requests - Improved HTTP lib for Python and dependency of grequests
+grequests - Concurrent requests

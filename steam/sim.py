@@ -114,7 +114,7 @@ class backpack(base.json_request):
             downloadlist = [str(k) for k in contexts.keys()]
             self._object["cells"] = self._ctx["asset_count"]
 
-        downloader = base.json_request_multi(connsize = len(downloadlist))
+        downloader = base.json_request_multi()
 
         for sec in downloadlist:
             req = base.json_request(url + sec)
@@ -124,13 +124,11 @@ class backpack(base.json_request):
         requests = downloader.download()
 
         for page in requests:
-            json = page._download()
             sec = page.section
+            inventorysection = page._object
 
-            try:
-                inventorysection = self._deserialize(json)
-            except ValueError:
-                raise base.HttpError("Empty context data returned")
+            if not inventorysection:
+                raise base.items.BackpackError("Empty context data returned")
 
             try:
                 itemdescs = inventorysection["rgDescriptions"]

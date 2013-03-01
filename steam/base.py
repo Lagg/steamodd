@@ -1,4 +1,14 @@
-import json, requests, grequests, re
+import json, re, urllib2
+
+try:
+    import requests
+except ImportError:
+    requests = None
+
+try:
+    import grequests
+except ImportError:
+    grequests = None
 
 _api_key = None
 
@@ -93,20 +103,30 @@ class http_request(object):
     def _download(self):
         """ Download the URL using last-modified timestamp if given """
 
+        using_requests = (requests and grequests)
         head = self._build_headers()
+        status_code = -1
+        body = ''
 
-        req = requests.get(self._url, headers = head, timeout = self._timeout)
+        if using_requests:
+            req = requests.get(self._url, headers = head, timeout = self._timeout)
+            status_code = req.status_code
+            body = req.text
+        else:
+            req = urllib2.urlopen(urllib2.Request(self._url, headers = head), timeout = self._timeout)
+            status_code = req.code
+            body = req.read()
 
         lm = req.headers.get("last-modified")
 
-        if req.status_code == 304:
+        if status_code == 304:
             raise HttpStale(str(lm))
-        elif req.status_code != 200:
-            raise HttpError(str(req.status_code))
+        elif status_code != 200:
+            raise HttpError(str(status_code))
         else:
             self._last_modified = lm
 
-        return req.text
+        return body
 
     @property
     def last_modified(self):
@@ -160,22 +180,27 @@ class json_request_multi(object):
         self._reqs = {}
 
     def download(self):
-        greqs = [grequests.get(request.url, headers = request._build_headers(), timeout = request._timeout) for request in self._reqs.values()]
+        if requests and grequests:
+            greqs = [grequests.get(request.url, headers = request._build_headers(), timeout = request._timeout) for request in self._reqs.values()]
 
-        for response in grequests.map(greqs, size = self._connsize):
-            req = None
-            urlcandidates = [response.url] + [hist.url for hist in response.history]
+            for response in grequests.map(greqs, size = self._connsize):
+                req = None
+                urlcandidates = [response.url] + [hist.url for hist in response.history]
 
-            for url in urlcandidates:
-                try:
-                    req = self._reqs[url]
-                    break
-                except KeyError:
-                    pass
+                for url in urlcandidates:
+                    try:
+                        req = self._reqs[url]
+                        break
+                    except KeyError:
+                        pass
 
-            if req:
-                req._object = req._deserialize(response.text)
-                req._last_modified = response.headers.get("last-modified")
+                if req:
+                    req._object = req._deserialize(response.text)
+                    req._last_modified = response.headers.get("last-modified")
+        else:
+            for url in self._reqs.keys():
+                req = self._reqs[url]
+                req._get()
 
         return self._reqs.values()
 

@@ -116,6 +116,8 @@ class http_request(object):
         else:
             try:
                 req = urllib2.urlopen(urllib2.Request(self._url, headers = head), timeout = self._timeout)
+            except urllib2.URLError:
+                raise HttpError("Server connection failed")
             except timeout:
                 raise HttpTimeout("Server took too long to respond")
             status_code = req.code

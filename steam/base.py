@@ -1,4 +1,5 @@
 import json, re, urllib2
+from socket import timeout
 
 try:
     import requests
@@ -113,7 +114,10 @@ class http_request(object):
             status_code = req.status_code
             body = req.text
         else:
-            req = urllib2.urlopen(urllib2.Request(self._url, headers = head), timeout = self._timeout)
+            try:
+                req = urllib2.urlopen(urllib2.Request(self._url, headers = head), timeout = self._timeout)
+            except timeout:
+                raise HttpTimeout(self._url)
             status_code = req.code
             body = req.read()
 

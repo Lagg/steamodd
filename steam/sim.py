@@ -61,7 +61,7 @@ class backpack_context(base.json_request):
             iterindex += 1
             yield data
 
-    def __init__(self, user):
+    def __init__(self, user, **kwargs):
         self._ctx = None
         try:
             sid = user.get_id64()
@@ -71,7 +71,7 @@ class backpack_context(base.json_request):
         url = "http://steamcommunity.com/profiles/{0}/inventory/".format(sid)
         self._user = sid
 
-        super(backpack_context, self).__init__(url)
+        super(backpack_context, self).__init__(url, **kwargs)
 
 class backpack(base.json_request):
     def get_total_cells(self):
@@ -117,7 +117,7 @@ class backpack(base.json_request):
         downloader = base.json_request_multi()
 
         for sec in downloadlist:
-            req = base.json_request(url + sec)
+            req = base.json_request(url + sec, timeout = self._timeout)
             req.section = sec
             downloader.add(req)
 
@@ -151,13 +151,14 @@ class backpack(base.json_request):
         else:
             return self._object
 
-    def __init__(self, user, app, schema = None, section = None):
+    def __init__(self, user, app, schema = None, section = None, timeout = 3):
         """ app: A valid app object as returned by backpack_context.get_app
         section: The inventory section to retrieve, if not given all items will be returned """
 
         self._object = {}
         self._section = section
         self._ctx = app
+        self._timeout = timeout
 
         if not app:
             raise base.items.BackpackError("No inventory available")

@@ -54,7 +54,7 @@ class user_ugc(base.json_request):
         except base.APIError as E:
             raise UGCError(str(E))
 
-    def __init__(self, appid, ugcid64, user = None):
+    def __init__(self, appid, ugcid64, user = None, **kwargs):
         uid = None
 
         if user:
@@ -66,4 +66,4 @@ class user_ugc(base.json_request):
 
         if uid: url += "&steamid=" + str(uid)
 
-        super(user_ugc, self).__init__(url)
+        super(user_ugc, self).__init__(url, **kwargs)

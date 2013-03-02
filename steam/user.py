@@ -68,14 +68,14 @@ class vanity_url(base.json_request):
     def __str__(self):
         return str(self.get_id64())
 
-    def __init__(self, vanity):
+    def __init__(self, vanity, **kwargs):
         """ Takes a vanity URL part and tries
         to resolve it. """
 
         url = ("http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?" +
                urllib.urlencode({"key": base.get_api_key(), "vanityurl": vanity}))
 
-        super(vanity_url, self).__init__(url)
+        super(vanity_url, self).__init__(url, **kwargs)
 
 class profile(base.json_request):
     """ Functions for reading user account data """
@@ -201,7 +201,7 @@ class profile(base.json_request):
     def __str__(self):
         return self.get_persona() or str(self.get_id64())
 
-    def __init__(self, sid):
+    def __init__(self, sid, **kwargs):
         """ Creates a profile instance for the given user """
         url = ("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/"
                "v2/?key=" + base.get_api_key() + "&steamids=")
@@ -211,7 +211,7 @@ class profile(base.json_request):
         if (lsid + 1) >= len(sid): sid = sid[:lsid]
         sid = os.path.basename(sid)
 
-        super(profile, self).__init__(url + sid)
+        super(profile, self).__init__(url + sid, **kwargs)
 
         self._sid = sid
         self._base_url = url

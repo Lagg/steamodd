@@ -32,11 +32,11 @@ class GoldenWrenchError(TF2Error):
 
 class item_schema(items.schema):
     def __init__(self, appid = None, **kwargs):
-        items.schema.__init__(self, appid or _APP_ID, item_type = item, **kwargs)
+        super(item_schema, self).__init__(appid or _APP_ID, item_type = item, **kwargs)
 
 class backpack(items.backpack):
-    def __init__(self, sid, appid = None, schema = None):
-        items.backpack.__init__(self, appid or _APP_ID, sid, schema)
+    def __init__(self, sid, appid = None, **kwargs):
+        super(backpack, self).__init__(appid or _APP_ID, sid, **kwargs)
 
 class item(items.item):
     def get_equipable_classes(self):
@@ -45,12 +45,12 @@ class item(items.item):
         if len(classes) <= 0 or classes[0] == None: return []
         else: return classes
 
-    def __init__(self, schema, item):
-        items.item.__init__(self, schema, item)
+    def __init__(self, schema, init_item):
+        super(item, self).__init__(schema, init_item)
 
 class assets(items.assets):
     def __init__(self, appid = None, **kwargs):
-        items.assets.__init__(self, appid or _APP_ID, **kwargs)
+        super(assets, self).__init__(appid or _APP_ID, **kwargs)
 
 class golden_wrench_item:
     def get_craft_date(self):

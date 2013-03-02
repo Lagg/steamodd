@@ -860,7 +860,7 @@ class backpack(base.json_request):
     def _get(self, value = None):
         return super(backpack, self)._get(value)
 
-    def __init__(self, appid, profile, schema = None, item_type = None):
+    def __init__(self, appid, profile, schema = None, item_type = None, **kwargs):
         """ Loads the backpack of user sid if given,
         items will only have identifiers if schema is not given. """
 
@@ -880,7 +880,7 @@ class backpack(base.json_request):
             base.get_api_key(),
             sid)
 
-        super(backpack, self).__init__(url)
+        super(backpack, self).__init__(url, **kwargs)
 
 class asset_item:
     def __init__(self, asset, catalog):

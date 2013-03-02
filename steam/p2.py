@@ -21,12 +21,12 @@ import items
 _APP_ID = 620
 
 class backpack(items.backpack):
-    def __init__(self, sid, schema = None):
-        items.backpack.__init__(self, _APP_ID, sid, schema)
+    def __init__(self, sid, **kwargs):
+        super(backpack, self).__init__(_APP_ID, sid, **kwargs)
 
 class item_schema(items.schema):
     def __init__(self, **kwargs):
-        items.schema.__init__(self, _APP_ID, item_type = item, **kwargs)
+        super(item_schema, self).__init__(_APP_ID, item_type = item, **kwargs)
 
 class item(items.item):
     def get_full_item_name(self, prefixes = None):
@@ -45,5 +45,5 @@ class item(items.item):
 
         return classes
 
-    def __init__(self, schema, item):
-        items.item.__init__(self, schema, item)
+    def __init__(self, schema, init_item):
+        super(item, self).__init__(schema, init_item)

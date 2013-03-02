@@ -117,7 +117,7 @@ class http_request(object):
             try:
                 req = urllib2.urlopen(urllib2.Request(self._url, headers = head), timeout = self._timeout)
             except timeout:
-                raise HttpTimeout(self._url)
+                raise HttpTimeout("Server took too long to respond")
             status_code = req.code
             body = req.read()
 

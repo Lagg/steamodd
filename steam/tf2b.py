@@ -28,5 +28,5 @@ class item_schema(tf2.item_schema):
         tf2.item_schema.__init__(self, _APP_ID, **kwargs)
 
 class backpack(tf2.backpack):
-    def __init__(self, sid, schema = None):
-        tf2.backpack.__init__(self, sid, _APP_ID, schema)
+    def __init__(self, sid, **kwargs):
+        tf2.backpack.__init__(self, sid, _APP_ID, **kwargs)

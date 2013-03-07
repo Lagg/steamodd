@@ -13,8 +13,7 @@ http://steamcommunity.com/dev/apikey
 Contributing
 ================
 
-If you would like to contribute please send a patch with the change
-and your email and name in AUTHORS.
+If you would like to contribute please send a pull request.
 
 Third-party modules
 ===================

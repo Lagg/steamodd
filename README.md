@@ -14,8 +14,3 @@ Contributing
 ================
 
 If you would like to contribute please send a pull request.
-
-Third-party modules
-===================
-
-grequests (Optional)  - Concurrent requests

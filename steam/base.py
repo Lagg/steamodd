@@ -1,16 +1,6 @@
 import json, re, urllib2
 from socket import timeout
 
-try:
-    import requests
-except ImportError:
-    requests = None
-
-try:
-    import grequests
-except ImportError:
-    grequests = None
-
 _api_key = None
 
 # Supported API languages (where applicable)
@@ -104,24 +94,18 @@ class http_request(object):
     def _download(self):
         """ Download the URL using last-modified timestamp if given """
 
-        using_requests = (requests and grequests)
         head = self._build_headers()
         status_code = -1
         body = ''
 
-        if using_requests:
-            req = requests.get(self._url, headers = head, timeout = self._timeout)
-            status_code = req.status_code
-            body = req.text
-        else:
-            try:
-                req = urllib2.urlopen(urllib2.Request(self._url, headers = head), timeout = self._timeout)
-                status_code = req.code
-                body = req.read()
-            except urllib2.URLError:
-                raise HttpError("Server connection failed")
-            except timeout:
-                raise HttpTimeout("Server took too long to respond")
+        try:
+            req = urllib2.urlopen(urllib2.Request(self._url, headers = head), timeout = self._timeout)
+            status_code = req.code
+            body = req.read()
+        except urllib2.URLError:
+            raise HttpError("Server connection failed")
+        except timeout:
+            raise HttpTimeout("Server took too long to respond")
 
         lm = req.headers.get("last-modified")
 
@@ -186,27 +170,9 @@ class json_request_multi(object):
         self._reqs = {}
 
     def download(self):
-        if requests and grequests:
-            greqs = [grequests.get(request.url, headers = request._build_headers(), timeout = request._timeout) for request in self._reqs.values()]
-
-            for response in grequests.map(greqs, size = self._connsize):
-                req = None
-                urlcandidates = [response.url] + [hist.url for hist in response.history]
-
-                for url in urlcandidates:
-                    try:
-                        req = self._reqs[url]
-                        break
-                    except KeyError:
-                        pass
-
-                if req:
-                    req._object = req._deserialize(response.text)
-                    req._last_modified = response.headers.get("last-modified")
-        else:
-            for url in self._reqs.keys():
-                req = self._reqs[url]
-                req._get()
+        for url in self._reqs.keys():
+            req = self._reqs[url]
+            req._get()
 
         return self._reqs.values()
 

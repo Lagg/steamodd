@@ -23,6 +23,11 @@ COMMENT = '/'
 CR = '\r'
 LF = '\n'
 
+try:
+    from collections import OrderedDict as odict
+except ImportError:
+    odict = dict
+
 def _symtostr(line, i):
     opening = i + 1
     closing = 0
@@ -74,9 +79,9 @@ def _parse(stream, ptr = 0):
 
 def _run_parse_encoded(string):
     try:
-        encoded = unicode(string, "ascii")
+        encoded = string.encode("ascii")
     except UnicodeDecodeError:
-        encoded = unicode(string, "utf-16")
+        encoded = string.encode("utf-16")
 
     res, ptr = _parse(encoded)
     return res

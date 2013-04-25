@@ -22,6 +22,9 @@ NODE_CLOSE = '}'
 COMMENT = '/'
 CR = '\r'
 LF = '\n'
+SPACE = ' '
+TAB = '\t'
+WHITESPACE = set(' \t\r\n')
 
 try:
     from collections import OrderedDict as odict
@@ -42,6 +45,15 @@ def _symtostr(line, i):
     finalstr = line[opening:closing]
     return finalstr, i + len(finalstr) + 1
 
+def _unquotedtostr(line, i):
+    ci = i
+    _len = len(line)
+    while ci < _len:
+        if line[ci] in WHITESPACE:
+            break
+        ci += 1
+    return line[i:ci], ci
+
 def _parse(stream, ptr = 0):
     i = ptr
     laststr = None
@@ -51,12 +63,7 @@ def _parse(stream, ptr = 0):
     while i < len(stream):
         c = stream[i]
 
-        if c == STRING:
-            string, i = _symtostr(stream, i)
-            if lasttok == STRING:
-                deserialized[laststr] = string
-            laststr = string
-        elif c == NODE_OPEN:
+        if c == NODE_OPEN:
             deserialized[laststr], i = _parse(stream, i + 1)
         elif c == NODE_CLOSE:
             return deserialized, i
@@ -69,6 +76,15 @@ def _parse(stream, ptr = 0):
                 i = ni
             if lasttok != LF:
                 c = LF
+        elif c != SPACE and c != TAB:
+            string, i = (
+                _symtostr if c == STRING else
+                _unquotedtostr)(stream, i)
+            if lasttok == STRING:
+                deserialized[laststr] = string
+            # force c = STRING so that lasttok will be set properly
+            c = STRING
+            laststr = string
         else:
             c = lasttok
 

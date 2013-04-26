@@ -19,47 +19,59 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 STRING = '"'
 NODE_OPEN = '{'
 NODE_CLOSE = '}'
+BR_OPEN = '['
+BR_CLOSE = ']'
 COMMENT = '/'
 CR = '\r'
 LF = '\n'
+SPACE = ' '
+TAB = '\t'
+WHITESPACE = set(' \t\r\n')
 
 try:
     from collections import OrderedDict as odict
 except ImportError:
     odict = dict
 
-def _symtostr(line, i):
+def _symtostr(line, i, token = STRING):
     opening = i + 1
     closing = 0
 
-    ci = line.find('"', opening)
+    ci = line.find(token, opening)
     while ci != -1:
         if line[ci - 1] != '\\':
             closing = ci
             break
-        ci = line.find('"', ci + 1)
+        ci = line.find(token, ci + 1)
 
     finalstr = line[opening:closing]
     return finalstr, i + len(finalstr) + 1
+
+def _unquotedtostr(line, i):
+    ci = i
+    _len = len(line)
+    while ci < _len:
+        if line[ci] in WHITESPACE:
+            break
+        ci += 1
+    return line[i:ci], ci
 
 def _parse(stream, ptr = 0):
     i = ptr
     laststr = None
     lasttok = None
+    lastbrk = None
     deserialized = {}
 
     while i < len(stream):
         c = stream[i]
 
-        if c == STRING:
-            string, i = _symtostr(stream, i)
-            if lasttok == STRING:
-                deserialized[laststr] = string
-            laststr = string
-        elif c == NODE_OPEN:
+        if c == NODE_OPEN:
             deserialized[laststr], i = _parse(stream, i + 1)
         elif c == NODE_CLOSE:
             return deserialized, i
+        elif c == BR_OPEN:
+            lastbrk, i = _symtostr(stream, i, BR_CLOSE)
         elif c == COMMENT:
             if (i + 1) < len(stream) and stream[i + 1] == '/':
                 i = stream.find('\n', i)
@@ -69,6 +81,19 @@ def _parse(stream, ptr = 0):
                 i = ni
             if lasttok != LF:
                 c = LF
+        elif c != SPACE and c != TAB:
+            string, i = (
+                _symtostr if c == STRING else
+                _unquotedtostr)(stream, i)
+            if lasttok == STRING:
+                if laststr in deserialized and lastbrk is not None:
+                    # ignore this entry if it's the second bracketed expression
+                    lastbrk = None
+                else:
+                    deserialized[laststr] = string
+            # force c = STRING so that lasttok will be set properly
+            c = STRING
+            laststr = string
         else:
             c = lasttok
 

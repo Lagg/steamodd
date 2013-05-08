@@ -4,45 +4,46 @@ import json
 import base
 import operator
 
-class backpack_context(base.json_request):
-    """ Reads in inventory contexts and other information
-    from the root inventory page """
+class inventory_context(object):
+    """ Builds context data that is fetched from a user's inventory page """
 
-    def get_app(self, key):
+    @property
+    def ctx(self):
+        if self._cache:
+            return self._cache
+
+        try:
+            data = self._downloader.download()
+            contexts = re.search("var g_rgAppContextData = (.+);", data)
+            match = contexts.group(1)
+            self._cache = json.loads(match)
+        except:
+            raise base.items.BackpackError("No SIM inventory information available for this user")
+
+        return self._cache
+
+    def get(self, key):
         """ Returns context data for a given app, can be an ID or a case insensitive name """
-
         keystr = str(key)
         res = None
 
         try:
-            res = self._get(keystr)
+            res = self.ctx[keystr]
         except KeyError:
-            for k, v in self._get().iteritems():
+            for k, v in self.ctx.iteritems():
                 if "name" in v and v["name"].lower() == keystr.lower():
                     res = v
                     break
 
         return res
 
-    def get_app_list(self):
+    @property
+    def apps(self):
         """ Returns a list of valid app IDs """
-
-        return self._get().keys()
-
-    def get_user_id64(self):
-        return self._user
-
-    def _deserialize(self, data):
-        contexts = re.search("var g_rgAppContextData = (.+);", data)
-
-        try:
-            match = contexts.group(1)
-            return json.loads(match)
-        except:
-            raise base.items.BackpackError("No inventory information available for this user")
+        return self.ctx.keys()
 
     def __getitem__(self, key):
-        res = self.get_app(key)
+        res = self.get(key)
 
         if not res: raise KeyError(key)
 
@@ -50,11 +51,7 @@ class backpack_context(base.json_request):
 
     def __iter__(self):
         iterindex = 0
-
-        if not self._ctx:
-            self._ctx = sorted(self._get().values(), key = operator.itemgetter("appid"))
-
-        iterdata = self._ctx
+        iterdata = sorted(self.ctx.values(), key = operator.itemgetter("appid"))
 
         while iterindex < len(iterdata):
             data = iterdata[iterindex]
@@ -62,70 +59,67 @@ class backpack_context(base.json_request):
             yield data
 
     def __init__(self, user, **kwargs):
-        self._ctx = None
+        self._cache = {}
         try:
-            sid = user.get_id64()
+            sid = user.id64
         except:
             sid = user
 
-        url = "http://steamcommunity.com/profiles/{0}/inventory/".format(sid)
+        self._downloader = base.http_downloader("http://steamcommunity.com/profiles/{0}/inventory/".format(sid), **kwargs)
         self._user = sid
 
-        super(backpack_context, self).__init__(url, **kwargs)
-
-class backpack(base.json_request):
-    def get_total_cells(self):
+class inventory(object):
+    @property
+    def cells_total(self):
         """ Returns the total amount of "cells" which in this case is just an amount of items """
-        return self._get("cells")
+        return self._inv.get("cells", len(self))
 
-    def nextitem(self):
+    def next(self):
         iterindex = 0
-        iterdata = self._get("items")
+        iterdata = self._inv.get("items", [])
 
         while iterindex < len(iterdata):
             data = iterdata[iterindex]
             iterindex += 1
-            yield data
+            yield item(data, self._ctx["rgContexts"][data["sec"]])
+
+    def __getitem__(self, key):
+        key = str(key)
+        for item in self:
+            if str(item.id) == key or str(item.original_id) == key:
+                return item
+        raise KeyError(key)
 
     def __iter__(self):
-        return self.nextitem()
+        return self.next()
 
     def __len__(self):
-        return len(self._get("items"))
+        return len(self._inv.get("items", []))
 
-    def _get(self, value = None):
-        if self._object:
-            if value: return self._object[value]
-            else: return self._object
+    @property
+    def _inv(self):
+        if self._cache:
+            return self._cache
 
-        self._object = {"section": self._section, "cells": 0, "items": []}
-        section = self._get("section")
         downloadlist = []
         invstr = "http://steamcommunity.com/profiles/{0}/inventory/json/{1}/"
         url = invstr.format(self._user, self._ctx["appid"])
         contexts = self._ctx["rgContexts"]
+        cellcount = 0
         items = []
 
-        if section != None:
-            sec = str(section)
-            downloadlist.append(sec)
-            self._object["cells"] = contexts[sec]["asset_count"]
+        if self._section != None:
+            sec = str(self._section)
+            downloadlist = sec
+            cellcount = contexts[sec]["asset_count"]
         else:
-            downloadlist = [str(k) for k in contexts.keys()]
-            self._object["cells"] = self._ctx["asset_count"]
-
-        downloader = base.json_request_multi()
+            for sec, ctx in contexts.iteritems():
+                cellcount += ctx["asset_count"]
+                downloadlist.append(str(sec))
 
         for sec in downloadlist:
-            req = base.json_request(url + sec, timeout = self._timeout)
-            req.section = sec
-            downloader.add(req)
-
-        requests = downloader.download()
-
-        for page in requests:
-            sec = page.section
-            inventorysection = page._object
+            req = base.http_downloader(url + sec, timeout = self._timeout)
+            inventorysection = json.loads(req.download())
 
             if not inventorysection:
                 raise base.items.BackpackError("Empty context data returned")
@@ -141,21 +135,20 @@ class backpack(base.json_request):
 
             for k, v in inv.iteritems():
                 fullitem = dict(v.items() + itemdescs[v["classid"] + "_" + v["instanceid"]].items())
-                finalitem = item(fullitem, contexts[sec])
-                items.append(finalitem)
+                # Store the sec ID for later referencing
+                fullitem["sec"] = sec
+                items.append(fullitem)
 
-        self._object["items"] = items
+        self._cache = {"cells": cellcount, "items": items}
+        return self._cache
 
-        if value:
-            return self._object[value]
-        else:
-            return self._object
+    def __init__(self, app, profile, schema = None, section = None, timeout = 3):
+        """
+        app is context data as returned by `inventory_context.get'
+        profile is a valid user object or ID64
+        """
 
-    def __init__(self, user, app, schema = None, section = None, timeout = 3):
-        """ app: A valid app object as returned by backpack_context.get_app
-        section: The inventory section to retrieve, if not given all items will be returned """
-
-        self._object = {}
+        self._cache = {}
         self._section = section
         self._ctx = app
         self._timeout = timeout
@@ -164,165 +157,138 @@ class backpack(base.json_request):
             raise base.items.BackpackError("No inventory available")
 
         try:
-            sid = user.get_id64()
-        except:
-            sid = user
+            sid = profile.id64
+        except AttributeError:
+            sid = profile
 
         self._user = sid
 
 class item_attribute(base.items.item_attribute):
-    def get_class(self):
-        return "mult_burger"
-
-    def get_id(self):
-        # Make this be element position as well maybe
-        return 0
-
-    def get_name(self):
-        return "make my name useful"
-
-    def get_type(self):
+    @property
+    def value_type(self):
         # Because Valve uses this same data on web pages, it's /probably/ trustworthy,
         # so long as they have fixed all the XSS bugs...
         return "html"
 
-    def get_description(self):
-        desc = self._attribute.get("value")
+    @property
+    def description(self):
+        desc = self.value
 
         if desc:
             return saxutils.unescape(desc)
         else:
             return " "
 
-    def get_description_color(self):
+    @property
+    def description_color(self):
         """ Returns description color as an RGB tuple """
         return self._attribute.get("color")
 
-    def is_hidden(self):
-        # Never anything but this, but could have a use for child classes
-        return False
+    @property
+    def type(self):
+        return self._attribute.get("type")
 
-    def get_value(self):
-        return 0
-    def get_value_formatted(self, value = None):
-        return str(self.get_value())
-    def get_value_max(self):
-        return 0
-    def get_value_min(self):
-        return 0
-    def get_value_type(self):
-        return self._attribute.get("type", "additive")
+    @property
+    def value(self):
+        return self._attribute.get("value")
 
     def __init__(self, attribute):
         super(item_attribute, self).__init__(attribute)
 
 class item(base.items.item):
-    def get_category_name(self):
+    @property
+    def category(self):
         """ Returns the category name that the item is a member of """
         return self._ctx.get("name", self._ctx["id"])
 
-    def get_color(self):
+    @property
+    def background_color(self):
         """ Returns the color associated with the item as a hex RGB tuple """
         return self._item.get("background_color")
 
-    def get_quality(self):
-        for tag in self._get_category("Quality"):
-            # Could maybe unpack hex values into ad-hoc ID.
-            return {"id": 0, "prettystr": tag["name"], "str": tag["internal_name"]}
-
-        return {"id": 0, "prettystr": "Normal", "str": "normal"}
-
-    def get_name(self):
+    @property
+    def name(self):
         return saxutils.unescape(self._item["name"])
 
-    def get_name_color(self):
+    @property
+    def name_color(self):
         """ Returns the name color as an RGB tuple """
         return self._item.get("name_color")
 
-    def get_full_item_name(self, prefixes = {}):
-        return self.get_name()
+    @property
+    def full_name(self):
+        return self.name
 
-    def is_untradable(self):
-        return bool(not self._item.get("tradable"))
+    @property
+    def tool_metadata(self):
+        return self._item.get("app_data")
 
-    def get_quantity(self):
+    @property
+    def tradable(self):
+        return self._item.get("tradable")
+
+    @property
+    def quality(self):
+        """ Can't really trust presence of a schema here, but there is an ID sometimes """
+        try:
+            qid = int((self.tool_metadata or {}).get("quality", 0))
+        except:
+            qid = 0
+        return qid, "normal", "Normal"
+
+    @property
+    def quantity(self):
         return int(self._item["amount"])
 
-    def get_attributes(self):
+    @property
+    def attributes(self):
         # Use descriptions here, with alternative attribute class
         return [item_attribute(attr) for attr in self._item.get("descriptions", [])]
 
-    def get_position(self):
+    @property
+    def position(self):
         return self._item["pos"]
 
-    def get_equipped_classes(self):
-        # Unsupported
-        return []
+    @property
+    def schema_id(self):
+        """
+        This *will* return none if there is no schema ID, since it's a
+        valve specific concept for the most part
+        """
+        try:
+            return int((self.tool_metadata or {}).get("def_index"))
+        except TypeError:
+            return None
 
-    def get_equipable_classes(self):
-        # might as well be unsupported
-        return []
-
-    def get_schema_id(self):
-        # Kind of unsupported (class ID possible?) TODO
-        return self._item["classid"]
-
-    def get_type(self):
+    @property
+    def type(self):
         return self._item.get("type", '')
 
-    def get_image(self, size):
-        """ If not one of the standard ITEM_* constants,
-        the given string will be used in the request.
+    def _scaled_image_url(self, dims):
+        urlbase = self._item.get("icon_url")
+        if urlbase:
+            cdn = "http://cdn.steamcommunity.com/economy/image/"
+            return cdn + urlbase + '/' + dims
+        else:
+            return ''
 
-        Syntax is W[f]xH[f] where f is a flag scaling up to the
-        given dimension until at the max size, and padding the rest with alpha/transparency """
-        smallicon = self._item.get("icon_url")
+    @property
+    def icon(self):
+        return self._scaled_image_url("96fx96f")
 
-        if not smallicon:
-            return ""
+    @property
+    def image(self):
+        return self._scaled_image_url("512fx512f")
 
-        fullurl = self._cdn_url + smallicon
-        dims = size
-
-        if size == self.ITEM_IMAGE_SMALL: dims = "96fx96f"
-        elif size == self.ITEM_IMAGE_LARGE: dims = "512fx512f"
-
-        return fullurl + '/' + dims
-
-    def get_id(self):
+    @property
+    def id(self):
         return long(self._item["id"])
 
-    def get_level(self):
-        return None
-
-    def get_slot(self):
+    @property
+    def slot_name(self):
         # (present sometimes in the form of tags) TODO
         for tag in self._get_category("Type"):
             return tag["name"]
-
-    def get_description(self):
-        # (kind of iffy here, since the actual descriptions are lists used for attributes)
-        return None
-
-    def is_name_prefixed(self):
-        # Always false because of the nature of this inventory system, there's no accurate way to determine grammar
-        return False
-
-    def get_kill_eaters(self):
-        # If they're there we can't tell due to lessened granularity, and Valve specific
-        return []
-
-    def get_rank(self):
-        # see above
-        return None
-
-    def get_styles(self):
-        # get_styles (Valve specific, and also iffy because it's 
-        # technically there, but would need a heuristic because it's 
-        # in the other description elements), the same is true for other related methods
-        return []
-
-    # get_capabilities (Maybe, depending on potential heuristic and tags) TODO
 
     def _get_category(self, name):
         cats = []
@@ -335,31 +301,6 @@ class item(base.items.item):
         return cats
 
     def __init__(self, theitem, context):
-        self._cdn_url = "http://cdn.steamcommunity.com/economy/image/"
         self._ctx = context
 
         super(item, self).__init__(theitem)
-
-class item_schema(base.json_request):
-    def __getitem__(self, key):
-        raise KeyError(key)
-
-    def __iter__(self):
-        while False: yield None
-
-    def _get(self, value = None):
-        return None
-
-    def get_attributes(self):
-        return []
-
-    def get_particle_systems(self):
-        return {}
-
-    def get_qualities(self):
-        return {}
-
-    def __init__(self, lang = None, **kwargs):
-        self._app_id = 0
-        self._language = base.get_language(lang)[0]
-        self._item_type = item

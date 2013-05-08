@@ -1,7 +1,7 @@
-import json, re, urllib2
+import json, re, urllib2, urllib
 from socket import timeout
 
-_api_key = None
+__api_key = None
 
 # Supported API languages (where applicable)
 _languages = {"da_DK": "Danish",
@@ -24,7 +24,7 @@ _languages = {"da_DK": "Danish",
               "es_ES": "Spanish",
               "sv_SE": "Swedish",
               "zh_TW": "Traditional Chinese",
-              "tr_TR": "Turksih"}
+              "tr_TR": "Turkish"}
 
 # Changeable if desired
 _default_language = "en_US"
@@ -68,9 +68,29 @@ class LangErrorUnsupported(LangError):
     def __init__(self, lang):
         LangError.__init__(self, lang, "Unsupported")
 
-class http_request(object):
-    def __init__(self, url, last_modified = None, timeout = 3, data_timeout = 15):
-        self._user_agent = "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; Valve Steam Client/1983; ) AppleWebKit/535.15 (KHTML, like Gecko) Chrome/18.0.989.0 Safari/535.11"
+class _interface_method(object):
+    def __init__(self, iface, name):
+        self._iface = iface
+        self._name = name
+
+    def __call__(self, method = "GET", version = 1, timeout = 5, since = None, **kwargs):
+        kwargs["format"] = "json"
+        kwargs["key"] = get_api_key()
+        url = "http://api.steampowered.com/{0}/{1}/v{2}?{3}".format(self._iface,
+                self._name, version, urllib.urlencode(kwargs))
+
+        return method_result(url, last_modified = since, timeout = timeout)
+
+class interface(object):
+    def __init__(self, iface):
+        self._iface = iface
+
+    def __getattr__(self, name):
+        return _interface_method(self._iface, name)
+
+class http_downloader(object):
+    def __init__(self, url, last_modified = None, timeout = 5):
+        self._user_agent = "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; Valve Steam Client/1366845241; ) AppleWebKit/535.15 (KHTML, like Gecko) Chrome/18.0.989.0 Safari/535.11"
         self._url = url
         self._timeout = timeout
         self._last_modified = last_modified
@@ -86,14 +106,7 @@ class http_request(object):
 
         return head
 
-    def _deserialize(self, data):
-        """ Deserialize downloaded content """
-
-        return str(data)
-
-    def _download(self):
-        """ Download the URL using last-modified timestamp if given """
-
+    def download(self):
         head = self._build_headers()
         status_code = -1
         body = ''
@@ -102,8 +115,8 @@ class http_request(object):
             req = urllib2.urlopen(urllib2.Request(self._url, headers = head), timeout = self._timeout)
             status_code = req.code
             body = req.read()
-        except urllib2.URLError:
-            raise HttpError("Server connection failed")
+        except urllib2.HTTPError as E:
+            raise HttpError("Server connection failed: {0.reason} ({1})".format(E, E.getcode()))
         except timeout:
             raise HttpTimeout("Server took too long to respond")
 
@@ -126,67 +139,40 @@ class http_request(object):
     def url(self):
         return self._url
 
-class json_request(http_request):
-    """ Base class for API requests over HTTP returning JSON """
+class method_result(dict):
+    """ Holds a deserialized JSON object obtained from fetching the given URL """
+    def __init__(self, *args, **kwargs):
+        super(method_result, self).__init__()
+        self._fetched = False
+        self._downloader = http_downloader(*args, **kwargs)
 
-    def _get(self, value = None):
-        """ Internal JSON object getter """
+    def __getitem__(self, key):
+        if not self._fetched:
+            self._call_method()
 
-        if not self._object:
-            self._object = self._deserialize(self._download())
+        return super(method_result, self).__getitem__(key)
 
-        if value:
-            return self._object[value]
-        else:
-            return self._object
-
-    def _deserialize(self, data):
-        try:
-            return json.loads(data)
-        except ValueError:
-            try:
-                return json.loads(self._strip_control_chars(data).decode("utf-8", errors = "replace"))
-            except ValueError:
-                return {}
+    def _call_method(self):
+        """ Download the URL using last-modified timestamp if given """
+        self.update(json.loads(self._strip_control_chars(self._downloader.download()).decode("utf-8", errors = "replace")))
+        self._fetched = True
 
     def _strip_control_chars(self, s):
         return replace_exp.sub('', s)
 
-    def __init__(self, *args, **kwargs):
-        self._object = {}
+    def get(self, key, default = None):
+        if not self._fetched:
+            self._call_method()
 
-        super(json_request, self).__init__(*args, **kwargs)
-
-class json_request_multi(object):
-    """ Builds stacks of json_request-like objects and downloads them concurrently """
-
-    def add(self, request):
-        """ Adds the request to the list,
-        remember that this is in place, object methods
-        and properties will change """
-        self._reqs[request.url] = request
-
-    def clear_queue(self):
-        self._reqs = {}
-
-    def download(self):
-        for url in self._reqs.keys():
-            req = self._reqs[url]
-            req._get()
-
-        return self._reqs.values()
-
-    def __init__(self, connsize = None):
-        self._reqs = {}
-        self._connsize = connsize
+        return super(method_result, self).get(key, default)
 
 def get_api_key():
     """ Returns the API key as a string, raises APIError if it's not set """
 
-    if not _api_key:
+    if not __api_key:
         raise APIError("API key not set")
 
-    return _api_key
+    return __api_key
 
 def get_language(code = None):
     """ Returns tuple of (code, label) for a given language.
@@ -214,8 +200,8 @@ def get_language(code = None):
         return lang
 
 def set_api_key(key):
-    global _api_key
+    global __api_key
 
-    _api_key = key
+    __api_key = key
 
-import items, tf2, tf2b, p2, d2, d2b, user, remote_storage, sim, vdf
+import apps, items, user, remote_storage, sim, vdf

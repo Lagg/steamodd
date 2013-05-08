@@ -23,47 +23,42 @@ class UGCError(base.APIError):
         self.msg = msg
         base.APIError.__init__(self, msg)
 
-class user_ugc(base.json_request):
-    def get_file_size(self):
+class ugc_file(object):
+    @property
+    def size(self):
         """ Size in bytes """
+        return self._data["size"]
 
-        return self._get("size")
-
-    def get_local_filename(self):
+    @property
+    def filename(self):
         """ Local filename is what the user named it, not the URL """
+        return self._data["filename"]
 
-        return self._get("filename")
-
-    def get_url(self):
+    @property
+    def url(self):
         """ UGC link """
+        return self._data["url"]
 
-        return self._get("url")
+    @property
+    def _data(self):
+        if self._cache:
+            return self._cache
 
-    def _deserialize(self, data):
-        res = super(user_ugc, self)._deserialize(data)
-
-        if "status" in res:
-            if res["status"]["code"] == 9:
-                raise UGCError("Code 9")
-
-        return res["data"]
-
-    def _get(self, value = None):
+        data = None
+        status = None
         try:
-            return super(user_ugc, self)._get(value)
-        except base.APIError as E:
-            raise UGCError(str(E))
+            data = self._api["data"]
+            status = self._api["status"]["code"]
+        except KeyError:
+            if not data:
+                if status != None and status != 9:
+                    raise UGCError("Code " + str(status))
+                else:
+                    raise UGCError("File not found")
 
-    def __init__(self, appid, ugcid64, user = None, **kwargs):
-        uid = None
+        self._cache = data
+        return self._cache
 
-        if user:
-            try: uid = user.get_id64()
-            except AttributeError: uid = user
-
-        url = ("http://api.steampowered.com/ISteamRemoteStorage/" +
-               "GetUGCFileDetails/v1?ugcid={0}&appid={1}&key={2}").format(ugcid64, appid, base.get_api_key())
-
-        if uid: url += "&steamid=" + str(uid)
-
-        super(user_ugc, self).__init__(url, **kwargs)
+    def __init__(self, appid, ugcid64, **kwargs):
+        self._cache = {}
+        self._api = base.interface("ISteamRemoteStorage").GetUGCFileDetails(ugcid = ugcid64, appid = appid, **kwargs)

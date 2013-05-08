@@ -42,61 +42,68 @@ class VanityError(Exception):
     def get_code(self):
         return self.code
 
-class vanity_url(base.json_request):
+class vanity_url(object):
     """ Class for holding a vanity URL and it's id64 """
 
-    def get_id64(self):
-        return self._get("id64")
+    @property
+    def id64(self):
+        if self._cache:
+            return self._cache
 
-    def _deserialize(self, data):
-        res = super(vanity_url, self)._deserialize(data)
-        obj = {}
-
+        res = None
         try:
-            res = res["response"]
-            code = int(res["success"])
-        except Exception as E:
-            raise VanityError("Server returned invalid vanity lookup")
+            res = self._api["response"]
+            self._cache = long(res["steamid"])
+        except KeyError:
+            if not self._cache:
+                if res:
+                    raise VanityError(res.get("message", "Invalid vanity response"), res.get("success"))
+                else:
+                    raise VanityError("Empty vanity response")
 
-        if code != 1:
-            raise VanityError(res["message"], code)
-
-        obj["id64"] = long(res["steamid"])
-
-        return obj
+        return self._cache
 
     def __str__(self):
-        return str(self.get_id64())
+        return str(self.id64)
 
     def __init__(self, vanity, **kwargs):
         """ Takes a vanity URL part and tries
         to resolve it. """
+        self._cache = None
+        self._api = base.interface("ISteamUser").ResolveVanityURL(vanityurl = vanity, **kwargs)
 
-        url = ("http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?" +
-               urllib.urlencode({"key": base.get_api_key(), "vanityurl": vanity}))
-
-        super(vanity_url, self).__init__(url, **kwargs)
-
-class profile(base.json_request):
+class profile(object):
     """ Functions for reading user account data """
 
-    def get_id64(self):
+    @property
+    def id64(self):
         """ Returns the 64 bit steam ID (use with other API requests) """
-        return self._get("steamid")
+        return long(self._prof["steamid"])
 
-    def get_persona(self):
+    @property
+    def persona(self):
         """ Returns the user's persona (what you usually see in-game) """
-        return self._get("personaname")
+        return self._prof["personaname"]
 
-    def get_profile_url(self):
+    @property
+    def profile_url(self):
         """ Returns a URL to the user's Community profile page """
-        return self._get("profileurl")
+        return self._prof["profileurl"]
 
-    def get_avatar_url(self, size):
-        """ Returns a URL to the user's avatar, see AVATAR_* """
-        return self._get(size)
+    @property
+    def avatar_small(self):
+        return self._prof["avatar"]
 
-    def get_status(self):
+    @property
+    def avatar_medium(self):
+        return self._prof["avatarmedium"]
+
+    @property
+    def avatar_large(self):
+        return self._prof["avatarfull"]
+
+    @property
+    def status(self):
         """ Returns the user's status.
         0: offline
         1: online
@@ -104,118 +111,93 @@ class profile(base.json_request):
         3: away
         4: snooze
         """
-        return self._get("personastate")
+        return self._prof["personastate"]
 
-    def get_visibility(self):
+    @property
+    def visibility(self):
         """ Returns the visibility setting of the profile.
         1: private
         2: friends only
         3: public
         """
-        return self._get("communityvisibilitystate")
+        return self._prof["communityvisibilitystate"]
 
     # This might be redundant, can we still get an id64 from an unconfigured profile?
-    def is_configured(self):
+    @property
+    def configured(self):
         """ Returns true if the user has created a Community profile """
+        return self._prof.get("profilestate", False)
 
-        return self._get().get("profilestate", False)
-
-    def get_last_online(self):
+    @property
+    def last_online(self):
         """ Returns the last time the user was online as a localtime
         time.struct_time struct """
+        return time.localtime(self._prof["lastlogoff"])
 
-        return time.localtime(self._get("lastlogoff"))
-
-    def is_comment_enabled(self):
+    @property
+    def comments_enabled(self):
         """ Returns true if the profile allows public comments """
+        return self._prof.get("commentpermission", False)
 
-        return self._get().get("commentpermission", False)
-
-    def get_real_name(self):
+    @property
+    def real_name(self):
         """ Returns the user's real name if it's set and public """
+        return self._prof.get("realname")
 
-        return self._get().get("realname")
-
-    # This isn't very useful yet since there's no API request
-    # for groups yet, and I'm avoiding using the old API
-    # as much as possible
-    def get_primary_group(self):
+    @property
+    def primary_group(self):
         """ Returns the user's primary group ID if set. """
+        return self._prof.get("primaryclanid")
 
-        return self._get().get("primaryclanid")
-
-    def get_creation_date(self):
+    @property
+    def creation_date(self):
         """ Returns the account creation date as a localtime time.struct_time
         struct if public"""
-
-        timestamp = self._get().get("timecreated")
+        timestamp = self._prof.get("timecreated")
         if timestamp:
             return time.localtime(timestamp)
 
-    def get_current_game(self):
-        """ Returns a dict of game info if the user is playing if public and set
-        id is an integer if it's a steam game
-        server is the IP address:port string if they're on a server
-        extra is the game name """
-        ret = {}
-        obj = self._get()
-        if self.get_visibility() == 3:
-            if "gameid" in obj:
-                ret["id"] = obj["gameid"]
-            if "gameserverip" in obj:
-                ret["server"] = obj["gameserverip"]
-            if "gameextrainfo" in obj:
-                ret["extra"] = obj["gameextrainfo"]
+    @property
+    def current_game(self):
+        """
+        Returns a tuple of 3 elements (each of which may be None if not available):
+        Current game app ID, server ip:port, misc. extra info (eg. game title)
+        """
+        obj = self._prof
+        return (obj.get("gameid"), obj.get("gameserverip"), obj.get("gameextrainfo"))
 
-            return ret
+    @property
+    def location(self):
+        """
+        Returns a tuple of 2 elements (each of which may be None if not available):
+        State ISO code, country ISO code
+        """
+        obj = self._prof
+        return (obj.get("locstatecode"), obj.get("loccountrycode"))
 
-    def get_location(self):
-        """ Returns a dict of location data if public and set
-        country: A two char ISO country code
-        state: A two char ISO state code """
-        ret = {}
-        obj = self._get()
-        if self.get_visibility() == 3:
-            if "loccountrycode" in obj:
-                ret["country"] = obj["loccountrycode"]
-            if "locstatecode" in obj:
-                ret["state"] = obj["locstatecode"]
+    @property
+    def _prof(self):
+        if not self._cache:
+            try:
+                res = self._api["response"]["players"]
+                try:
+                    self._cache = res[0]
+                except IndexError:
+                    raise ProfileNotFound("Profile not found")
+            except KeyError:
+                raise ProfileError("Bad player profile results returned")
 
-            return ret
-
-    def _deserialize(self, data):
-        res = super(profile, self)._deserialize(data.decode("utf-8", errors="ignore"))
-        obj = {}
-
-        try:
-            res = res["response"]["players"]
-            if res and res[0] != None:
-                obj = res[0]
-            else:
-                raise ProfileNotFound("Profile not found")
-        except KeyError:
-            raise ProfileError("Bad player profile results returned")
-
-        return obj
+        return self._cache
 
     def __str__(self):
-        return self.get_persona() or str(self.get_id64())
+        return self.persona or str(self.id64)
 
     def __init__(self, sid, **kwargs):
         """ Creates a profile instance for the given user """
-        url = ("http://api.steampowered.com/ISteamUser/GetPlayerSummaries/"
-               "v2/?key=" + base.get_api_key() + "&steamids=")
+        try:
+            sid = sid.id64
+        except AttributeError:
+            sid = os.path.basename(str(sid).strip('/'))
 
-        sid = str(sid)
-        lsid = sid.rfind('/')
-        if (lsid + 1) >= len(sid): sid = sid[:lsid]
-        sid = os.path.basename(sid)
-
-        super(profile, self).__init__(url + sid, **kwargs)
-
-        self._sid = sid
-        self._base_url = url
-
-    AVATAR_SMALL = "avatar"
-    AVATAR_MEDIUM = "avatarmedium"
-    AVATAR_LARGE = "avatarfull"
+        self._cache = {}
+        self._api = base.interface("ISteamUser").GetPlayerSummaries(version = 2, steamids = sid, **kwargs)

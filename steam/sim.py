@@ -1,3 +1,9 @@
+"""
+Steam Inventory Manager layer
+Copyright (c) 2010-2013, Anthony Garcia <anthony@lagg.me>
+Distributed under the ISC License (see LICENSE)
+"""
+
 from xml.sax import saxutils
 import re
 import json

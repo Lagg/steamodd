@@ -1,3 +1,9 @@
+"""
+Core code (to be moved)
+Copyright (c) 2010-2013, Anthony Garcia <anthony@lagg.me>
+Distributed under the ISC License (see LICENSE)
+"""
+
 import json, re, urllib2, urllib
 from socket import timeout
 

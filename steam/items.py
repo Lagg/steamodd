@@ -4,40 +4,17 @@ Copyright (c) 2010-2013, Anthony Garcia <anthony@lagg.me>
 Distributed under the ISC License (see LICENSE)
 """
 
-import json, os, time, base, operator
+import json, os, time, operator
+import api, loc
 
-class Error(Exception):
-    def __init__(self, msg):
-        Exception.__init__(self)
-        self.msg = msg
+class SchemaError(api.APIError):
+    pass
 
-    def __str__(self):
-        return str(self.msg)
+class AssetError(api.APIError):
+    pass
 
-class SchemaError(Error):
-    def __init__(self, msg, status = None):
-        Error.__init__(self, msg)
-        self.msg = msg
-        self.code = status
-
-        if status: self.msg += ": {0}".format(status)
-
-class ItemError(Error):
-    def __init__(self, msg, item = None):
-        Error.__init__(self, msg)
-        self.msg = msg
-        self.item = item
-
-class AssetError(Error):
-    def __init__(self, msg, asset = None):
-        Error.__init__(self, msg)
-        self.msg = msg
-        self.asset = asset
-
-class BackpackError(Error):
-    def __init__(self, msg):
-        Error.__init__(self, msg)
-        self.msg = msg
+class BackpackError(api.APIError):
+    pass
 
 class schema(object):
     """ The base class for the item schema. """
@@ -215,11 +192,11 @@ class schema(object):
         lang can be any ISO language code.
         lm will be used to generate an HTTP If-Modified-Since header. """
 
-        self._language = base.get_language(lang)[0]
+        self._language = loc.language(lang).code
         self._app = app
         self._cache = {}
 
-        self._api = base.interface("IEconItems_" + str(self._app)).GetSchema(language = self._language, **kwargs)
+        self._api = api.interface("IEconItems_" + str(self._app)).GetSchema(language = self._language, **kwargs)
 
 class item(object):
     """ Stores a single inventory item """
@@ -870,7 +847,7 @@ class inventory(object):
         except:
             sid = str(profile)
 
-        self._api = base.interface("IEconItems_" + str(self._app)).GetPlayerItems(SteamID = sid, **kwargs)
+        self._api = api.interface("IEconItems_" + str(self._app)).GetPlayerItems(SteamID = sid, **kwargs)
 
 class asset_item:
     """ Stores a single item from a steam asset catalog """
@@ -970,8 +947,8 @@ class assets(object):
         """ lang: Language of asset tags, defaults to english
         currency: The iso 4217 currency code, returns all currencies by default """
 
-        self._language = base.get_language(lang)[0]
+        self._language = loc.language(lang).code
         self._app = app
         self._cache = {}
 
-        self._api = base.interface("ISteamEconomy").GetAssetPrices(language = self._language, appid = self._app, **kwargs)
+        self._api = api.interface("ISteamEconomy").GetAssetPrices(language = self._language, appid = self._app, **kwargs)

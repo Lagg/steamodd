@@ -4,31 +4,17 @@ Copyright (c) 2010-2013, Anthony Garcia <anthony@lagg.me>
 Distributed under the ISC License (see LICENSE)
 """
 
-import base, time, os, urllib
+import time, os, urllib
+import api
 
-class ProfileError(Exception):
-    def __init__(self, msg):
-        Exception.__init__(self)
-        self.msg = msg
-
-    def __str__(self):
-        return str(self.msg)
+class ProfileError(api.APIError):
+    pass
 
 class ProfileNotFound(ProfileError):
-    def __init__(self, msg):
-        ProfileError.__init__(self, msg)
+    pass
 
-class VanityError(Exception):
-    def __init__(self, msg, code = None):
-        Exception.__init__(self)
-        self.msg = msg
-        self.code = code
-
-    def __str__(self):
-        return "{0}: {1}".format(self.get_code(), self.msg)
-
-    def get_code(self):
-        return self.code
+class VanityError(ProfileError):
+    pass
 
 class vanity_url(object):
     """ Class for holding a vanity URL and it's id64 """
@@ -45,7 +31,7 @@ class vanity_url(object):
         except KeyError:
             if not self._cache:
                 if res:
-                    raise VanityError(res.get("message", "Invalid vanity response"), res.get("success"))
+                    raise VanityError(res.get("message", "Invalid vanity response"))
                 else:
                     raise VanityError("Empty vanity response")
 
@@ -58,7 +44,7 @@ class vanity_url(object):
         """ Takes a vanity URL part and tries
         to resolve it. """
         self._cache = None
-        self._api = base.interface("ISteamUser").ResolveVanityURL(vanityurl = vanity, **kwargs)
+        self._api = api.interface("ISteamUser").ResolveVanityURL(vanityurl = vanity, **kwargs)
 
 class profile(object):
     """ Functions for reading user account data """
@@ -188,4 +174,4 @@ class profile(object):
             sid = os.path.basename(str(sid).strip('/'))
 
         self._cache = {}
-        self._api = base.interface("ISteamUser").GetPlayerSummaries(version = 2, steamids = sid, **kwargs)
+        self._api = api.interface("ISteamUser").GetPlayerSummaries(version = 2, steamids = sid, **kwargs)

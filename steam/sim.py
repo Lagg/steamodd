@@ -7,8 +7,9 @@ Distributed under the ISC License (see LICENSE)
 from xml.sax import saxutils
 import re
 import json
-import base
 import operator
+import api
+import items
 
 class inventory_context(object):
     """ Builds context data that is fetched from a user's inventory page """
@@ -24,7 +25,7 @@ class inventory_context(object):
             match = contexts.group(1)
             self._cache = json.loads(match)
         except:
-            raise base.items.BackpackError("No SIM inventory information available for this user")
+            raise items.BackpackError("No SIM inventory information available for this user")
 
         return self._cache
 
@@ -71,7 +72,7 @@ class inventory_context(object):
         except:
             sid = user
 
-        self._downloader = base.http_downloader("http://steamcommunity.com/profiles/{0}/inventory/".format(sid), **kwargs)
+        self._downloader = api.http_downloader("http://steamcommunity.com/profiles/{0}/inventory/".format(sid), **kwargs)
         self._user = sid
 
 class inventory(object):
@@ -124,16 +125,16 @@ class inventory(object):
                 downloadlist.append(str(sec))
 
         for sec in downloadlist:
-            req = base.http_downloader(url + sec, timeout = self._timeout)
+            req = api.http_downloader(url + sec, timeout = self._timeout)
             inventorysection = json.loads(req.download())
 
             if not inventorysection:
-                raise base.items.BackpackError("Empty context data returned")
+                raise items.BackpackError("Empty context data returned")
 
             try:
                 itemdescs = inventorysection["rgDescriptions"]
             except KeyError:
-                raise base.items.BackpackError("Steam returned inventory with missing context")
+                raise items.BackpackError("Steam returned inventory with missing context")
 
             inv = inventorysection.get("rgInventory")
             if not inv:
@@ -160,7 +161,7 @@ class inventory(object):
         self._timeout = timeout
 
         if not app:
-            raise base.items.BackpackError("No inventory available")
+            raise items.BackpackError("No inventory available")
 
         try:
             sid = profile.id64
@@ -169,7 +170,7 @@ class inventory(object):
 
         self._user = sid
 
-class item_attribute(base.items.item_attribute):
+class item_attribute(items.item_attribute):
     @property
     def value_type(self):
         # Because Valve uses this same data on web pages, it's /probably/ trustworthy,
@@ -201,7 +202,7 @@ class item_attribute(base.items.item_attribute):
     def __init__(self, attribute):
         super(item_attribute, self).__init__(attribute)
 
-class item(base.items.item):
+class item(items.item):
     @property
     def category(self):
         """ Returns the category name that the item is a member of """

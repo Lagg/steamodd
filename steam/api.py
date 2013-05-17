@@ -1,78 +1,51 @@
 """
-Core code (to be moved)
+Core API code
 Copyright (c) 2010-2013, Anthony Garcia <anthony@lagg.me>
 Distributed under the ISC License (see LICENSE)
 """
 
-import json, re, urllib2, urllib
+import os, urllib2, urllib, re, json
 from socket import timeout
 
-__api_key = None
+class SteamError(Exception):
+    """ For future expansion, considering that steamodd is already no
+    longer *just* an API implementation """
+    pass
 
-# Supported API languages (where applicable)
-_languages = {"da_DK": "Danish",
-              "nl_NL": "Dutch",
-              "en_US": "English",
-              "fi_FI": "Finnish",
-              "fr_FR": "French",
-              "de_DE": "German",
-              "hu_HU": "Hungarian",
-              "it_IT": "Italian",
-              "ja_JP": "Japanese",
-              "ko_KR": "Korean",
-              "no_NO": "Norwegian",
-              "pl_PL": "Polish",
-              "pt_PT": "Portuguese",
-              "pt_BR": "Brazilian Portuguese",
-              "ro_RO": "Romanian",
-              "ru_RU": "Russian",
-              "zh_CN": "Simplified Chinese",
-              "es_ES": "Spanish",
-              "sv_SE": "Swedish",
-              "zh_TW": "Traditional Chinese",
-              "tr_TR": "Turkish"}
+class APIError(SteamError):
+    """ Base API exception class """
+    pass
 
-# Changeable if desired
-_default_language = "en_US"
-
-# Don't remember where this came from, or even if I wrote it. But thank
-# you unnamed hero, or me. Not sure.
-control_chars = ''.join(map(unichr, range(0,32) + range(127,160)))
-replace_exp = re.compile('[' + re.escape(control_chars) + ']')
-
-class APIError(Exception):
-    def __init__(self, msg):
-        self.msg = msg
-        Exception.__init__(self, msg)
+class APIKeyMissingError(APIError):
+    pass
 
 class HttpError(APIError):
     """ Raised for other HTTP codes or results """
-    def __init__(self, msg):
-        self.msg = msg
-        APIError.__init__(self, msg)
+    pass
 
 class HttpStale(HttpError):
     """ Raised for HTTP code 304 """
-    def __init__(self, msg):
-        self.msg = msg
-        HttpError.__init__(self, msg)
+    pass
 
 class HttpTimeout(HttpError):
-    """ Raised for timeouts (may not explicitly be caused by HTTP lib) """
-    def __init__(self, msg):
-        self.msg = msg
-        HttpError.__init__(self, msg)
+    """ Raised for timeouts (not necessarily from the http lib itself but the
+    socket layer, but the effect and recovery is the same, this just makes it
+    more convenient """
+    pass
 
-class LangError(APIError):
-    """ Base loc error class """
-    def __init__(self, lang, msg = None):
-        self.msg = lang + ": " + str(msg)
-        APIError.__init__(self, self.msg)
+class key(object):
+    __api_key = None
 
-class LangErrorUnsupported(LangError):
-    """ Raised for invalid languages passed to related calls """
-    def __init__(self, lang):
-        LangError.__init__(self, lang, "Unsupported")
+    @classmethod
+    def set(cls, value):
+        cls.__api_key = str(value)
+
+    @classmethod
+    def get(cls):
+        if cls.__api_key:
+            return cls.__api_key
+        else:
+            raise APIKeyMissingError("API key not set")
 
 class _interface_method(object):
     def __init__(self, iface, name):
@@ -81,7 +54,7 @@ class _interface_method(object):
 
     def __call__(self, method = "GET", version = 1, timeout = 5, since = None, **kwargs):
         kwargs["format"] = "json"
-        kwargs["key"] = get_api_key()
+        kwargs["key"] = key.get()
         url = "http://api.steampowered.com/{0}/{1}/v{2}?{3}".format(self._iface,
                 self._name, version, urllib.urlencode(kwargs))
 
@@ -147,6 +120,10 @@ class http_downloader(object):
 
 class method_result(dict):
     """ Holds a deserialized JSON object obtained from fetching the given URL """
+
+    __replace_exp = re.compile('[' + re.escape(''.join(
+        map(unichr, range(0,32) + range(127,160)))) + ']')
+
     def __init__(self, *args, **kwargs):
         super(method_result, self).__init__()
         self._fetched = False
@@ -164,50 +141,10 @@ class method_result(dict):
         self._fetched = True
 
     def _strip_control_chars(self, s):
-        return replace_exp.sub('', s)
+        return method_result.__replace_exp.sub('', s)
 
     def get(self, key, default = None):
         if not self._fetched:
             self._call_method()
 
         return super(method_result, self).get(key, default)
-
-def get_api_key():
-    """ Returns the API key as a string, raises APIError if it's not set """
-
-    if not __api_key:
-        raise APIError("API key not set")
-
-    return __api_key
-
-def get_language(code = None):
-    """ Returns tuple of (code, label) for a given language.
-    raises LangErrorUnsupported if invalid, returns default if no code given """
-
-    lang = None
-
-    try:
-        if not code:
-            lang = (_default_language, _languages[_default_language])
-        else:
-            for k, v in _languages.iteritems():
-                lk = k.lower()
-                lc = code.lower()
-
-                if (lk == lc or
-                    lk.find('_') != -1 and lk.split('_')[0] == lc):
-                    lang = (k, v)
-    except KeyError:
-        pass
-
-    if not lang:
-        raise LangErrorUnsupported(code)
-    else:
-        return lang
-
-def set_api_key(key):
-    global __api_key
-
-    __api_key = key
-
-import apps, items, user, remote_storage, sim, vdf

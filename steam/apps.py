@@ -4,11 +4,10 @@ Copyright (c) 2010-2013, Anthony Garcia <anthony@lagg.me>
 Distributed under the ISC License (see LICENSE)
 """
 
-import base
+import api
 
-class AppError(base.APIError):
-    def __init__(self, msg):
-        base.APIError.__init__(self, msg)
+class AppError(api.APIError):
+    pass
 
 class app_list(object):
     """ Retrieves a list of all Steam apps with their ID and localized name """
@@ -33,7 +32,7 @@ class app_list(object):
                     return app, name
 
     def __init__(self, **kwargs):
-        self._api = base.interface("ISteamApps").GetAppList(version = 2, **kwargs)
+        self._api = api.interface("ISteamApps").GetAppList(version = 2, **kwargs)
         self._cache = {}
 
     def __iter__(self):

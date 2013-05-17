@@ -10,4 +10,9 @@ __contact__ = "anthony@lagg.me"
 __license__ = "ISC"
 __copyright__ = "Copyright (c) 2010-2013, " + __author__
 
-from base import *
+__all__ = [
+    "api", "apps", "items", "loc",
+    "remote_storage", "sim", "user", "vdf"
+    ]
+
+from . import *

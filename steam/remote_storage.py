@@ -4,12 +4,11 @@ Copyright (c) 2010-2013, Anthony Garcia <anthony@lagg.me>
 Distributed under the ISC License (see LICENSE)
 """
 
-import json, base
+import json
+import api
 
-class UGCError(base.APIError):
-    def __init__(self, msg):
-        self.msg = msg
-        base.APIError.__init__(self, msg)
+class UGCError(api.APIError):
+    pass
 
 class ugc_file(object):
     @property
@@ -49,4 +48,4 @@ class ugc_file(object):
 
     def __init__(self, appid, ugcid64, **kwargs):
         self._cache = {}
-        self._api = base.interface("ISteamRemoteStorage").GetUGCFileDetails(ugcid = ugcid64, appid = appid, **kwargs)
+        self._api = api.interface("ISteamRemoteStorage").GetUGCFileDetails(ugcid = ugcid64, appid = appid, **kwargs)

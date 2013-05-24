@@ -25,7 +25,7 @@ class inventory_context(object):
             match = contexts.group(1)
             self._cache = json.loads(match)
         except:
-            raise items.BackpackError("No SIM inventory information available for this user")
+            raise items.InventoryError("No SIM inventory information available for this user")
 
         return self._cache
 
@@ -129,12 +129,12 @@ class inventory(object):
             inventorysection = json.loads(req.download())
 
             if not inventorysection:
-                raise items.BackpackError("Empty context data returned")
+                raise items.InventoryError("Empty context data returned")
 
             try:
                 itemdescs = inventorysection["rgDescriptions"]
             except KeyError:
-                raise items.BackpackError("Steam returned inventory with missing context")
+                raise items.InventoryError("Steam returned inventory with missing context")
 
             inv = inventorysection.get("rgInventory")
             if not inv:
@@ -161,7 +161,7 @@ class inventory(object):
         self._timeout = timeout
 
         if not app:
-            raise items.BackpackError("No inventory available")
+            raise items.InventoryError("No inventory available")
 
         try:
             sid = profile.id64

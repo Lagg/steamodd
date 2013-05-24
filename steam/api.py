@@ -19,18 +19,21 @@ class APIError(SteamError):
 class APIKeyMissingError(APIError):
     pass
 
-class HttpError(APIError):
+class HTTPError(APIError):
     """ Raised for other HTTP codes or results """
     pass
 
-class HttpStale(HttpError):
+class HTTPStale(HTTPError):
     """ Raised for HTTP code 304 """
     pass
 
-class HttpTimeout(HttpError):
+class HTTPTimeoutError(HTTPError):
     """ Raised for timeouts (not necessarily from the http lib itself but the
     socket layer, but the effect and recovery is the same, this just makes it
     more convenient """
+    pass
+
+class HTTPFileNotFoundError(HTTPError):
     pass
 
 class key(object):
@@ -95,16 +98,20 @@ class http_downloader(object):
             status_code = req.code
             body = req.read()
         except urllib2.HTTPError as E:
-            raise HttpError("Server connection failed: {0.reason} ({1})".format(E, E.getcode()))
+            code = E.getcode()
+            if code == 404:
+                raise HTTPFileNotFoundError("File not found")
+            else:
+                raise HTTPError("Server connection failed: {0.reason} ({1})".format(E, code))
         except timeout:
-            raise HttpTimeout("Server took too long to respond")
+            raise HTTPTimeoutError("Server took too long to respond")
 
         lm = req.headers.get("last-modified")
 
         if status_code == 304:
-            raise HttpStale(str(lm))
+            raise HTTPStale(str(lm))
         elif status_code != 200:
-            raise HttpError(str(status_code))
+            raise HTTPError(str(status_code))
         else:
             self._last_modified = lm
 

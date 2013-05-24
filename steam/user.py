@@ -4,13 +4,13 @@ Copyright (c) 2010-2013, Anthony Garcia <anthony@lagg.me>
 Distributed under the ISC License (see LICENSE)
 """
 
-import time, os, urllib
+import time, os
 import api
 
 class ProfileError(api.APIError):
     pass
 
-class ProfileNotFound(ProfileError):
+class ProfileNotFoundError(ProfileError):
     pass
 
 class VanityError(ProfileError):
@@ -157,7 +157,7 @@ class profile(object):
                 try:
                     self._cache = res[0]
                 except IndexError:
-                    raise ProfileNotFound("Profile not found")
+                    raise ProfileNotFoundError("Profile not found")
             except KeyError:
                 raise ProfileError("Bad player profile results returned")
 

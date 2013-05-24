@@ -4,7 +4,7 @@ Copyright (c) 2010-2013, Anthony Garcia <anthony@lagg.me>
 Distributed under the ISC License (see LICENSE)
 """
 
-import json, os, time, operator
+import time, operator
 import api, loc
 
 class SchemaError(api.APIError):
@@ -13,7 +13,13 @@ class SchemaError(api.APIError):
 class AssetError(api.APIError):
     pass
 
-class BackpackError(api.APIError):
+class InventoryError(api.APIError):
+    pass
+
+class BadID64Error(InventoryError):
+    pass
+
+class ProfilePrivateError(InventoryError):
     pass
 
 class schema(object):
@@ -788,10 +794,10 @@ class inventory(object):
             # Only try to check status code if items don't exist (why error out when items are there)
             if status != None:
                 if status == 8:
-                    raise BackpackError("Bad Steam ID64 given")
+                    raise BadID64Error("Bad Steam ID64 given")
                 elif status == 15:
-                    raise BackpackError("Profile is private")
-            raise BackpackError("Backpack data incomplete or corrupt")
+                    raise ProfilePrivateError("Profile is private")
+            raise InventoryError("Backpack data incomplete or corrupt")
 
         self._cache = {
                 "items": items,

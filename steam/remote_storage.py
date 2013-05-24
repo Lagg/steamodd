@@ -4,10 +4,12 @@ Copyright (c) 2010-2013, Anthony Garcia <anthony@lagg.me>
 Distributed under the ISC License (see LICENSE)
 """
 
-import json
 import api
 
 class UGCError(api.APIError):
+    pass
+
+class FileNotFoundError(UGCError):
     pass
 
 class ugc_file(object):
@@ -41,7 +43,9 @@ class ugc_file(object):
                 if status != None and status != 9:
                     raise UGCError("Code " + str(status))
                 else:
-                    raise UGCError("File not found")
+                    raise FileNotFoundError("File not found")
+        except api.HTTPFileNotFoundError:
+            raise FileNotFoundError("File not found")
 
         self._cache = data
         return self._cache

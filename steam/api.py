@@ -128,9 +128,6 @@ class http_downloader(object):
 class method_result(dict):
     """ Holds a deserialized JSON object obtained from fetching the given URL """
 
-    __replace_exp = re.compile('[' + re.escape(''.join(
-        map(unichr, range(0,32) + range(127,160)))) + ']')
-
     def __init__(self, *args, **kwargs):
         super(method_result, self).__init__()
         self._fetched = False
@@ -144,11 +141,8 @@ class method_result(dict):
 
     def _call_method(self):
         """ Download the URL using last-modified timestamp if given """
-        self.update(json.loads(self._strip_control_chars(self._downloader.download()).decode("utf-8", errors = "replace")))
+        self.update(json.loads(self._downloader.download().decode("utf-8", errors = "replace")))
         self._fetched = True
-
-    def _strip_control_chars(self, s):
-        return method_result.__replace_exp.sub('', s)
 
     def get(self, key, default = None):
         if not self._fetched:

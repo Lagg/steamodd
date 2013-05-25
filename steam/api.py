@@ -101,19 +101,15 @@ class http_downloader(object):
             code = E.getcode()
             if code == 404:
                 raise HTTPFileNotFoundError("File not found")
+            elif code == 304:
+                raise HTTPStale(str(self._last_modified))
             else:
                 raise HTTPError("Server connection failed: {0.reason} ({1})".format(E, code))
         except timeout:
             raise HTTPTimeoutError("Server took too long to respond")
 
         lm = req.headers.get("last-modified")
-
-        if status_code == 304:
-            raise HTTPStale(str(lm))
-        elif status_code != 200:
-            raise HTTPError(str(status_code))
-        else:
-            self._last_modified = lm
+        self._last_modified = lm
 
         return body
 

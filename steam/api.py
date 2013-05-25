@@ -4,8 +4,20 @@ Copyright (c) 2010-2013, Anthony Garcia <anthony@lagg.me>
 Distributed under the ISC License (see LICENSE)
 """
 
-import os, urllib2, urllib, re, json
+import os, re, json
 from socket import timeout
+
+# Python 2 <-> 3 glue
+try:
+    from urllib.request import urlopen
+    from urllib.request import Request as urlrequest
+    from urllib.parse import urlencode
+    from urllib import error as urlerror
+except ImportError:
+    from urllib2 import urlopen
+    from urllib2 import Request as urlrequest
+    from urllib import urlencode
+    import urllib2 as urlerror
 
 class SteamError(Exception):
     """ For future expansion, considering that steamodd is already no
@@ -59,7 +71,7 @@ class _interface_method(object):
         kwargs["format"] = "json"
         kwargs["key"] = key.get()
         url = "http://api.steampowered.com/{0}/{1}/v{2}?{3}".format(self._iface,
-                self._name, version, urllib.urlencode(kwargs))
+                self._name, version, urlencode(kwargs))
 
         return method_result(url, last_modified = since, timeout = timeout)
 
@@ -94,10 +106,10 @@ class http_downloader(object):
         body = ''
 
         try:
-            req = urllib2.urlopen(urllib2.Request(self._url, headers = head), timeout = self._timeout)
+            req = urlopen(urlrequest(self._url, headers = head), timeout = self._timeout)
             status_code = req.code
             body = req.read()
-        except urllib2.HTTPError as E:
+        except urlerror.HTTPError as E:
             code = E.getcode()
             if code == 404:
                 raise HTTPFileNotFoundError("File not found")

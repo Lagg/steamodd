@@ -5,7 +5,7 @@ Distributed under the ISC License (see LICENSE)
 """
 
 import time, os
-import api
+from . import api
 
 class ProfileError(api.APIError):
     pass
@@ -27,7 +27,7 @@ class vanity_url(object):
         res = None
         try:
             res = self._api["response"]
-            self._cache = long(res["steamid"])
+            self._cache = int(res["steamid"])
         except KeyError:
             if not self._cache:
                 if res:
@@ -52,7 +52,7 @@ class profile(object):
     @property
     def id64(self):
         """ Returns the 64 bit steam ID (use with other API requests) """
-        return long(self._prof["steamid"])
+        return int(self._prof["steamid"])
 
     @property
     def persona(self):

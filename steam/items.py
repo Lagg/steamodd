@@ -5,7 +5,7 @@ Distributed under the ISC License (see LICENSE)
 """
 
 import time, operator
-import api, loc
+from . import api, loc
 
 class SchemaError(api.APIError):
     pass
@@ -44,7 +44,7 @@ class schema(object):
             # are in inventories, it's mostly just the schema that specifies qualities by non-loc name)
             qualities = {}
             quality_names = {}
-            for k, v in self._api["result"]["qualities"].iteritems():
+            for k, v in self._api["result"]["qualities"].items():
                 locname = self._api["result"]["qualityNames"][k]
                 idname = k.lower()
                 qualities[v] = (v, idname, locname)
@@ -168,16 +168,17 @@ class schema(object):
         return self._schema["items"].get(id)
 
     def __iter__(self):
-        return self.next()
+        return next(self)
 
-    def next(self):
+    def __next__(self):
         iterindex = 0
-        iterdata = self._schema["items"].values()
+        iterdata = list(self._schema["items"].values())
 
         while(iterindex < len(iterdata)):
             data = item(iterdata[iterindex], self)
             iterindex += 1
             yield data
+    next = __next__
 
     def __getitem__(self, key):
         realkey = None
@@ -215,7 +216,7 @@ class item(object):
         sortmap = {"neutral" : 1, "positive": 2,
                    "negative": 3}
 
-        sortedattrs = overridden_attrs.values()
+        sortedattrs = list(overridden_attrs.values())
         sortedattrs.sort(key = operator.itemgetter("defindex"))
         sortedattrs.sort(key = lambda t: sortmap[t.get("effect_type", "neutral")])
         return [item_attribute(theattr) for theattr in sortedattrs]
@@ -257,7 +258,7 @@ class item(object):
         """ Returns a list of classes that _can_ use the item. """
         sitem = self._schema_item
 
-        return filter(None, sitem.get("used_by_classes", self.equipped.keys()))
+        return [c for c in sitem.get("used_by_classes", self.equipped.keys()) if c]
 
     @property
     def schema_id(self):
@@ -443,7 +444,7 @@ class item(object):
             if aname.startswith("kill eater"):
                 try:
                     # Get the name prefix (matches up type and score and determines the primary type for ranking)
-                    eateri = filter(None, aname.split(' '))[-1]
+                    eateri = list(filter(None, aname.split(' ')))[-1]
                     if eateri.isdigit():
                         eateri = int(eateri)
                     else:
@@ -512,7 +513,7 @@ class item(object):
         """ Returns a list of all styles defined for the item """
         styles = self._schema_item.get("styles", [])
 
-        return map(operator.itemgetter("name"), styles)
+        return list(map(operator.itemgetter("name"), styles))
 
     @property
     def style(self):
@@ -525,7 +526,7 @@ class item(object):
     @property
     def capabilities(self):
         """ Returns a list of capabilities, these are flags for what the item can do or be done with """
-        return self._schema_item.get("capabilities", {}).keys()
+        return list(self._schema_item.get("capabilities", {}).keys())
 
     @property
     def tool_metadata(self):
@@ -538,9 +539,9 @@ class item(object):
         return self._origin
 
     def __iter__(self):
-        return self.next()
+        return next(self)
 
-    def next(self):
+    def __next__(self):
         iterindex = 0
         attrs = self.attributes
 
@@ -548,6 +549,7 @@ class item(object):
             data = attrs[iterindex]
             iterindex += 1
             yield data
+    next = __next__
 
     def __getitem__(self, key):
         for attr in self:
@@ -563,11 +565,8 @@ class item(object):
         except KeyError:
             return False
 
-    def __unicode__(self):
-        return self.full_name
-
     def __str__(self):
-        return unicode(self).encode("utf-8")
+        return self.full_name
 
     def __init__(self, item, schema = None):
         self._item = item
@@ -763,15 +762,12 @@ class item_attribute(object):
         else:
             return None
 
-    def __unicode__(self):
+    def __str__(self):
         """ Pretty printing """
         if not self.hidden:
             return self.formatted_description
         else:
             return self.name + ": " + self.formatted_value
-
-    def __str__(self):
-        return unicode(self).encode("utf-8")
 
     def __init__(self, attribute):
         self._attribute = attribute
@@ -823,12 +819,12 @@ class inventory(object):
         raise KeyError(key)
 
     def __iter__(self):
-        return self.next()
+        return next(self)
 
     def __len__(self):
         return len(self._inv["items"])
 
-    def next(self):
+    def __next__(self):
         iterindex = 0
         iterdata = self._inv["items"]
 
@@ -836,6 +832,7 @@ class inventory(object):
             data = item(iterdata[iterindex], self._schema)
             iterindex += 1
             yield data
+    next = __next__
 
     def __init__(self, app, profile, schema = None, **kwargs):
         """
@@ -862,11 +859,8 @@ class asset_item:
         self._catalog = catalog
         self._asset = asset
 
-    def __unicode__(self):
-        return self.name + " " + str(self.price)
-
     def __str__(self):
-        return unicode(self).encode("utf-8")
+        return self.name + " " + str(self.price)
 
     def _calculate_price(self, base = False):
         asset = self._asset
@@ -875,7 +869,7 @@ class asset_item:
         if base:
             pricemap = asset.get("original_prices", pricemap)
 
-        return dict([(currency, float(price) / 100) for currency, price in pricemap.iteritems()])
+        return dict([(currency, float(price) / 100) for currency, price in pricemap.items()])
 
     @property
     def tags(self):
@@ -937,17 +931,18 @@ class assets(object):
         return asset_item(assets[str(key)], self)
 
     def __iter__(self):
-        return self.next()
+        return next(self)
 
-    def next(self):
+    def __next__(self):
         # This was previously sorted, but I don't think order matters here. Does it?
-        data = self._assets["items"].values()
+        data = list(self._assets["items"].values())
         iterindex = 0
 
         while iterindex < len(data):
             ydata = asset_item(data[iterindex], self)
             iterindex += 1
             yield ydata
+    next = __next__
 
     def __init__(self, app, lang = None, **kwargs):
         """ lang: Language of asset tags, defaults to english

@@ -4,7 +4,7 @@ Copyright (c) 2010-2013, Anthony Garcia <anthony@lagg.me>
 Distributed under the ISC License (see LICENSE)
 """
 
-import api
+from . import api
 
 class UGCError(api.APIError):
     pass

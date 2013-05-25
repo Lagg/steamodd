@@ -8,8 +8,8 @@ from xml.sax import saxutils
 import re
 import json
 import operator
-import api
-import items
+from . import api
+from . import items
 
 class inventory_context(object):
     """ Builds context data that is fetched from a user's inventory page """
@@ -21,7 +21,7 @@ class inventory_context(object):
 
         try:
             data = self._downloader.download()
-            contexts = re.search("var g_rgAppContextData = (.+);", data)
+            contexts = re.search("var g_rgAppContextData = (.+);", data.decode("utf-8"))
             match = contexts.group(1)
             self._cache = json.loads(match)
         except:
@@ -37,7 +37,7 @@ class inventory_context(object):
         try:
             res = self.ctx[keystr]
         except KeyError:
-            for k, v in self.ctx.iteritems():
+            for k, v in self.ctx.items():
                 if "name" in v and v["name"].lower() == keystr.lower():
                     res = v
                     break
@@ -47,7 +47,7 @@ class inventory_context(object):
     @property
     def apps(self):
         """ Returns a list of valid app IDs """
-        return self.ctx.keys()
+        return list(self.ctx.keys())
 
     def __getitem__(self, key):
         res = self.get(key)
@@ -57,6 +57,9 @@ class inventory_context(object):
         return res
 
     def __iter__(self):
+        return next(self)
+
+    def __next__(self):
         iterindex = 0
         iterdata = sorted(self.ctx.values(), key = operator.itemgetter("appid"))
 
@@ -64,6 +67,7 @@ class inventory_context(object):
             data = iterdata[iterindex]
             iterindex += 1
             yield data
+    next = __next__
 
     def __init__(self, user, **kwargs):
         self._cache = {}
@@ -81,7 +85,7 @@ class inventory(object):
         """ Returns the total amount of "cells" which in this case is just an amount of items """
         return self._inv.get("cells", len(self))
 
-    def next(self):
+    def __next__(self):
         iterindex = 0
         iterdata = self._inv.get("items", [])
 
@@ -89,6 +93,7 @@ class inventory(object):
             data = iterdata[iterindex]
             iterindex += 1
             yield item(data, self._ctx["rgContexts"][data["sec"]])
+    next = __next__
 
     def __getitem__(self, key):
         key = str(key)
@@ -98,7 +103,7 @@ class inventory(object):
         raise KeyError(key)
 
     def __iter__(self):
-        return self.next()
+        return next(self)
 
     def __len__(self):
         return len(self._inv.get("items", []))
@@ -120,13 +125,13 @@ class inventory(object):
             downloadlist = sec
             cellcount = contexts[sec]["asset_count"]
         else:
-            for sec, ctx in contexts.iteritems():
+            for sec, ctx in contexts.items():
                 cellcount += ctx["asset_count"]
                 downloadlist.append(str(sec))
 
         for sec in downloadlist:
             req = api.http_downloader(url + sec, timeout = self._timeout)
-            inventorysection = json.loads(req.download())
+            inventorysection = json.loads(req.download().decode("utf-8"))
 
             if not inventorysection:
                 raise items.InventoryError("Empty context data returned")
@@ -140,11 +145,11 @@ class inventory(object):
             if not inv:
                 continue
 
-            for k, v in inv.iteritems():
-                fullitem = dict(v.items() + itemdescs[v["classid"] + "_" + v["instanceid"]].items())
-                # Store the sec ID for later referencing
-                fullitem["sec"] = sec
-                items.append(fullitem)
+            for id, item in inv.items():
+                # Store the section ID for later use
+                item["sec"] = sec
+                item.update(itemdescs.get(item["classid"] + "_" + item["instanceid"], {}))
+                items.append(item)
 
         self._cache = {"cells": cellcount, "items": items}
         return self._cache
@@ -289,7 +294,7 @@ class item(items.item):
 
     @property
     def id(self):
-        return long(self._item["id"])
+        return int(self._item["id"])
 
     @property
     def slot_name(self):

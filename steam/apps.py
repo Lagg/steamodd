@@ -4,7 +4,7 @@ Copyright (c) 2010-2013, Anthony Garcia <anthony@lagg.me>
 Distributed under the ISC License (see LICENSE)
 """
 
-import api
+from . import api
 
 class AppError(api.APIError):
     pass
@@ -36,7 +36,7 @@ class app_list(object):
         self._cache = {}
 
     def __iter__(self):
-        return self.next()
+        return next(self)
 
     def __len__(self):
         return len(self._apps)
@@ -50,7 +50,7 @@ class app_list(object):
                 raise AppError("Bad app list returned")
         return self._cache
 
-    def next(self):
+    def __next__(self):
         i = 0
         data = self._apps
 
@@ -59,3 +59,4 @@ class app_list(object):
             name = data[i]["name"]
             i += 1
             yield (app, name)
+    next = __next__

@@ -92,9 +92,9 @@ def _parse(stream, ptr = 0):
 
 def _run_parse_encoded(string):
     try:
-        encoded = string.encode("ascii")
+        encoded = string.decode("utf-16")
     except UnicodeDecodeError:
-        encoded = string.encode("utf-16")
+        encoded = str(string)
 
     res, ptr = _parse(encoded)
     return res
@@ -108,18 +108,18 @@ def loads(string):
 indent = 0
 mult = 2
 def _i():
-    return ' ' * (indent * mult)
+    return u' ' * (indent * mult)
 
 def _dump(obj):
-    nodefmt = unicode('\n' + _i() + '"{0}"\n' + _i() + '{{\n{1}' + _i() + '}}\n\n')
-    podfmt = unicode(_i() + '"{0}" "{1}"\n')
-    lstfmt = unicode(_i() + (' ' * mult) + '"{0}" "1"')
+    nodefmt = u'\n' + _i() + '"{0}"\n' + _i() + '{{\n{1}' + _i() + '}}\n\n'
+    podfmt = _i() + '"{0}" "{1}"\n'
+    lstfmt = _i() + (' ' * mult) + '"{0}" "1"'
     global indent
 
     indent += 1
 
     nodes = []
-    for k, v in obj.iteritems():
+    for k, v in obj.items():
         if isinstance(v, dict):
             nodes.append(nodefmt.format(k, _dump(v)))
         else:
@@ -129,13 +129,13 @@ def _dump(obj):
                     nodes.append(podfmt.format(k, v))
                 except AttributeError:
                     lst = map(lstfmt.format, v)
-                    nodes.append(nodefmt.format(k, '\n'.join(lst) + '\n'))
+                    nodes.append(nodefmt.format(k, u'\n'.join(lst) + '\n'))
             except TypeError:
                 nodes.append(podfmt.format(k, v))
 
     indent -= 1
 
-    return unicode(''.join(nodes))
+    return u''.join(nodes)
 
 def _run_dump(obj):
     res = _dump(obj)

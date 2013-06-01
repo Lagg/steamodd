@@ -92,9 +92,12 @@ def _parse(stream, ptr = 0):
 
 def _run_parse_encoded(string):
     try:
-        encoded = string.decode("utf-16")
-    except UnicodeDecodeError:
-        encoded = str(string)
+        encoded = string.decode("ascii")
+    except:
+        try:
+            encoded = string.decode("utf-8")
+        except:
+            encoded = string.decode("utf-16")
 
     res, ptr = _parse(encoded)
     return res

@@ -6,7 +6,6 @@ Distributed under the ISC License (see LICENSE)
 from distutils.core import setup, Command
 from distutils.errors import DistutilsOptionError
 from unittest import TestLoader, TextTestRunner
-import os
 import steam
 
 class run_tests(Command):
@@ -23,7 +22,7 @@ class run_tests(Command):
         if not self.key:
             raise DistutilsOptionError("API key is required")
         else:
-            os.environ["STEAM_API_KEY"] = self.key
+            steam.api.key.set(self.key)
 
     def run(self):
         tests = TestLoader().discover("tests")

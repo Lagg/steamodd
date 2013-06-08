@@ -43,6 +43,8 @@ class vanity_url(object):
     def __init__(self, vanity, **kwargs):
         """ Takes a vanity URL part and tries
         to resolve it. """
+        vanity = os.path.basename(str(vanity).strip('/'))
+
         self._cache = None
         self._api = api.interface("ISteamUser").ResolveVanityURL(vanityurl = vanity, **kwargs)
 

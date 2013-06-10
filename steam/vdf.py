@@ -91,15 +91,18 @@ def _parse(stream, ptr = 0):
     return deserialized, i
 
 def _run_parse_encoded(string):
-    encoded = string
+    try:
+        encoded = bytearray(string, "utf-16")
+    except TypeError:
+        encoded = bytearray(string) # Already byte object?
 
     try:
-        encoded = string.decode("ascii")
+        encoded = encoded.decode("ascii")
     except UnicodeDecodeError:
         try:
-            encoded = string.decode("utf-8")
+            encoded = encoded.decode("utf-8")
         except:
-            encoded = string.decode("utf-16")
+            encoded = encoded.decode("utf-16")
     except UnicodeEncodeError:
         pass # Likely already decoded
 

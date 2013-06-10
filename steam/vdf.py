@@ -49,6 +49,7 @@ def _parse(stream, ptr = 0):
     laststr = None
     lasttok = None
     lastbrk = None
+    laststr_is_key = False
     deserialized = {}
 
     while i < len(stream):
@@ -73,7 +74,7 @@ def _parse(stream, ptr = 0):
             string, i = (
                 _symtostr if c == STRING else
                 _unquotedtostr)(stream, i)
-            if lasttok == STRING:
+            if lasttok == STRING and laststr_is_key:
                 if laststr in deserialized and lastbrk is not None:
                     # ignore this entry if it's the second bracketed expression
                     lastbrk = None
@@ -82,6 +83,7 @@ def _parse(stream, ptr = 0):
             # force c = STRING so that lasttok will be set properly
             c = STRING
             laststr = string
+            laststr_is_key = not laststr_is_key
         else:
             c = lasttok
 

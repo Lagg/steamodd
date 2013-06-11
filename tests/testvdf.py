@@ -42,6 +42,8 @@ class SyntaxTestCase(unittest.TestCase):
         {
             key value
         }
+
+        "key4" "value"
     }
     """
 
@@ -58,7 +60,8 @@ class SyntaxTestCase(unittest.TestCase):
                 u"key3": u"value",
                 u"subnode": {
                     u"key": u"value"
-                    }
+                    },
+                u"key4": u"value"
                 }
             }
 

@@ -95,7 +95,7 @@ def _parse(stream, ptr = 0):
 def _run_parse_encoded(string):
     try:
         encoded = bytearray(string, "utf-16")
-    except TypeError:
+    except:
         encoded = bytearray(string) # Already byte object?
 
     try:

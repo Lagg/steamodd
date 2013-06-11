@@ -77,3 +77,19 @@ class DeserializeTestCase(SyntaxTestCase):
 
     def test_mixed(self):
         self.assertEqual(self.EXPECTED_MIXED_DICT, vdf.loads(self.MIXED_VDF))
+
+class SerializeTestCase(SyntaxTestCase):
+    def test_unquoted(self):
+        self.assertEqual(self.EXPECTED_DICT, vdf.loads(vdf.dumps(vdf.loads(self.UNQUOTED_VDF))))
+
+    def test_quoted(self):
+        self.assertEqual(self.EXPECTED_DICT, vdf.loads(vdf.dumps(vdf.loads(self.QUOTED_VDF))))
+
+    def test_macro_unquoted(self):
+        self.assertEqual(self.EXPECTED_DICT, vdf.loads(vdf.dumps(vdf.loads(self.MACRO_UNQUOTED_VDF))))
+
+    def test_macro_quoted(self):
+        self.assertEqual(self.EXPECTED_DICT, vdf.loads(vdf.dumps(vdf.loads(self.MACRO_QUOTED_VDF))))
+
+    def test_mixed(self):
+        self.assertEqual(self.EXPECTED_MIXED_DICT, vdf.loads(vdf.dumps(vdf.loads(self.MIXED_VDF))))

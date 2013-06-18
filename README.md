@@ -14,7 +14,7 @@ when the release makes breaking changes, minor version numbers
 are incremented when they are not. Meaning that it is safe to
 upgrade without having to change existing code.
 
-## The name ##
+### The name ###
 
 If there's one thing I've learned over the years and most recently
 from OPTF2 it's a good idea to record the meaning behind your project
@@ -31,12 +31,22 @@ addition to the strong implementation of the API it has the recent
 [VDF](http://wiki.teamfortress.com/wiki/WebAPI/VDF) support and the SIM
 layer to boast as useful but not exactly unrelated utilities.
 
+# Installing #
+
+Steamodd uses the standard distutils module. To install it run
+`python setup.py install`. For further instructions and commands run
+`python setup.py --help`.
+
 # Using #
 
 Before calling any methods you should call the steam.api.key.set
 method and pass it your Steam API key. Most methods will not
 complete successfully without it. If you don't have an API key you
 can register for one on [Steam](http://steamcommunity.com/dev/apikey).
+
+# Testing #
+
+To launch the test suite run `python setup.py run_tests -k <KEY>`.
 
 # Contributing #
 

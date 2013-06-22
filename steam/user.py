@@ -67,6 +67,13 @@ class profile(object):
         return self._prof["profileurl"]
 
     @property
+    def vanity(self):
+        """ Returns the user's vanity url if it exists, None otherwise """
+        purl = self.profile_url.strip('/')
+        if purl.find("/id/") != -1:
+            return os.path.basename(purl)
+
+    @property
     def avatar_small(self):
         return self._prof["avatar"]
 

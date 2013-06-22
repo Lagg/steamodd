@@ -9,3 +9,8 @@ env:
           uE1O+K3p5PSYeYL/z0z8jrloncTCY26bFB79p8cscZvD2aGZCdQgTHLW/inq
           PYkqxArdjIUU4Pe6yxIIS4sZv0jHA/CcVQAGa4KwMDiaVQA5/Hc=
 script: python setup.py run_tests -k $APIKEY
+notifications:
+    email:
+        on_success: never
+        on_failure: always
+    irc: "chat.freenode.net#optf2"

@@ -13,4 +13,8 @@ notifications:
     email:
         on_success: never
         on_failure: always
-    irc: "chat.freenode.net#optf2"
+    irc:
+        channels:
+            - "chat.freenode.net#optf2"
+        template:
+            - "%{repository}/%{branch}#%{commit} by %{author}: %{message} - %{build_url}"

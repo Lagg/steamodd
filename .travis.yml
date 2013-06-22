@@ -1,0 +1,11 @@
+language: python
+python:
+    - '2.7'
+    - '3.3'
+env:
+    global:
+        secure: |-
+          EGaBZsH4N0En+rJBbsv+D/Y6nSuvYcMcqEfgQE62iEgzt5wXLAto5vV0SfoK
+          uE1O+K3p5PSYeYL/z0z8jrloncTCY26bFB79p8cscZvD2aGZCdQgTHLW/inq
+          PYkqxArdjIUU4Pe6yxIIS4sZv0jHA/CcVQAGa4KwMDiaVQA5/Hc=
+script: python setup.py run_tests -k $APIKEY

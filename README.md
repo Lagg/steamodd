@@ -48,6 +48,8 @@ can register for one on [Steam](http://steamcommunity.com/dev/apikey).
 
 To launch the test suite run `python setup.py run_tests -k <KEY>`.
 
+[![Build Status](https://travis-ci.org/Lagg/steamodd.png)](https://travis-ci.org/Lagg/steamodd)
+
 # Contributing #
 
 If you would like to contribute please send a pull request.

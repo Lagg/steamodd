@@ -6,11 +6,10 @@ class AppsTestCase(unittest.TestCase):
     def setUpClass(cls):
         cls._apps = apps.app_list()
 
-    def test_app_list_get_tf2(self):
-        self.assertEquals(self._apps[440], (440, 'Team Fortress 2'))
+    def test_builtin_consistency(self):
+        for app, name in self._apps._builtin.items():
+            self.assertIn(app, self._apps)
+            self.assertEquals((app, name), self._apps[app])
 
-    def test_app_list_get_dota2(self):
-        self.assertEquals(self._apps[570], (570, 'DOTA 2'))
-
-    def test_app_list_get_invalid_app(self):
-        self.assertRaises(apps.AppError, self._apps[12345678])
+    def test_invalid_app(self):
+        self.assertRaises(KeyError, self._apps.__getitem__, 12345678)

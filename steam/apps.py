@@ -22,6 +22,13 @@ class app_list(object):
             730: "Counter Strike Global Offensive"
             }
 
+    def __contains__(self, key):
+        try:
+            self[key]
+            return True
+        except KeyError:
+            return False
+
     def __getitem__(self, key):
         try:
             return key, self._builtin[key]
@@ -30,6 +37,7 @@ class app_list(object):
             for app, name in self:
                 if str(app) == key or name.lower() == key:
                     return app, name
+            raise
 
     def __init__(self, **kwargs):
         self._api = api.interface("ISteamApps").GetAppList(version = 2, **kwargs)

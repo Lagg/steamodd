@@ -919,6 +919,16 @@ class assets(object):
 
         return self._assets["tags"]
 
+    def __contains__(self, key):
+        """ Returns a whether a given asset ID exists within this
+        catalog or not. """
+        try:
+            key = key.schema_id
+        except AttributeError:
+            pass
+
+        return str(key) in self._assets["items"]
+
     def __getitem__(self, key):
         """ Returns an `asset_item' for a given asset ID """
         assets = self._assets["items"]

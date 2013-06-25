@@ -62,12 +62,24 @@ class key(object):
         else:
             raise APIKeyMissingError("API key not set")
 
+class socket_timeout(object):
+    """ Global timeout, can be overridden by timeouts passed to ctor """
+    __timeout = 5
+
+    @classmethod
+    def set(cls, value):
+        cls.__timeout = value
+
+    @classmethod
+    def get(cls):
+        return cls.__timeout
+
 class _interface_method(object):
     def __init__(self, iface, name):
         self._iface = iface
         self._name = name
 
-    def __call__(self, method = "GET", version = 1, timeout = 5, since = None, **kwargs):
+    def __call__(self, method = "GET", version = 1, timeout = None, since = None, **kwargs):
         kwargs["format"] = "json"
         kwargs["key"] = key.get()
         url = "http://api.steampowered.com/{0}/{1}/v{2}?{3}".format(self._iface,
@@ -83,10 +95,10 @@ class interface(object):
         return _interface_method(self._iface, name)
 
 class http_downloader(object):
-    def __init__(self, url, last_modified = None, timeout = 5):
+    def __init__(self, url, last_modified = None, timeout = None):
         self._user_agent = "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; Valve Steam Client/1366845241; ) AppleWebKit/535.15 (KHTML, like Gecko) Chrome/18.0.989.0 Safari/535.11"
         self._url = url
-        self._timeout = timeout
+        self._timeout = timeout or socket_timeout.get()
         self._last_modified = last_modified
 
     def _build_headers(self):

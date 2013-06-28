@@ -17,7 +17,7 @@ class VanityError(ProfileError):
     pass
 
 class vanity_url(object):
-    """ Class for holding a vanity URL and it's id64 """
+    """ Class for holding a vanity URL and its id64 """
 
     @property
     def id64(self):

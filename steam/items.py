@@ -417,7 +417,7 @@ class item(object):
                 if prefixed:
                     if quality_str == "unique":
                         pfinal = "The"
-                else:
+                elif quality_str == "unique":
                     pfinal = ''
 
         if rank and not custom_name and quality_str == "strange": pfinal = rank["name"]

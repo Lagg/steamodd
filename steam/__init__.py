@@ -4,7 +4,7 @@ Copyright (c) 2010-2013, Anthony Garcia <anthony@lagg.me>
 Distributed under the ISC License (see LICENSE)
 """
 
-__version__ = "3.2"
+__version__ = "4.0"
 __author__ = "Anthony Garcia"
 __contact__ = "anthony@lagg.me"
 __license__ = "ISC"

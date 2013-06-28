@@ -31,6 +31,7 @@ class run_tests(Command):
 setup(name = "steamodd",
       version = steam.__version__,
       description = "High level Steam API implementation with low level reusable core",
+      long_description = "Please see the `README <https://github.com/Lagg/steamodd/blob/master/README.md>`_ for a full description.",
       packages = ["steam"],
       author = steam.__author__,
       author_email = steam.__contact__,

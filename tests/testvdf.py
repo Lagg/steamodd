@@ -110,7 +110,7 @@ class SyntaxTestCase(unittest.TestCase):
             u"number2": 2
             }
 
-    COMBINATION_OF_ABOVE_DICT = {
+    COMBINATION_DICT = {
             u"node": {
                 u"key": u"value",
                 u"subnode": {
@@ -138,7 +138,7 @@ class SyntaxTestCase(unittest.TestCase):
             "number2": "2"
             }
 
-    EXPECTED_COMBINATION_OF_ABOVE_DICT = {
+    EXPECTED_COMBINATION_DICT = {
             "node": {
                 "key": "value",
                 "subnode": {
@@ -193,5 +193,5 @@ class SerializeTestCase(SyntaxTestCase):
     def test_numerical_dict(self):
         self.assertEqual(self.EXPECTED_NUMERICAL_DICT, vdf.loads(vdf.dumps(self.NUMERICAL_DICT)))
 
-    def test_combination_of_above(self):
-        self.assertEqual(self.EXPECTED_COMBINATION_OF_ABOVE_DICT, vdf.loads(vdf.dumps(self.COMBINATION_OF_ABOVE_DICT)))
+    def test_combination_dict(self):
+        self.assertEqual(self.EXPECTED_COMBINATION_DICT, vdf.loads(vdf.dumps(self.COMBINATION_DICT)))

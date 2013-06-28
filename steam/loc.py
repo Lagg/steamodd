@@ -44,7 +44,7 @@ class language(object):
     def __init__(self, code = None):
         """ Raises LanguageUnsupportedError if the code isn't supported by the
         API or otherwise invalid, uses the default language if no code is given.
-        `code` is an ISO language code. """
+        'code' is an ISO language code. """
         self._code = None
 
         if not code:

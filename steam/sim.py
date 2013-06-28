@@ -156,7 +156,7 @@ class inventory(object):
 
     def __init__(self, app, profile, schema = None, section = None, timeout = None):
         """
-        app is context data as returned by `inventory_context.get'
+        app is context data as returned by 'inventory_context.get'
         profile is a valid user object or ID64
         """
 

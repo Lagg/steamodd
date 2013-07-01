@@ -1,5 +1,6 @@
 import unittest
 from steam import user
+from steam import api
 
 class ProfileTestCase(unittest.TestCase):
     VALID_ID64 = 76561198014028523
@@ -42,3 +43,28 @@ class ProfileIdTestCase(ProfileTestCase):
     def test_weird_id(self):
         profile = user.profile(self.WEIRD_ID64)
         self.assertRaises(user.ProfileNotFoundError, lambda: profile.id64)
+
+class ProfileBatchTestCase(ProfileTestCase):
+    def test_big_list(self):
+        # As of writing this my list has ~150 friends. I don't plan on going below 100.
+        # If I should become a pariah or otherwise go under 100 this should probably be changed.
+        # TODO: Implement GetFriendList in steamodd proper
+        friends = api.interface("ISteamUser").GetFriendList(steamid = self.VALID_ID64)
+        testsids = [friend["steamid"] for friend in friends["friendslist"]["friends"]]
+
+        self.assertEqual(set(testsids), set(map(lambda x: str(x.id64), user.profile_batch(testsids))))
+
+    def test_compatibility(self):
+        userlist = [self.VALID_ID64, user.vanity_url("windpower"), user.vanity_url("rjackson"),
+                user.profile(self.VALID_ID64)]
+        resolvedids = set()
+
+        for u in userlist:
+            try:
+                sid = u.id64
+            except AttributeError:
+                sid = str(u)
+
+            resolvedids.add(str(sid))
+
+        self.assertEqual(resolvedids, set(map(lambda x: str(x.id64), user.profile_batch(userlist))))

@@ -172,6 +172,14 @@ class profile(object):
 
         return self._cache
 
+    @classmethod
+    def from_def(cls, obj):
+        """ Builds a profile object from a raw player summary object """
+        prof = cls(obj["steamid"])
+        prof._cache = obj
+
+        return prof
+
     def __str__(self):
         return self.persona or str(self.id64)
 
@@ -184,3 +192,42 @@ class profile(object):
 
         self._cache = {}
         self._api = api.interface("ISteamUser").GetPlayerSummaries(version = 2, steamids = sid, **kwargs)
+
+class profile_batch:
+    def __init__(self, sids):
+        """ Fetches user profiles en masse and generates 'profile' objects.
+        The length of the ID list can be indefinite, separate requests
+        will be made if the length exceeds the API's ID cap and the list
+        split into batches. """
+        MAX_BATCHSIZE = 100
+        self._batches = []
+        batchlen, rem = divmod(len(sids), MAX_BATCHSIZE)
+
+        if rem > 0:
+            batchlen += 1
+
+        for i in range(batchlen):
+            offset = i * MAX_BATCHSIZE
+            batch = sids[offset:offset + MAX_BATCHSIZE]
+            processed = set()
+
+            for sid in batch:
+                try:
+                    sid = sid.id64
+                except AttributeError:
+                    sid = os.path.basename(str(sid).strip('/'))
+
+                processed.add(str(sid))
+
+            self._batches.append(processed)
+
+    def __iter__(self):
+        return next(self)
+
+    def __next__(self):
+        for batch in self._batches:
+            req = api.interface("ISteamUser").GetPlayerSummaries(version = 2, steamids = ','.join(batch))
+
+            for player in req["response"]["players"]:
+                yield profile.from_def(player)
+    next = __next__

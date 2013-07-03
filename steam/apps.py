@@ -17,7 +17,7 @@ class app_list(object):
             520: "Team Fortress 2 Beta",
             620: "Portal 2",
             570: "DOTA 2",
-            205700: "DOTA 2 Beta",
+            205700: "DOTA 2 Test",
             816: "DOTA 2 Internal",
             730: "Counter Strike Global Offensive"
             }

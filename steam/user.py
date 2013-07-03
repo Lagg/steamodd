@@ -17,7 +17,7 @@ class VanityError(ProfileError):
     pass
 
 class vanity_url(object):
-    """ Class for holding a vanity URL and it's id64 """
+    """ Class for holding a vanity URL and its id64 """
 
     @property
     def id64(self):
@@ -105,7 +105,6 @@ class profile(object):
         """
         return self._prof["communityvisibilitystate"]
 
-    # This might be redundant, can we still get an id64 from an unconfigured profile?
     @property
     def configured(self):
         """ Returns true if the user has created a Community profile """

@@ -25,6 +25,9 @@ class run_tests(Command):
         else:
             steam.api.key.set(self.key)
 
+        # Generous timeout so slow server days don't cause failed builds
+        steam.api.socket_timeout.set(20)
+
     def run(self):
         tests = TestLoader().discover("tests")
         results = TextTestRunner(verbosity = 2).run(tests)

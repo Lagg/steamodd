@@ -79,7 +79,7 @@ class schema(object):
             items = self._api["result"]["items"]
             self._cache["items"] = dict([(i["defindex"], i) for i in items])
         except KeyError:
-            # Due to the various fields needed we can't check for certain fields and fall back ala `inventory'
+            # Due to the various fields needed we can't check for certain fields and fall back ala 'inventory'
             if status != None:
                 raise SchemaError("Steam returned bad schema with error code " + str(status))
             else:
@@ -100,7 +100,7 @@ class schema(object):
 
     def _attribute_definition(self, attrid):
         """ Returns the attribute definition dict of a given attribute
-        id, can be the name or the integer ID """
+        ID, can be the name or the integer ID """
         attrs = self._schema["attributes"]
 
         try:
@@ -134,9 +134,9 @@ class schema(object):
     @property
     def qualities(self):
         """
-        Returns a dict of all possible qualities. The key(s) will be the ID
-        , values are a tuple containing id, name, localized name. To resolve
-        a quality to a name intelligently use `_quality_definition'
+        Returns a dict of all possible qualities. The key(s) will be the ID,
+        values are a tuple containing ID, name, localized name. To resolve
+        a quality to a name intelligently use '_quality_definition'
         """
         return self._schema["qualities"]
 
@@ -223,7 +223,7 @@ class item(object):
 
     @property
     def quality(self):
-        """ Returns a tuple containing id, name, and localized name of the quality """
+        """ Returns a tuple containing ID, name, and localized name of the quality """
         return self._quality
 
     @property
@@ -308,13 +308,13 @@ class item(object):
         """ Returns the item's slot as a string, this includes "primary",
         "secondary", "melee", and "head". Note that this is the slot
         of the item as it appears in the schema, and not necessarily
-        the actual equipable slot. (see `equipped')"""
+        the actual equipable slot. (see 'equipped')"""
         return self._schema_item.get("item_slot")
 
     @property
     def cvar_class(self):
         """ Returns the item's class
-        (what you use in the console to equip it, not the craft class)"""
+        (what you use in the game to equip it, not the craft class)"""
         return self._schema_item.get("item_class")
 
     @property
@@ -369,15 +369,16 @@ class item(object):
 
     @property
     def tradable(self):
-        # Somewhat a WORKAROUND since this flag is there
-        # sometimes, "cannot trade" is there somtimes
-        # and then there's "always tradable". Opposed to
-        # only occasionally tradable when it feels like it.
-        # Attr 153 = cannot trade
+        """ Somewhat of a WORKAROUND since this flag is there
+        sometimes, "cannot trade" is there sometimes
+        and then there's "always tradable". Opposed to
+        only occasionally tradable when it feels like it.
+        Attr 153 = cannot trade """
         return not (self._item.get("flag_cannot_trade") or (153 in self))
 
     @property
     def craftable(self):
+        """ Returns not craftable if the cannot craft flag exists. True, otherwise. """
         return not self._item.get("flag_cannot_craft")
 
     @property
@@ -697,14 +698,14 @@ class item_attribute(object):
 
     @property
     def type(self):
-        """ Returns the attribute effect type (positive, negative, or neutral). This is not the same as the value type, see `value_type' """
+        """ Returns the attribute effect type (positive, negative, or neutral). This is not the same as the value type, see 'value_type' """
         return self._attribute.get("effect_type")
 
     @property
     def value(self):
         """
         Tries to intelligently return the raw value based on schema data.
-        See also: `value_int' and `value_float'
+        See also: 'value_int' and 'value_float'
         """
         # TODO: No way to determine which value to use without schema, could be problem
         if self._isint:
@@ -725,14 +726,14 @@ class item_attribute(object):
         """ Returns the attribute's description string, if
         it is intended to be printed with the value there will
         be a "%s1" token somewhere in the string. Use
-        `formatted_description' to build one automatically. """
+        'formatted_description' to build one automatically. """
         return self._attribute.get("description_string")
 
     @property
     def value_type(self):
         """ The attribute's type, note that this is the type of the attribute's
         value and not its affect on the item (i.e. negative or positive). See
-        `type' for that. """
+        'type' for that. """
         redundantprefix = "value_is_"
         vtype = self._attribute.get("description_format")
 
@@ -753,7 +754,7 @@ class item_attribute(object):
         """ Certain attributes have a user's account information
         associated with it such as a gifted or crafted item.
 
-        A dict with two keys: `persona' and `id64'.
+        A dict with two keys: 'persona' and 'id64'.
         None if the attribute has no account information attached to it. """
         account_info = self._attribute.get("account_info")
         if account_info:
@@ -836,9 +837,9 @@ class inventory(object):
 
     def __init__(self, app, profile, schema = None, **kwargs):
         """
-        `app': Steam app to get the inventory for.
-        `profile': A user ID or profile object.
-        `schema': The schema to use for item lookup.
+        'app': Steam app to get the inventory for.
+        'profile': A user ID or profile object.
+        'schema': The schema to use for item lookup.
         """
 
         self._app = app
@@ -930,7 +931,7 @@ class assets(object):
         return str(key) in self._assets["items"]
 
     def __getitem__(self, key):
-        """ Returns an `asset_item' for a given asset ID """
+        """ Returns an 'asset_item' for a given asset ID """
         assets = self._assets["items"]
 
         try:

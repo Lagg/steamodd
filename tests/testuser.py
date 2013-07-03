@@ -5,7 +5,7 @@ from steam import api
 class ProfileTestCase(unittest.TestCase):
     VALID_ID64 = 76561198014028523
     INVALID_ID64 = 123
-    # This is weird but there should be no reason that it's invalid
+    # This is weird but there should be no reason that it's invalid.
     # So Valve, if you see this, be gewd guys and make 33 bit (condensed)
     # IDs work properly. Or at least put a more appropriate error. Currently
     # It's impossible to distinguish between this and a bad ID (all are code 8)

@@ -6,7 +6,7 @@ from steam import sim
 class BaseTestCase(unittest.TestCase):
     TEST_APP = (440, 'en_US')     # TF2 English catalog
     ITEM_IN_CATALOG = 344         # Crocleather Slouch
-    ITEM_NOT_IN_CATALOG = 1       # Demoman Bottle
+    ITEM_NOT_IN_CATALOG = 1       # Bottle
     TEST_ID64 = 76561198014028523 # Yours truly
 
 class AssetTestCase(BaseTestCase):
@@ -86,7 +86,7 @@ class ItemTestCase(InventoryBaseTestCase):
                             break
 
         for item in self._inv:
-            # Ignore hidden, special (for now)  and date values (timestamp formatting is an eternal battle, let it not be fought on these hallowed testgrounds)
+            # Ignore hidden, special (for now) and date values (timestamp formatting is an eternal battle, let it not be fought on these hallowed testgrounds)
             attrs = set([attr.formatted_description for attr in item if not attr.hidden and attr.value_type not in ("date", "particle_index")])
             self.assertTrue(item.id in sim_attrs, "Item " + str(item.id))
             self.assertEqual(attrs, sim_attrs[item.id], "Item " + str(item.id))

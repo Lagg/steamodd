@@ -6,6 +6,7 @@ Distributed under the ISC License (see LICENSE)
 from distutils.core import setup, Command
 from distutils.errors import DistutilsOptionError
 from unittest import TestLoader, TextTestRunner
+import sys
 import steam
 
 class run_tests(Command):
@@ -26,7 +27,8 @@ class run_tests(Command):
 
     def run(self):
         tests = TestLoader().discover("tests")
-        TextTestRunner(verbosity = 2).run(tests)
+        results = TextTestRunner(verbosity = 2).run(tests)
+        sys.exit(int(not results.wasSuccessful()))
 
 setup(name = "steamodd",
       version = steam.__version__,

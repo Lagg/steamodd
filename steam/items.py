@@ -715,11 +715,17 @@ class item_attribute(object):
 
     @property
     def value_int(self):
-        return int(self._attribute.get("value", 0))
+        try:
+            return int(self._attribute.get("value", 0))
+        except ValueError:
+            return 0
 
     @property
     def value_float(self):
-        return float(self._attribute.get("float_value", self._attribute.get("value", 0)))
+        try:
+            return float(self._attribute.get("float_value", self.value_int))
+        except ValueError:
+            return 0.0
 
     @property
     def description(self):

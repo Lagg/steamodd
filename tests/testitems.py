@@ -88,8 +88,8 @@ class ItemTestCase(InventoryBaseTestCase):
         for item in self._inv:
             # Ignore hidden, special (for now) and date values (timestamp formatting is an eternal battle, let it not be fought on these hallowed testgrounds)
             attrs = set([attr.formatted_description for attr in item if not attr.hidden and attr.value_type not in ("date", "particle_index")])
-            self.assertTrue(item.id in sim_attrs, "Item " + str(item.id))
-            self.assertEqual(attrs, sim_attrs[item.id], "Item " + str(item.id))
+            self.assertTrue(item.id in sim_attrs)
+            self.assertEqual(attrs, sim_attrs[item.id])
 
 class InventoryTestCase(InventoryBaseTestCase):
     def test_cell_count(self):

@@ -50,15 +50,23 @@ class HTTPFileNotFoundError(HTTPError):
 
 class key(object):
     __api_key = None
+    __api_key_env_var = os.environ.get("STEAMODD_API_KEY")
 
     @classmethod
     def set(cls, value):
+        """ Set the current API key, overrides env var. """
         cls.__api_key = str(value)
 
     @classmethod
     def get(cls):
-        if cls.__api_key:
-            return cls.__api_key
+        """Get the current API key.
+        if one has not been given via 'set' the env var STEAMODD_API_KEY will
+        be checked instead.
+        """
+        apikey = cls.__api_key or cls.__api_key_env_var
+
+        if apikey:
+            return apikey
         else:
             raise APIKeyMissingError("API key not set")
 

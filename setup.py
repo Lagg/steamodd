@@ -17,7 +17,10 @@ class run_tests(Command):
             ]
 
     def initialize_options(self):
-        self.key = None
+        try:
+            self.key = steam.api.key.get()
+        except steam.api.APIKeyMissingError:
+            self.key = None
 
     def finalize_options(self):
         if not self.key:

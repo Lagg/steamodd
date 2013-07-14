@@ -104,10 +104,11 @@ class schema(object):
         attrs = self._schema["attributes"]
 
         try:
-            return attrs[attrid]
+            # Make a new dict to avoid side effects
+            return dict(attrs[attrid])
         except KeyError:
             attr_names = self._schema["attribute_names"]
-            return attrs.get(attr_names.get(str(attrid).lower()))
+            return dict(attrs.get(attr_names.get(str(attrid).lower()))) or None
 
     def _quality_definition(self, qid):
         """ Returns the ID and localized name of the given quality, can be either ID type """

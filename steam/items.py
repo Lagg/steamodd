@@ -638,7 +638,7 @@ class item_attribute(object):
         """ Returns a formatted value as a string"""
         # TODO: Cleanup all of this, it's just weird and unnatural maths
         val = self.value
-        fattr = str(val)
+        pval = val
         ftype = self.value_type
 
         if ftype == "percentage":
@@ -648,12 +648,8 @@ class item_attribute(object):
                 pval = 0 - (100 - pval)
             else:
                 pval -= 100
-
-            fattr = str(pval)
         elif ftype == "additive_percentage":
             pval = int(round(val * 100))
-
-            fattr = str(pval)
         elif ftype == "inverted_percentage":
             pval = 100 - int(round(val * 100))
 
@@ -661,15 +657,14 @@ class item_attribute(object):
             if self.type == "negative":
                 if self.value > 1:
                     pval = 0 - pval
-
-            fattr = str(pval)
         elif ftype == "additive" or ftype == "particle_index" or ftype == "account_id":
-            if int(val) == val: fattr = (str(int(val)))
+            if int(val) == val:
+                pval = int(val)
         elif ftype == "date":
             d = time.gmtime(int(val))
-            fattr = time.strftime("%Y-%m-%d %H:%M:%S", d)
+            pval = time.strftime("%Y-%m-%d %H:%M:%S", d)
 
-        return fattr
+        return u"{0}".format(pval)
 
     @property
     def formatted_description(self):

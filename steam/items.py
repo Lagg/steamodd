@@ -712,7 +712,15 @@ class item_attribute(object):
     @property
     def value_int(self):
         try:
-            return int(self._attribute.get("value", 0))
+            # This is weird, I know, but so is Valve.
+            # They store floats in value fields sometimes, sometimes not.
+            # Oh and they also store strings in there too now!
+            val = self._attribute.get("value", 0)
+
+            if not isinstance(val, float):
+                return int(val)
+            else:
+                return float(val)
         except ValueError:
             return 0
 

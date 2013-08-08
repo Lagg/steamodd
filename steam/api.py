@@ -169,7 +169,7 @@ class method_result(dict):
 
     def _call_method(self):
         """ Download the URL using last-modified timestamp if given """
-        self.update(json.loads(self._downloader.download().decode("utf-8", errors = "replace")))
+        self.update(json.loads(self._downloader.download().decode("utf-8")))
         self._fetched = True
 
     def get(self, key, default = None):

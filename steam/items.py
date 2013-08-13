@@ -399,30 +399,20 @@ class item(object):
         suffix = ''
         pfinal = ''
 
-        if not custom_name:
-            # 229 = unique craft index
-            try:
-                craftno = self[229].value
-                if craftno > 0: suffix = '#' + str(craftno)
-            except KeyError: pass
+        if item_name.startswith("The ") and prefixed:
+            item_name = item_name[4:]
 
-            if item_name.startswith("The ") and prefixed:
-                item_name = item_name[4:]
+        if quality_str != "unique" and quality_str != "normal":
+            pfinal = pretty_quality_str
 
-        if custom_name:
-            item_name = custom_name
-        else:
-            if quality_str != "unique" and quality_str != "normal":
-                pfinal = pretty_quality_str
+        if english:
+            if prefixed:
+                if quality_str == "unique":
+                    pfinal = "The"
+            elif quality_str == "unique":
+                pfinal = ''
 
-            if english:
-                if prefixed:
-                    if quality_str == "unique":
-                        pfinal = "The"
-                elif quality_str == "unique":
-                    pfinal = ''
-
-        if rank and not custom_name and quality_str == "strange": pfinal = rank["name"]
+        if rank and quality_str == "strange": pfinal = rank["name"]
 
         if english: prefix = pfinal
         elif pfinal: suffix = '(' + pfinal + ') ' + suffix
@@ -568,7 +558,13 @@ class item(object):
             return False
 
     def __str__(self):
-        return self.full_name
+        cname = self.custom_name
+        fullname = self.full_name
+
+        if cname:
+            return "{0} ({1})".format(cname, fullname)
+        else:
+            return fullname
 
     def __init__(self, item, schema = None):
         self._item = item

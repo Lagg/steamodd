@@ -47,7 +47,7 @@ class ItemTestCase(InventoryBaseTestCase):
             name = item.full_name.strip("'")
             sim_names.add(cn_exp.sub('', name))
 
-        our_names = set([cn_exp.sub('', item.full_name) for item in self._inv])
+        our_names = set([cn_exp.sub('', item.custom_name or item.full_name) for item in self._inv])
 
         self.assertEqual(our_names, sim_names)
 

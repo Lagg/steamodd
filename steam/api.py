@@ -137,7 +137,7 @@ class http_downloader(object):
                 raise HTTPStale(str(self._last_modified))
             else:
                 raise HTTPError("Server connection failed: {0.reason} ({1})".format(E, code))
-        except timeout:
+        except (timeout, urlerror.URLError):
             raise HTTPTimeoutError("Server took too long to respond")
 
         lm = req.headers.get("last-modified")

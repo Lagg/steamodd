@@ -131,12 +131,18 @@ class http_downloader(object):
             body = req.read()
         except urlerror.HTTPError as E:
             code = E.getcode()
+            # More portability hax (no reason property in 2.6?)
+            try:
+                reason = E.reason
+            except AttributeError:
+                reason = "Connection error"
+
             if code == 404:
                 raise HTTPFileNotFoundError("File not found")
             elif code == 304:
                 raise HTTPStale(str(self._last_modified))
             else:
-                raise HTTPError("Server connection failed: {0.reason} ({1})".format(E, code))
+                raise HTTPError("Server connection failed: {0} ({1})".format(reason, code))
         except (timeout, urlerror.URLError):
             raise HTTPTimeoutError("Server took too long to respond")
 

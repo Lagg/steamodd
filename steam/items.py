@@ -219,7 +219,7 @@ class item(object):
 
         sortedattrs = list(overridden_attrs.values())
         sortedattrs.sort(key = operator.itemgetter("defindex"))
-        sortedattrs.sort(key = lambda t: sortmap[t.get("effect_type", "neutral")])
+        sortedattrs.sort(key = lambda t: sortmap.get(t.get("effect_type", "neutral")))
         return [item_attribute(theattr) for theattr in sortedattrs]
 
     @property
@@ -451,9 +451,10 @@ class item(object):
                     eateri += 100
 
                 eaters.setdefault(eateri, [None, None])
-                if aname.find("score type") != -1:
+                if aname.find("score type") != -1 or aname.find("kill type") != -1:
                     # Score type attribute
-                    eaters[eateri][0] = attr.value
+                    if eaters[eateri][0] == None:
+                        eaters[eateri][0] = attr.value
                 else:
                     # Value attribute
                     eaters[eateri][1] = attr.value

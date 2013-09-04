@@ -4,8 +4,10 @@ Copyright (c) 2010-2013, Anthony Garcia <anthony@lagg.me>
 Distributed under the ISC License (see LICENSE)
 """
 
-import os, re, json
-from socket import timeout
+import os
+import re
+import json
+import socket
 
 # Python 2 <-> 3 glue
 try:
@@ -143,8 +145,10 @@ class http_downloader(object):
                 raise HTTPStale(str(self._last_modified))
             else:
                 raise HTTPError("Server connection failed: {0} ({1})".format(reason, code))
-        except (timeout, urlerror.URLError):
+        except (socket.timeout, urlerror.URLError):
             raise HTTPTimeoutError("Server took too long to respond")
+        except socket.error as E:
+            raise HTTPError("Server read error: ".format(E))
 
         lm = req.headers.get("last-modified")
         self._last_modified = lm

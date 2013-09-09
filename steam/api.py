@@ -8,6 +8,7 @@ import os
 import re
 import json
 import socket
+import sys
 
 # Python 2 <-> 3 glue
 try:
@@ -179,7 +180,15 @@ class method_result(dict):
 
     def _call_method(self):
         """ Download the URL using last-modified timestamp if given """
-        self.update(json.loads(self._downloader.download().decode("utf-8")))
+        data = self._downloader.download()
+
+        # Only try to pass errors arg if supported
+        if sys.version >= "2.7":
+            data = data.decode("utf-8", errors="ignore")
+        else:
+            data = data.decode("utf-8")
+
+        self.update(json.loads(data))
         self._fetched = True
 
     def get(self, key, default = None):

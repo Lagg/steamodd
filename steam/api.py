@@ -149,7 +149,7 @@ class http_downloader(object):
         except (socket.timeout, urlerror.URLError):
             raise HTTPTimeoutError("Server took too long to respond")
         except socket.error as E:
-            raise HTTPError("Server read error: ".format(E))
+            raise HTTPError("Server read error: {0}".format(E))
 
         lm = req.headers.get("last-modified")
         self._last_modified = lm

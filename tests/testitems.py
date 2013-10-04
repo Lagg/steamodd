@@ -9,6 +9,9 @@ class BaseTestCase(unittest.TestCase):
     ITEM_NOT_IN_CATALOG = 1       # Bottle
     TEST_ID64 = 76561198014028523 # Yours truly
 
+    TEST_APP_NO_TAGS = (570, 'en_US')     # Dota 2 English catalog
+    ITEM_IN_NO_TAGS_CATALOG = 4097         # Arctic Hunter's Ice Axe
+
 class AssetTestCase(BaseTestCase):
     def test_asset_contains(self):
         assets = items.assets(*self.TEST_APP)
@@ -17,6 +20,25 @@ class AssetTestCase(BaseTestCase):
         schema = items.schema(*self.TEST_APP)
         self.assertTrue(schema[self.ITEM_IN_CATALOG] in assets)
         self.assertFalse(schema[self.ITEM_NOT_IN_CATALOG] in assets)
+
+    def test_asset_has_tags(self):
+        assets_with_tags = items.assets(*self.TEST_APP)
+        self.assertGreater(len(assets_with_tags.tags), 0)
+
+    def test_asset_has_no_tags(self):
+        assets_without_tags = items.assets(*self.TEST_APP_NO_TAGS)
+        self.assertEqual(len(assets_without_tags.tags), 0)
+
+    def test_asset_item_has_tags(self):
+        assets_with_tags = items.assets(*self.TEST_APP)
+        asset_item_with_tags = assets_with_tags[self.ITEM_IN_CATALOG]
+        self.assertGreater(len(asset_item_with_tags.tags), 0)
+
+    def test_asset_item_has_no_tags(self):
+        assets_without_tags = items.assets(*self.TEST_APP_NO_TAGS)
+        asset_item_without_tags = assets_without_tags[self.ITEM_IN_NO_TAGS_CATALOG]
+        self.assertEqual(len(asset_item_without_tags.tags), 0)
+
 
 class InventoryBaseTestCase(BaseTestCase):
     @classmethod

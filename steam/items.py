@@ -882,7 +882,7 @@ class asset_item:
     @property
     def tags(self):
         """ Returns a dict containing tags and their localized labels as values """
-        return dict([(t, self._catalog.tags.get(t, t)) for t in self._asset.get("tags")])
+        return dict([(t, self._catalog.tags.get(t, t)) for t in self._asset.get("tags", [])])
 
     @property
     def base_price(self):
@@ -909,7 +909,7 @@ class assets(object):
 
         try:
             assets = dict([(asset["name"], asset) for asset in self._api["result"]["assets"]])
-            tags = self._api["result"]["tags"]
+            tags = self._api["result"].get("tags", {})
         except KeyError:
             raise AssetError("Empty or corrupt asset catalog")
 

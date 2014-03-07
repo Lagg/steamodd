@@ -195,16 +195,19 @@ class schema(object):
     def __len__(self):
         return len(self._schema["items"])
 
-    def __init__(self, app, lang = None, **kwargs):
+    def __init__(self, app, lang = None, version = 1, **kwargs):
         """ schema will be used to initialize the schema if given,
         lang can be any ISO language code.
         lm will be used to generate an HTTP If-Modified-Since header. """
 
         self._language = loc.language(lang).code
-        self._app = app
+        self._app = int(app)
         self._cache = {}
 
-        self._api = api.interface("IEconItems_" + str(self._app)).GetSchema(language = self._language, **kwargs)
+        if self._app == 730 and version == 1: # WORKAROUND: CS GO v1 returns 404
+            version = 2
+
+        self._api = api.interface("IEconItems_" + str(self._app)).GetSchema(language = self._language, version = version, **kwargs)
 
 class item(object):
     """ Stores a single inventory item """

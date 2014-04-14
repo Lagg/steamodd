@@ -222,7 +222,7 @@ class item(object):
 
         sortedattrs = list(overridden_attrs.values())
         sortedattrs.sort(key = operator.itemgetter("defindex"))
-        sortedattrs.sort(key = lambda t: sortmap.get(t.get("effect_type", "neutral")))
+        sortedattrs.sort(key = lambda t: sortmap.get(t.get("effect_type", "neutral"), 99))
         return [item_attribute(theattr) for theattr in sortedattrs]
 
     @property

@@ -91,8 +91,8 @@ class _interface_method(object):
         self._name = name
 
     def __call__(self, method = "GET", version = 1, timeout = None, since = None, **kwargs):
-        kwargs["format"] = "json"
-        kwargs["key"] = key.get()
+        kwargs.setdefault("format", "json")
+        kwargs.setdefault("key", key.get())
         url = "http://api.steampowered.com/{0}/{1}/v{2}?{3}".format(self._iface,
                 self._name, version, urlencode(kwargs))
 

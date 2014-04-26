@@ -5,7 +5,7 @@ python:
     - 'pypy'
 env:
     global:
-        - APIKEY=NkExMzEzRDYzQ0EyRTA5NEJCQTJDMUY1N0IwNDk4QkQ=
+        - APIKEY=MTI2Njc1RDNENEJDOUU5QzVBMTBEQjJDMTdDQUNFOTI=
 script: python setup.py run_tests -k $(echo $APIKEY|base64 -d)
 notifications:
     email:

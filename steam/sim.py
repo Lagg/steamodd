@@ -11,6 +11,7 @@ import operator
 from . import api
 from . import items
 
+
 class inventory_context(object):
     """ Builds context data that is fetched from a user's inventory page """
 
@@ -21,7 +22,8 @@ class inventory_context(object):
 
         try:
             data = self._downloader.download()
-            contexts = re.search("var g_rgAppContextData = (.+);", data.decode("utf-8"))
+            contexts = re.search("var g_rgAppContextData = (.+);",
+                                 data.decode("utf-8"))
             match = contexts.group(1)
             self._cache = json.loads(match)
         except:
@@ -52,7 +54,8 @@ class inventory_context(object):
     def __getitem__(self, key):
         res = self.get(key)
 
-        if not res: raise KeyError(key)
+        if not res:
+            raise KeyError(key)
 
         return res
 
@@ -61,7 +64,7 @@ class inventory_context(object):
 
     def __next__(self):
         iterindex = 0
-        iterdata = sorted(self.ctx.values(), key = operator.itemgetter("appid"))
+        iterdata = sorted(self.ctx.values(), key=operator.itemgetter("appid"))
 
         while iterindex < len(iterdata):
             data = iterdata[iterindex]
@@ -78,6 +81,7 @@ class inventory_context(object):
 
         self._downloader = api.http_downloader("http://steamcommunity.com/profiles/{0}/inventory/".format(sid), **kwargs)
         self._user = sid
+
 
 class inventory(object):
     @property
@@ -120,7 +124,7 @@ class inventory(object):
         cellcount = 0
         items = []
 
-        if self._section != None:
+        if self._section is not None:
             sec = str(self._section)
             downloadlist = sec
             cellcount = contexts[sec]["asset_count"]
@@ -130,7 +134,7 @@ class inventory(object):
                 downloadlist.append(str(sec))
 
         for sec in downloadlist:
-            req = api.http_downloader(url + sec, timeout = self._timeout)
+            req = api.http_downloader(url + sec, timeout=self._timeout)
             inventorysection = json.loads(req.download().decode("utf-8"))
 
             if not inventorysection:
@@ -154,7 +158,7 @@ class inventory(object):
         self._cache = {"cells": cellcount, "items": items}
         return self._cache
 
-    def __init__(self, app, profile, schema = None, section = None, timeout = None):
+    def __init__(self, app, profile, schema=None, section=None, timeout=None):
         """
         app is context data as returned by 'inventory_context.get'
         profile is a valid user object or ID64
@@ -175,11 +179,12 @@ class inventory(object):
 
         self._user = sid
 
+
 class item_attribute(items.item_attribute):
     @property
     def value_type(self):
-        # Because Valve uses this same data on web pages, it's /probably/ trustworthy,
-        # so long as they have fixed all the XSS bugs...
+        # Because Valve uses this same data on web pages, it's /probably/
+        # trustworthy, so long as they have fixed all the XSS bugs...
         return "html"
 
     @property
@@ -206,6 +211,7 @@ class item_attribute(items.item_attribute):
 
     def __init__(self, attribute):
         super(item_attribute, self).__init__(attribute)
+
 
 class item(items.item):
     @property

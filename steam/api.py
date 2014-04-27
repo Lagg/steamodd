@@ -5,7 +5,6 @@ Distributed under the ISC License (see LICENSE)
 """
 
 import os
-import re
 import json
 import socket
 import sys
@@ -22,25 +21,31 @@ except ImportError:
     from urllib import urlencode
     import urllib2 as urlerror
 
+
 class SteamError(Exception):
     """ For future expansion, considering that steamodd is already no
     longer *just* an API implementation """
     pass
 
+
 class APIError(SteamError):
     """ Base API exception class """
     pass
 
+
 class APIKeyMissingError(APIError):
     pass
+
 
 class HTTPError(APIError):
     """ Raised for other HTTP codes or results """
     pass
 
+
 class HTTPStale(HTTPError):
     """ Raised for HTTP code 304 """
     pass
+
 
 class HTTPTimeoutError(HTTPError):
     """ Raised for timeouts (not necessarily from the http lib itself but the
@@ -48,8 +53,10 @@ class HTTPTimeoutError(HTTPError):
     more convenient """
     pass
 
+
 class HTTPFileNotFoundError(HTTPError):
     pass
+
 
 class key(object):
     __api_key = None
@@ -73,6 +80,7 @@ class key(object):
         else:
             raise APIKeyMissingError("API key not set")
 
+
 class socket_timeout(object):
     """ Global timeout, can be overridden by timeouts passed to ctor """
     __timeout = 5
@@ -85,18 +93,23 @@ class socket_timeout(object):
     def get(cls):
         return cls.__timeout
 
+
 class _interface_method(object):
     def __init__(self, iface, name):
         self._iface = iface
         self._name = name
 
-    def __call__(self, method = "GET", version = 1, timeout = None, since = None, **kwargs):
+    def __call__(self, method="GET", version=1, timeout=None, since=None,
+                 **kwargs):
         kwargs.setdefault("format", "json")
         kwargs.setdefault("key", key.get())
         url = "http://api.steampowered.com/{0}/{1}/v{2}?{3}".format(self._iface,
-                self._name, version, urlencode(kwargs))
+                                                                    self._name,
+                                                                    version,
+                                                                    urlencode(kwargs))
 
-        return method_result(url, last_modified = since, timeout = timeout)
+        return method_result(url, last_modified=since, timeout=timeout)
+
 
 class interface(object):
     def __init__(self, iface):
@@ -105,8 +118,9 @@ class interface(object):
     def __getattr__(self, name):
         return _interface_method(self._iface, name)
 
+
 class http_downloader(object):
-    def __init__(self, url, last_modified = None, timeout = None):
+    def __init__(self, url, last_modified=None, timeout=None):
         self._user_agent = "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; Valve Steam Client/1366845241; ) AppleWebKit/535.15 (KHTML, like Gecko) Chrome/18.0.989.0 Safari/535.11"
         self._url = url
         self._timeout = timeout or socket_timeout.get()
@@ -129,7 +143,8 @@ class http_downloader(object):
         body = ''
 
         try:
-            req = urlopen(urlrequest(self._url, headers = head), timeout = self._timeout)
+            req = urlopen(urlrequest(self._url, headers=head),
+                          timeout=self._timeout)
             status_code = req.code
             body = req.read()
         except urlerror.HTTPError as E:
@@ -164,6 +179,7 @@ class http_downloader(object):
     def url(self):
         return self._url
 
+
 class method_result(dict):
     """ Holds a deserialized JSON object obtained from fetching the given URL """
 
@@ -191,7 +207,7 @@ class method_result(dict):
         self.update(json.loads(data))
         self._fetched = True
 
-    def get(self, key, default = None):
+    def get(self, key, default=None):
         if not self._fetched:
             self._call_method()
 

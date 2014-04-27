@@ -6,8 +6,10 @@ Distributed under the ISC License (see LICENSE)
 
 from . import api
 
+
 class AppError(api.APIError):
     pass
+
 
 class app_list(object):
     """ Retrieves a list of all Steam apps with their ID and localized name """
@@ -40,7 +42,8 @@ class app_list(object):
             raise
 
     def __init__(self, **kwargs):
-        self._api = api.interface("ISteamApps").GetAppList(version = 2, **kwargs)
+        self._api = api.interface("ISteamApps").GetAppList(version=2,
+                                                           **kwargs)
         self._cache = {}
 
     def __iter__(self):

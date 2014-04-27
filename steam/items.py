@@ -4,23 +4,30 @@ Copyright (c) 2010-2013, Anthony Garcia <anthony@lagg.me>
 Distributed under the ISC License (see LICENSE)
 """
 
-import time, operator
+import time
+import operator
 from . import api, loc
+
 
 class SchemaError(api.APIError):
     pass
 
+
 class AssetError(api.APIError):
     pass
+
 
 class InventoryError(api.APIError):
     pass
 
+
 class BadID64Error(InventoryError):
     pass
 
+
 class ProfilePrivateError(InventoryError):
     pass
+
 
 class schema(object):
     """ The base class for the item schema. """
@@ -40,8 +47,10 @@ class schema(object):
             onames = self._api["result"].get("originNames", [])
             self._cache["origins"] = dict([(o["origin"], o["name"]) for o in onames])
 
-            # Two maps are built here, one for name:ID and one for ID:loc name. Most of the time qualities will be resolved by ID (as that's what they
-            # are in inventories, it's mostly just the schema that specifies qualities by non-loc name)
+            # Two maps are built here, one for name:ID and one for ID:loc name.
+            # Most of the time qualities will be resolved by ID (as that's what
+            # they are in inventories, it's mostly just the schema that
+            # specifies qualities by non-loc name)
             qualities = {}
             quality_names = {}
             for k, v in self._api["result"]["qualities"].items():
@@ -52,8 +61,10 @@ class schema(object):
             self._cache["qualities"] = qualities
             self._cache["quality_names"] = quality_names
 
-            # Two maps are built here, one for name:ID and one for ID:attribute. As with qualities it's mostly the schema that needs this extra layer
-            # of mapping. Inventories specify attribute IDs and quality IDs alike directly.
+            # Two maps are built here, one for name:ID and one for
+            # ID:attribute. As with qualities it's mostly the schema that needs
+            # this extra layer of mapping. Inventories specify attribute IDs
+            # and quality IDs alike directly.
             attributes = {}
             attribute_names = {}
             for attrib in self._api["result"]["attributes"]:
@@ -75,13 +86,16 @@ class schema(object):
             killtypes = self._api["result"].get("kill_eater_score_types", [])
             self._cache["eater_types"] = dict([(k["type"], k) for k in killtypes])
 
-            # Schema ID:item map (building this is insanely fast, overhead is minimal compared to lookup benefits in backpacks)
+            # Schema ID:item map (building this is insanely fast, overhead is
+            # minimal compared to lookup benefits in backpacks)
             items = self._api["result"]["items"]
             self._cache["items"] = dict([(i["defindex"], i) for i in items])
         except KeyError:
-            # Due to the various fields needed we can't check for certain fields and fall back ala 'inventory'
-            if status != None:
-                raise SchemaError("Steam returned bad schema with error code " + str(status))
+            # Due to the various fields needed we can't check for certain
+            # fields and fall back ala 'inventory'
+            if status is not None:
+                raise SchemaError("Steam returned bad schema with error code "
+                                  + str(status))
             else:
                 raise SchemaError("Empty or corrupt schema returned")
 
@@ -125,7 +139,7 @@ class schema(object):
         """ Returns all attributes in the schema """
         attrs = self._schema["attributes"]
         return [item_attribute(attr) for attr in sorted(attrs.values(),
-            key = operator.itemgetter("defindex"))]
+                key=operator.itemgetter("defindex"))]
 
     @property
     def origins(self):
@@ -160,8 +174,10 @@ class schema(object):
 
     def origin_id_to_name(self, origin):
         """ Returns a localized origin name for a given ID """
-        try: oid = int(origin)
-        except (ValueError, TypeError): return None
+        try:
+            oid = int(origin)
+        except (ValueError, TypeError):
+            return None
 
         return self.origins.get(oid)
 
@@ -183,8 +199,10 @@ class schema(object):
 
     def __getitem__(self, key):
         realkey = None
-        try: realkey = key["defindex"]
-        except: realkey = key
+        try:
+            realkey = key["defindex"]
+        except:
+            realkey = key
 
         schema_item = self._find_item_by_id(realkey)
         if schema_item:
@@ -195,7 +213,7 @@ class schema(object):
     def __len__(self):
         return len(self._schema["items"])
 
-    def __init__(self, app, lang = None, version = 1, **kwargs):
+    def __init__(self, app, lang=None, version=1, **kwargs):
         """ schema will be used to initialize the schema if given,
         lang can be any ISO language code.
         lm will be used to generate an HTTP If-Modified-Since header. """
@@ -204,10 +222,12 @@ class schema(object):
         self._app = int(app)
         self._cache = {}
 
-        if self._app == 730 and version == 1: # WORKAROUND: CS GO v1 returns 404
+        # WORKAROUND: CS GO v1 returns 404
+        if self._app == 730 and version == 1:
             version = 2
 
-        self._api = api.interface("IEconItems_" + str(self._app)).GetSchema(language = self._language, version = version, **kwargs)
+        self._api = api.interface("IEconItems_" + str(self._app)).GetSchema(language=self._language, version=version, **kwargs)
+
 
 class item(object):
     """ Stores a single inventory item """
@@ -217,12 +237,13 @@ class item(object):
         """ Returns a list of attributes """
 
         overridden_attrs = self._attributes
-        sortmap = {"neutral" : 1, "positive": 2,
+        sortmap = {"neutral": 1, "positive": 2,
                    "negative": 3}
 
         sortedattrs = list(overridden_attrs.values())
-        sortedattrs.sort(key = operator.itemgetter("defindex"))
-        sortedattrs.sort(key = lambda t: sortmap.get(t.get("effect_type", "neutral"), 99))
+        sortedattrs.sort(key=operator.itemgetter("defindex"))
+        sortedattrs.sort(key=lambda t: sortmap.get(t.get("effect_type",
+                                                         "neutral"), 99))
         return [item_attribute(theattr) for theattr in sortedattrs]
 
     @property
@@ -369,7 +390,8 @@ class item(object):
         """ Returns the item in the container, if there is one.
         This will be a standard item object. """
         rawitem = self._item.get("contained_item")
-        if rawitem: return self.__class__(rawitem, self._schema)
+        if rawitem:
+            return self.__class__(rawitem, self._schema)
 
     @property
     def tradable(self):
@@ -415,10 +437,13 @@ class item(object):
             elif quality_str == "unique":
                 pfinal = ''
 
-        if rank and quality_str == "strange": pfinal = rank["name"]
+        if rank and quality_str == "strange":
+            pfinal = rank["name"]
 
-        if english: prefix = pfinal
-        elif pfinal: suffix = '(' + pfinal + ') ' + suffix
+        if english:
+            prefix = pfinal
+        elif pfinal:
+            suffix = '(' + pfinal + ') ' + suffix
 
         return (prefix + " " + item_name + " " + suffix).strip()
 
@@ -438,7 +463,8 @@ class item(object):
 
             if aname.startswith("kill eater"):
                 try:
-                    # Get the name prefix (matches up type and score and determines the primary type for ranking)
+                    # Get the name prefix (matches up type and score and
+                    # determines the primary type for ranking)
                     eateri = list(filter(None, aname.split(' ')))[-1]
                     if eateri.isdigit():
                         eateri = int(eateri)
@@ -446,7 +472,8 @@ class item(object):
                         # Probably the primary type/score which has no number
                         eateri = 0
                 except IndexError:
-                    # Fallback to attr ID (will completely fail to make anything legible but better than nothing)
+                    # Fallback to attr ID (will completely fail to make
+                    # anything legible but better than nothing)
                     eateri = aid
 
                 if aname.find("user") != -1:
@@ -456,7 +483,7 @@ class item(object):
                 eaters.setdefault(eateri, [None, None])
                 if aname.find("score type") != -1 or aname.find("kill type") != -1:
                     # Score type attribute
-                    if eaters[eateri][0] == None:
+                    if eaters[eateri][0] is None:
                         eaters[eateri][0] = attr.value
                 else:
                     # Value attribute
@@ -467,11 +494,15 @@ class item(object):
         for key, eater in sorted(eaters.items()):
             etype, count = eater
 
-            # Eater type can be null (it still is in some older items), null count means we're looking at
-            # either an uninitialized item or schema item
-            if count != None:
-                rank = ranktypes.get(etype or 0, {"level_data": defaultleveldata, "type_name": "Count"})
-                eaterlist.append((rank.get("level_data", defaultleveldata), rank["type_name"], count))
+            # Eater type can be null (it still is in some older items), null
+            # count means we're looking at either an uninitialized item or
+            # schema item
+            if count is not None:
+                rank = ranktypes.get(etype or 0,
+                                     {"level_data": defaultleveldata,
+                                      "type_name": "Count"})
+                eaterlist.append((rank.get("level_data", defaultleveldata),
+                                  rank["type_name"], count))
 
         return eaterlist
 
@@ -495,7 +526,9 @@ class item(object):
             return None
 
         rankset = self._ranks.get(levelkey,
-                [{"level": 0, "required_score": 0, "name": "Strange"}])
+                                  [{"level": 0,
+                                    "required_score": 0,
+                                    "name": "Strange"}])
 
         for rank in rankset:
             self._rank = rank
@@ -570,7 +603,7 @@ class item(object):
         else:
             return fullname
 
-    def __init__(self, item, schema = None):
+    def __init__(self, item, schema=None):
         self._item = item
         self._schema_item = None
         self._schema = schema
@@ -586,14 +619,17 @@ class item(object):
         if not self._schema_item:
             self._schema_item = self._item
 
-        qualityid = self._item.get("quality", self._schema_item.get("item_quality", 0))
+        qualityid = self._item.get("quality",
+                                   self._schema_item.get("item_quality", 0))
         if schema:
             self._quality = schema._quality_definition(qualityid)
         else:
             self._quality = (qualityid, "normal", "Normal")
 
-        if schema: self._language = schema.language
-        else: self._language = "en_US"
+        if schema:
+            self._language = schema.language
+        else:
+            self._language = "en_US"
 
         originid = self._item.get("origin")
         if schema:
@@ -629,6 +665,7 @@ class item(object):
 
                 self._attributes.setdefault(index, {})
                 self._attributes[index].update(attr)
+
 
 class item_attribute(object):
     """ Wrapper around item attributes """
@@ -689,7 +726,8 @@ class item_attribute(object):
     @property
     def id(self):
         """ The attribute ID, used for indexing the description blocks in the schema """
-        # I'm basically making a pun here, Esky, when you find this. Someday. You owe me a dollar.
+        # I'm basically making a pun here, Esky, when you find this. Someday.
+        # You owe me a dollar.
         return self._attribute.get("defindex", id(self))
 
     @property
@@ -703,7 +741,8 @@ class item_attribute(object):
         Tries to intelligently return the raw value based on schema data.
         See also: 'value_int' and 'value_float'
         """
-        # TODO: No way to determine which value to use without schema, could be problem
+        # TODO: No way to determine which value to use without schema,
+        # could be problem
         if self._isint:
             return self.value_int
         else:
@@ -757,7 +796,7 @@ class item_attribute(object):
         """ True if the attribute is "hidden"
         (not intended to be shown to the end user). Note
         that hidden attributes also usually have no description string """
-        return self._attribute.get("hidden", False) or self.description == None
+        return self._attribute.get("hidden", False) or self.description is None
 
     @property
     def account_info(self):
@@ -784,6 +823,7 @@ class item_attribute(object):
         self._attribute = attribute
         self._isint = self._attribute.get("stored_as_integer", False)
 
+
 class inventory(object):
     """ Functions for reading player inventory """
 
@@ -798,8 +838,9 @@ class inventory(object):
             status = self._api["result"]["status"]
             items = self._api["result"]["items"]
         except KeyError:
-            # Only try to check status code if items don't exist (why error out when items are there)
-            if status != None:
+            # Only try to check status code if items don't exist (why error out
+            # when items are there)
+            if status is not None:
                 if status == 8:
                     raise BadID64Error("Bad Steam ID64 given")
                 elif status == 15:
@@ -845,7 +886,7 @@ class inventory(object):
             yield data
     next = __next__
 
-    def __init__(self, app, profile, schema = None, **kwargs):
+    def __init__(self, app, profile, schema=None, **kwargs):
         """
         'app': Steam app to get the inventory for.
         'profile': A user ID or profile object.
@@ -861,7 +902,8 @@ class inventory(object):
         except:
             sid = str(profile)
 
-        self._api = api.interface("IEconItems_" + str(self._app)).GetPlayerItems(SteamID = sid, **kwargs)
+        self._api = api.interface("IEconItems_" + str(self._app)).GetPlayerItems(SteamID=sid, **kwargs)
+
 
 class asset_item:
     """ Stores a single item from a steam asset catalog """
@@ -873,7 +915,7 @@ class asset_item:
     def __str__(self):
         return self.name + " " + str(self.price)
 
-    def _calculate_price(self, base = False):
+    def _calculate_price(self, base=False):
         asset = self._asset
         pricemap = asset["prices"]
 
@@ -890,7 +932,7 @@ class asset_item:
     @property
     def base_price(self):
         """ The price the item normally goes for, not including discounts. """
-        return self._calculate_price(base = True)
+        return self._calculate_price(base=True)
 
     @property
     def price(self):
@@ -901,6 +943,7 @@ class asset_item:
     def name(self):
         """ The asset item's name """
         return self._asset.get("name")
+
 
 class assets(object):
     """ Class for building asset catalogs """
@@ -955,7 +998,8 @@ class assets(object):
         return next(self)
 
     def __next__(self):
-        # This was previously sorted, but I don't think order matters here. Does it?
+        # This was previously sorted, but I don't think order matters here.
+        # Does it?
         data = list(self._assets["items"].values())
         iterindex = 0
 
@@ -965,7 +1009,7 @@ class assets(object):
             yield ydata
     next = __next__
 
-    def __init__(self, app, lang = None, **kwargs):
+    def __init__(self, app, lang=None, **kwargs):
         """ lang: Language of asset tags, defaults to english
         currency: The iso 4217 currency code, returns all currencies by default """
 
@@ -973,4 +1017,4 @@ class assets(object):
         self._app = app
         self._cache = {}
 
-        self._api = api.interface("ISteamEconomy").GetAssetPrices(language = self._language, appid = self._app, **kwargs)
+        self._api = api.interface("ISteamEconomy").GetAssetPrices(language=self._language, appid=self._app, **kwargs)

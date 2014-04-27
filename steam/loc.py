@@ -7,11 +7,14 @@ Distributed under the ISC License (see LICENSE)
 import os
 from . import api
 
+
 class LanguageError(api.APIError):
     pass
 
+
 class LanguageUnsupportedError(LanguageError):
     pass
+
 
 class language(object):
     """ Steam API localization tools and reference """
@@ -41,7 +44,7 @@ class language(object):
 
     _default_language = os.environ.get("LANG", "en_US").split('.')[0]
 
-    def __init__(self, code = None):
+    def __init__(self, code=None):
         """ Raises LanguageUnsupportedError if the code isn't supported by the
         API or otherwise invalid, uses the default language if no code is given.
         'code' is an ISO language code. """

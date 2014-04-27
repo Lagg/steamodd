@@ -21,7 +21,8 @@ try:
 except ImportError:
     odict = dict
 
-def _symtostr(line, i, token = STRING):
+
+def _symtostr(line, i, token=STRING):
     opening = i + 1
     closing = 0
 
@@ -35,6 +36,7 @@ def _symtostr(line, i, token = STRING):
     finalstr = line[opening:closing]
     return finalstr, i + len(finalstr) + 1
 
+
 def _unquotedtostr(line, i):
     ci = i
     _len = len(line)
@@ -44,7 +46,8 @@ def _unquotedtostr(line, i):
         ci += 1
     return line[i:ci], ci
 
-def _parse(stream, ptr = 0):
+
+def _parse(stream, ptr=0):
     i = ptr
     laststr = None
     lasttok = None
@@ -93,11 +96,12 @@ def _parse(stream, ptr = 0):
 
     return deserialized, i
 
+
 def _run_parse_encoded(string):
     try:
         encoded = bytearray(string, "utf-16")
     except:
-        encoded = bytearray(string) # Already byte object?
+        encoded = bytearray(string)  # Already byte object?
 
     try:
         encoded = encoded.decode("ascii")
@@ -107,21 +111,26 @@ def _run_parse_encoded(string):
         except:
             encoded = encoded.decode("utf-16")
     except UnicodeEncodeError:
-        pass # Likely already decoded
+        pass  # Likely already decoded
 
     res, ptr = _parse(encoded)
     return res
 
+
 def load(stream):
     return _run_parse_encoded(stream.read())
+
 
 def loads(string):
     return _run_parse_encoded(string)
 
 indent = 0
 mult = 2
+
+
 def _i():
     return u' ' * (indent * mult)
+
 
 def _dump(obj):
     nodefmt = u'\n' + _i() + '"{0}"\n' + _i() + '{{\n{1}' + _i() + '}}\n\n'
@@ -150,12 +159,15 @@ def _dump(obj):
 
     return u''.join(nodes)
 
+
 def _run_dump(obj):
     res = _dump(obj)
     return res.encode("utf-16")
 
+
 def dump(obj, stream):
     stream.write(_run_dump(obj))
+
 
 def dumps(obj):
     return _run_dump(obj)

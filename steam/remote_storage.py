@@ -6,11 +6,14 @@ Distributed under the ISC License (see LICENSE)
 
 from . import api
 
+
 class UGCError(api.APIError):
     pass
 
+
 class FileNotFoundError(UGCError):
     pass
+
 
 class ugc_file(object):
     @property
@@ -40,7 +43,7 @@ class ugc_file(object):
             status = self._api["status"]["code"]
         except KeyError:
             if not data:
-                if status != None and status != 9:
+                if status is not None and status != 9:
                     raise UGCError("Code " + str(status))
                 else:
                     raise FileNotFoundError("File not found")
@@ -52,4 +55,4 @@ class ugc_file(object):
 
     def __init__(self, appid, ugcid64, **kwargs):
         self._cache = {}
-        self._api = api.interface("ISteamRemoteStorage").GetUGCFileDetails(ugcid = ugcid64, appid = appid, **kwargs)
+        self._api = api.interface("ISteamRemoteStorage").GetUGCFileDetails(ugcid=ugcid64, appid=appid, **kwargs)

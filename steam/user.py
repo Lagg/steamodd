@@ -4,17 +4,22 @@ Copyright (c) 2010-2013, Anthony Garcia <anthony@lagg.me>
 Distributed under the ISC License (see LICENSE)
 """
 
-import time, os
+import time
+import os
 from . import api
+
 
 class ProfileError(api.APIError):
     pass
 
+
 class ProfileNotFoundError(ProfileError):
     pass
 
+
 class VanityError(ProfileError):
     pass
+
 
 class vanity_url(object):
     """ Class for holding a vanity URL and its id64 """
@@ -31,7 +36,8 @@ class vanity_url(object):
         except KeyError:
             if not self._cache:
                 if res:
-                    raise VanityError(res.get("message", "Invalid vanity response"))
+                    raise VanityError(res.get("message",
+                                              "Invalid vanity response"))
                 else:
                     raise VanityError("Empty vanity response")
 
@@ -46,7 +52,8 @@ class vanity_url(object):
         vanity = os.path.basename(str(vanity).strip('/'))
 
         self._cache = None
-        self._api = api.interface("ISteamUser").ResolveVanityURL(vanityurl = vanity, **kwargs)
+        self._api = api.interface("ISteamUser").ResolveVanityURL(vanityurl=vanity, **kwargs)
+
 
 class profile(object):
     """ Functions for reading user account data """
@@ -146,7 +153,8 @@ class profile(object):
         Current game app ID, server ip:port, misc. extra info (eg. game title)
         """
         obj = self._prof
-        return (obj.get("gameid"), obj.get("gameserverip"), obj.get("gameextrainfo"))
+        return (obj.get("gameid"), obj.get("gameserverip"),
+                obj.get("gameextrainfo"))
 
     @property
     def location(self):
@@ -190,7 +198,8 @@ class profile(object):
             sid = os.path.basename(str(sid).strip('/'))
 
         self._cache = {}
-        self._api = api.interface("ISteamUser").GetPlayerSummaries(version = 2, steamids = sid, **kwargs)
+        self._api = api.interface("ISteamUser").GetPlayerSummaries(version=2, steamids=sid, **kwargs)
+
 
 class profile_batch:
     def __init__(self, sids):
@@ -225,7 +234,7 @@ class profile_batch:
 
     def __next__(self):
         for batch in self._batches:
-            req = api.interface("ISteamUser").GetPlayerSummaries(version = 2, steamids = ','.join(batch))
+            req = api.interface("ISteamUser").GetPlayerSummaries(version=2, steamids=','.join(batch))
 
             for player in req["response"]["players"]:
                 yield profile.from_def(player)

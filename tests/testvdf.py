@@ -66,6 +66,59 @@ class SyntaxTestCase(unittest.TestCase):
     }
     """
 
+    MULTIKEY_KV = """
+    node
+    {
+        "key" "k1v1"
+        "key" "k1v2"
+        "key" "k1v3"
+
+        "key2" "k2v1"
+
+        "key3" "k3v1"
+        "key3" "k3v2"
+    }
+    """
+
+    MULTIKEY_KNODE = """
+    node
+    {
+        "key" {
+            "name" "k1v1"
+            "extra" ":D"
+        }
+        "key" {
+            "name" "k1v2"
+            "extra" ":!"
+        }
+        "key" {
+            "name"  "k1v3"
+            "extra" ":O"
+        }
+
+        "key2" {
+            "name" "k2v1"
+            "extra" "I'm lonely"
+        }
+
+        "key3" {
+            "name" "k3v1"
+            "extra" {
+                "smiley" ":O"
+                "comment" "Wow!"
+            }
+        }
+
+        "key3" {
+            "name" "k3v2"
+            "extra" {
+                "smiley" ":Z"
+                "comment" "BZZ!"
+            }
+        }
+    }
+    """
+
     # Expectations
     EXPECTED_DICT = {
             u"node": {
@@ -92,6 +145,60 @@ class SyntaxTestCase(unittest.TestCase):
                 u"key4": u"value"
                 }
             }
+
+    EXPECTED_MULTIKEY_KV = {
+        u"node": {
+            u"key": [
+                u"k1v1",
+                u"k1v2",
+                u"k1v3"
+            ],
+            u"key2": u"k2v1",
+            u"key3": [
+                u"k3v1",
+                u"k3v2"
+                ]
+            }
+        }
+
+    EXPECTED_MULTIKEY_KNODE = {
+        u"node": {
+            u"key": [
+                {
+                    u"name": u"k1v1",
+                    u"extra": u":D"
+                },
+                {
+                    u"name": u"k1v2",
+                    u"extra": u":!"
+                },
+                {
+                    u"name": u"k1v3",
+                    u"extra": u":O"
+                }
+            ],
+            u"key2": {
+                u"name": u"k2v1",
+                u"extra": u"I'm lonely",
+            },
+            u"key3": [
+                {
+                    u"name": u"k3v1",
+                    u"extra": {
+                        u"smiley": u":O",
+                        u"comment": u"Wow!"
+                    }
+                },
+                {
+                    u"name": u"k3v2",
+                    u"extra": {
+                        u"smiley": u":Z",
+                        u"comment": u"BZZ!"
+                    }
+                }
+            ]
+        }
+    }
 
     # Serialization
 
@@ -178,6 +285,13 @@ class DeserializeTestCase(SyntaxTestCase):
 
     def test_mixed(self):
         self.assertEqual(self.EXPECTED_MIXED_DICT, vdf.loads(self.MIXED_VDF))
+
+    def test_multikey_kv(self):
+        self.assertEqual(self.EXPECTED_MULTIKEY_KV, vdf.loads(self.MULTIKEY_KV))
+
+    def test_multikey_knode(self):
+        self.maxDiff = 80*80
+        self.assertEqual(self.EXPECTED_MULTIKEY_KNODE, vdf.loads(self.MULTIKEY_KNODE))
 
 
 class SerializeTestCase(SyntaxTestCase):

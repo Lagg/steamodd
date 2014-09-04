@@ -60,7 +60,19 @@ def _parse(stream, ptr=0):
 
         if c == NODE_OPEN:
             next_is_value = False  # Make sure next string is interpreted as a key.
-            deserialized[laststr], i = _parse(stream, i + 1)
+
+            if laststr in deserialized.keys():
+                # If this key already exists then we need to make it a list and append the current value.
+                if type(deserialized[laststr]) is not list:
+                    # If the value already set is not a list, let's make it one.
+                    deserialized[laststr] = [deserialized[laststr]]
+
+                # Append the current value to the list
+                _value, i = _parse(stream, i + 1)
+                deserialized[laststr].append(_value)
+            else:
+                # Key is brand new!
+                deserialized[laststr], i = _parse(stream, i + 1)
         elif c == NODE_CLOSE:
             return deserialized, i
         elif c == BR_OPEN:
@@ -83,7 +95,18 @@ def _parse(stream, ptr=0):
                     # ignore this entry if it's the second bracketed expression
                     lastbrk = None
                 else:
-                    deserialized[laststr] = string
+                    if laststr in deserialized.keys():
+                        # If this key already exists then we're dealing with a list of items
+                        if type(deserialized[laststr]) is not list:
+                            # If the existing val is not a list, we need to cast it to one.
+                            deserialized[laststr] = [deserialized[laststr]]
+
+                        # Append current val to list
+                        deserialized[laststr].append(string)
+                    else:
+                        # First occurence of laststr in deserialized.  Assign the value as normal
+                        deserialized[laststr] = string
+
             # force c = STRING so that lasttok will be set properly
             c = STRING
             laststr = string

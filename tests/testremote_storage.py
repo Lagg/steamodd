@@ -8,7 +8,7 @@ class RemoteStorageTestCase(unittest.TestCase):
     VALID_UGCID = 650994986817657344
     VALID_UGC_SIZE = 134620
     VALID_UGC_FILENAME = "steamworkshop/tf2/_thumb.jpg"
-    VALID_UGC_URL = "http://cloud-3.steampowered.com/ugc/650994986817657344/D2ADAD7F19BFA9A99BD2B8850CC317DC6BA01BA9/" #Silly tea hat made by RJ
+    VALID_UGC_URL = "http://cloud-4.steampowered.com/ugc/650994986817657344/D2ADAD7F19BFA9A99BD2B8850CC317DC6BA01BA9/" #Silly tea hat made by RJ
 
     @classmethod
     def setUpClass(cls):

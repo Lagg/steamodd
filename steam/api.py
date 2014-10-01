@@ -192,9 +192,14 @@ class method_result(dict):
 
         return getattr(super(method_result, self), method)(*args, **kwargs)
 
-    def __init__(self, *args, aggressive=False, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(method_result, self).__init__()
         self._fetched = False
+        aggressive = kwargs.get("aggressive")
+
+        if "aggressive" in kwargs:
+            del kwargs["aggressive"]
+
         self._downloader = http_downloader(*args, **kwargs)
 
         if aggressive:

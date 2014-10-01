@@ -194,11 +194,11 @@ class profile(object):
             return self._api["response"][level_key]
 
         try:
-            lvl = api.interface("IPlayerService").GetSteamLevel(steamid=self.id64)
-            self._api["response"][level_key] = lvl["response"][level_key]
+            lvl = api.interface("IPlayerService").GetSteamLevel(steamid=self.id64)["response"][level_key]
+            self._api["response"][level_key] = lvl
             return lvl
         except:
-            return 1
+            return -1
 
     @classmethod
     def from_def(cls, obj):

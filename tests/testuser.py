@@ -47,7 +47,7 @@ class ProfileIdTestCase(ProfileTestCase):
 class ProfileLevelTestCase(ProfileTestCase):
     def test_level(self):
         profile = user.profile(self.VALID_ID64)
-        self.assertNotEqual(profile.level, 1)
+        self.assertGreater(profile.level, 0)
 
 class ProfileBatchTestCase(ProfileTestCase):
     def test_big_list(self):

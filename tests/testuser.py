@@ -44,6 +44,11 @@ class ProfileIdTestCase(ProfileTestCase):
         profile = user.profile(self.WEIRD_ID64)
         self.assertRaises(user.ProfileNotFoundError, lambda: profile.id64)
 
+class ProfileLevelTestCase(ProfileTestCase):
+    def test_level(self):
+        profile = user.profile(self.VALID_ID64)
+        self.assertNotEqual(profile.level, 1)
+
 class ProfileBatchTestCase(ProfileTestCase):
     def test_big_list(self):
         # As of writing this my list has ~150 friends. I don't plan on going below 100.

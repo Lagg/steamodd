@@ -100,7 +100,7 @@ class _interface_method(object):
         self._name = name
 
     def __call__(self, method="GET", version=1, timeout=None, since=None,
-                 **kwargs):
+                 aggressive=False, **kwargs):
         kwargs.setdefault("format", "json")
         kwargs.setdefault("key", key.get())
         url = "http://api.steampowered.com/{0}/{1}/v{2}?{3}".format(self._iface,
@@ -108,7 +108,7 @@ class _interface_method(object):
                                                                     version,
                                                                     urlencode(kwargs))
 
-        return method_result(url, last_modified=since, timeout=timeout)
+        return method_result(url, last_modified=since, timeout=timeout, aggressive=aggressive)
 
 
 class interface(object):
@@ -181,21 +181,48 @@ class http_downloader(object):
 
 
 class method_result(dict):
-    """ Holds a deserialized JSON object obtained from fetching the given URL """
+    """ Holds a deserialized JSON object obtained from fetching the given URL.
+    If aggressive is True then the data will be fetched when the method is called
+    instead of only when the object is actually accessed.
+    """
 
-    def __init__(self, *args, **kwargs):
+    def __handle_accessor(self, method, *args, **kwargs):
+        if not self._fetched:
+            self.call()
+
+        return getattr(super(method_result, self), method)(*args, **kwargs)
+
+    def __init__(self, *args, aggressive=False, **kwargs):
         super(method_result, self).__init__()
         self._fetched = False
         self._downloader = http_downloader(*args, **kwargs)
 
-    def __getitem__(self, key):
-        if not self._fetched:
-            self._call_method()
+        if aggressive:
+            self.call()
 
-        return super(method_result, self).__getitem__(key)
+    def __getitem__(self, *args, **kwargs):
+        return self.__handle_accessor("__getitem__", *args, **kwargs)
 
-    def _call_method(self):
-        """ Download the URL using last-modified timestamp if given """
+    def __setitem__(self, *args, **kwargs):
+        return self.__handle_accessor("__setitem__", *args, **kwargs)
+
+    def __delitem__(self, *args, **kwargs):
+        return self.__handle_accessor("__delitem__", *args, **kwargs)
+
+    def __iter__(self):
+        return self.__handle_accessor("__iter__")
+
+    def __contains__(self, *args, **kwargs):
+        return self.__handle_accessor("__contains__", *args, **kwargs)
+
+    def __len__(self):
+        return self.__handle_accessor("__len__")
+
+    def __str__(self):
+        return self.__handle_accessor("__str__")
+
+    def call(self):
+        """ Make the API call again and fetch fresh data. """
         data = self._downloader.download()
 
         # Only try to pass errors arg if supported
@@ -207,8 +234,8 @@ class method_result(dict):
         self.update(json.loads(data))
         self._fetched = True
 
-    def get(self, key, default=None):
-        if not self._fetched:
-            self._call_method()
+    def get(self, *args, **kwargs):
+        return self.__handle_accessor("get", *args, **kwargs)
 
-        return super(method_result, self).get(key, default)
+    def keys(self):
+        return self.__handle_accessor("keys")

@@ -222,41 +222,68 @@ class profile(object):
         self._api = api.interface("ISteamUser").GetPlayerSummaries(version=2, steamids=sid, **kwargs)
 
 
-class profile_batch:
-    def __init__(self, sids):
-        """ Fetches user profiles en masse and generates 'profile' objects.
-        The length of the ID list can be indefinite, separate requests
-        will be made if the length exceeds the API's ID cap and the list
-        split into batches. """
-        MAX_BATCHSIZE = 100
+class _batched_request(object):
+    """ Base class for implementations that support multiple results
+    per request (for example GetPlayerSummaries takes multiple id64s)
+    """
+
+    def __init__(self, batch, batchsize=100):
         self._batches = []
-        batchlen, rem = divmod(len(sids), MAX_BATCHSIZE)
+        batchlen, rem = divmod(len(batch), batchsize)
 
         if rem > 0:
             batchlen += 1
 
         for i in range(batchlen):
-            offset = i * MAX_BATCHSIZE
-            batch = sids[offset:offset + MAX_BATCHSIZE]
-            processed = set()
+            offset = i * batchsize
+            batch_chunk = batch[offset:offset + batchsize]
 
-            for sid in batch:
-                try:
-                    sid = sid.id64
-                except AttributeError:
-                    sid = os.path.basename(str(sid).strip('/'))
+            self._batches.append(list(self._process_batch(batch_chunk)))
 
-                processed.add(str(sid))
+    def _process_batch(self, batch):
+        """ Process the given batch and return
+        an iterable
+        """
+        return batch
 
-            self._batches.append(processed)
+    def _call_method(self, batch):
+        """ Call the desired method for the given batch and
+        return the processed results as an iterable
+        """
+        raise NotImplementedError
 
     def __iter__(self):
         return next(self)
 
     def __next__(self):
         for batch in self._batches:
-            req = api.interface("ISteamUser").GetPlayerSummaries(version=2, steamids=','.join(batch))
-
-            for player in req["response"]["players"]:
-                yield profile.from_def(player)
+            for result in self._call_method(batch):
+                yield result
     next = __next__
+
+
+class profile_batch(_batched_request):
+    def __init__(self, sids):
+        """ Fetches user profiles en masse and generates 'profile' objects.
+        The length of the ID list can be indefinite, separate requests
+        will be made if the length exceeds the API's ID cap and the list
+        split into batches. """
+        super(profile_batch, self).__init__(sids)
+
+    def _process_batch(self, batch):
+        processed = set()
+
+        for sid in batch:
+            try:
+                sid = sid.id64
+            except AttributeError:
+                sid = os.path.basename(str(sid).strip('/'))
+
+            processed.add(str(sid))
+
+        return processed
+
+    def _call_method(self, batch):
+        response = api.interface("ISteamUser").GetPlayerSummaries(version=2, steamids=','.join(batch))
+
+        return [profile.from_def(player) for player in response["response"]["players"]]

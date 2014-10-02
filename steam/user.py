@@ -21,6 +21,14 @@ class VanityError(ProfileError):
     pass
 
 
+class BansError(ProfileError):
+    pass
+
+
+class BansNotFoundError(BansError):
+    pass
+
+
 class vanity_url(object):
     """ Class for holding a vanity URL and its id64 """
 
@@ -287,3 +295,90 @@ class profile_batch(_batched_request):
         response = api.interface("ISteamUser").GetPlayerSummaries(version=2, steamids=','.join(batch))
 
         return [profile.from_def(player) for player in response["response"]["players"]]
+
+class bans(object):
+    def __init__(self, sid, **kwargs):
+        """ Fetch user ban information """
+        try:
+            sid = sid.id64
+        except AttributeError:
+            sid = os.path.basename(str(sid).strip('/'))
+
+        self._cache = {}
+        self._api = api.interface("ISteamUser").GetPlayerBans(steamids=sid, **kwargs)
+
+    @property
+    def _bans(self):
+        if not self._cache:
+            try:
+                res = self._api["players"]
+                try:
+                    self._cache = res[0]
+                except IndexError:
+                    raise BansNotFoundError("No ban results for this profile")
+            except KeyError:
+                raise BansError("Bad ban data returned")
+
+        return self._cache
+
+    @property
+    def id64(self):
+        return int(self._bans["SteamId"])
+
+    @property
+    def community(self):
+        """ Community banned """
+        return self._bans["CommunityBanned"]
+
+    @property
+    def vac(self):
+        """ User is currently VAC banned """
+        return self._bans["VACBanned"]
+
+    @property
+    def vac_count(self):
+        """ Number of VAC bans on record """
+        return self._bans["NumberOfVACBans"]
+
+    @property
+    def days_unbanned(self):
+        """ Number of days since the last ban.
+        Note that users without a ban on record will have
+        this set to 0 so make sure to test bans.vac
+        """
+        return self._bans["DaysSinceLastBan"]
+
+    @property
+    def economy(self):
+        """ Economy ban status which is a string for whatever reason """
+        return self._bans["EconomyBan"]
+
+    @classmethod
+    def from_def(cls, obj):
+        instance = cls(int(obj["SteamId"]))
+        instance._cache = obj
+
+        return instance
+
+
+class bans_batch(_batched_request):
+    def __init__(self, sids):
+        super(bans_batch, self).__init__(sids)
+
+    def _process_batch(self, batch):
+        processed = set()
+
+        for sid in batch:
+            try:
+                sid = sid.id64
+            except AttributeError:
+                sid = os.path.basename(str(sid).strip('/'))
+
+            processed.add(str(sid))
+
+        return processed
+
+    def _call_method(self, batch):
+        response = api.interface("ISteamUser").GetPlayerBans(steamids=','.join(batch))
+
+        return [bans.from_def(player) for player in response["players"]]

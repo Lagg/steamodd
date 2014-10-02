@@ -58,6 +58,7 @@ class ProfileBatchTestCase(ProfileTestCase):
         testsids = [friend["steamid"] for friend in friends["friendslist"]["friends"]]
 
         self.assertEqual(set(testsids), set(map(lambda x: str(x.id64), user.profile_batch(testsids))))
+        self.assertEqual(set(testsids), set(map(lambda x: str(x.id64), user.bans_batch(testsids))))
 
     def test_compatibility(self):
         userlist = [self.VALID_ID64, user.vanity_url("windpower"), user.vanity_url("rjackson"),
@@ -73,3 +74,4 @@ class ProfileBatchTestCase(ProfileTestCase):
             resolvedids.add(str(sid))
 
         self.assertEqual(resolvedids, set(map(lambda x: str(x.id64), user.profile_batch(userlist))))
+        self.assertEqual(resolvedids, set(map(lambda x: str(x.id64), user.bans_batch(userlist))))

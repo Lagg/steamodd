@@ -268,6 +268,15 @@ class item(items.item):
         return self._item.get("tradable")
 
     @property
+    def craftable(self):
+        for attr in self:
+            desc = attr.description
+            if desc.startswith("( Not") and desc.find("Usable in Crafting"):
+                return False
+
+        return True
+
+    @property
     def quality(self):
         """ Can't really trust presence of a schema here, but there is an ID sometimes """
         try:

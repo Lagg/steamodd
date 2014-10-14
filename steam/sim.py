@@ -226,7 +226,12 @@ class item(items.item):
 
     @property
     def name(self):
-        return saxutils.unescape(self._item["market_name"])
+        name = self._item.get("market_name")
+
+        if not name:
+            name = self._item["name"]
+
+        return saxutils.unescape(name)
 
     @property
     def custom_name(self):

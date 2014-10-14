@@ -70,6 +70,11 @@ class profile(object):
     def id64(self):
         """ Returns the 64 bit steam ID (use with other API requests) """
         return int(self._prof["steamid"])
+        
+    @property
+    def id32(self):
+        """ Returns the 32 bit steam ID """
+        return int(self.id64) - 76561197960265728
 
     @property
     def persona(self):

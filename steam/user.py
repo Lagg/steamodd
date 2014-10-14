@@ -72,6 +72,11 @@ class profile(object):
         return int(self._prof["steamid"])
 
     @property
+    def id32(self):
+        """ Returns the 32 bit steam ID """
+        return int(self.id64) - 76561197960265728
+
+    @property
     def persona(self):
         """ Returns the user's persona (what you usually see in-game) """
         return self._prof["personaname"]

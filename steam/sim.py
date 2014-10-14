@@ -328,6 +328,11 @@ class item(items.item):
         for tag in self._get_category("Type"):
             return tag["name"]
 
+    @property
+    def appid(self):
+        """ Return the app ID that this item belongs to """
+        return self._item["appid"]
+
     def _get_category(self, name):
         cats = []
 

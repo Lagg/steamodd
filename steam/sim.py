@@ -264,6 +264,11 @@ class item(items.item):
         return self._item.get("app_data")
 
     @property
+    def tags(self):
+        """ A list of tags attached to the item if applicable, format is subject to change """
+        return self._item.get("tags")
+
+    @property
     def tradable(self):
         return self._item.get("tradable")
 
@@ -286,8 +291,8 @@ class item(items.item):
 
         # We might be able to get the quality strings from the item's tags
         internal_name, name = "normal", "Normal"
-        if 'tags' in self._item:
-            tags = {x.get('category'): x for x in self._item['tags']}
+        if self.tags:
+            tags = {x.get('category'): x for x in self.tags}
             if 'Quality' in tags:
                 internal_name, name = tags['Quality'].get('internal_name'), tags['Quality'].get('name')
 
@@ -355,8 +360,8 @@ class item(items.item):
     def _get_category(self, name):
         cats = []
 
-        if "tags" in self._item:
-            for tag in self._item["tags"]:
+        if self.tags:
+            for tag in self.tags:
                 if tag["category"] == name:
                     cats.append(tag)
 

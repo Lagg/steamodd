@@ -305,7 +305,12 @@ class item(items.item):
     @property
     def attributes(self):
         # Use descriptions here, with alternative attribute class
-        return [item_attribute(attr) for attr in self._item.get("descriptions", [])]
+        descs = self._item.get("descriptions") or []
+
+        if descs:
+            return [item_attribute(attr) for attr in descs]
+        else:
+            return []
 
     @property
     def position(self):

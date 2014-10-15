@@ -187,8 +187,11 @@ class method_result(dict):
     """
 
     def __handle_accessor(self, method, *args, **kwargs):
-        if not self._fetched:
-            self.call()
+        try:
+            if not self._fetched:
+                self.call()
+        except AttributeError:
+            self._fetched = True
 
         return getattr(super(method_result, self), method)(*args, **kwargs)
 

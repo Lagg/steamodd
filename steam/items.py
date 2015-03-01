@@ -652,7 +652,8 @@ class item(object):
 
             if schema:
                 attrdef = schema._attribute_definition(index)
-                index = attrdef["defindex"]
+                if attrdef:
+                    index = attrdef["defindex"]
 
             self._attributes.setdefault(index, {})
 
@@ -666,7 +667,10 @@ class item(object):
                 index = attr["defindex"]
 
                 if schema and index not in self._attributes:
-                    self._attributes[index] = schema._attribute_definition(index)
+                    attrdef = schema._attribute_definition(index)
+
+                    if attrdef:
+                        self._attributes[index] = attrdef
 
                 self._attributes.setdefault(index, {})
                 self._attributes[index].update(attr)

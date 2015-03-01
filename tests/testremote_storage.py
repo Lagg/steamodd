@@ -1,4 +1,11 @@
 import unittest
+
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urllib2 import urlparse
+    urlparse = urlparse.urlparse
+
 from steam import remote_storage
 
 class RemoteStorageTestCase(unittest.TestCase):
@@ -8,7 +15,7 @@ class RemoteStorageTestCase(unittest.TestCase):
     VALID_UGCID = 650994986817657344
     VALID_UGC_SIZE = 134620
     VALID_UGC_FILENAME = "steamworkshop/tf2/_thumb.jpg"
-    VALID_UGC_URL = "http://cloud-4.steampowered.com/ugc/650994986817657344/D2ADAD7F19BFA9A99BD2B8850CC317DC6BA01BA9/" #Silly tea hat made by RJ
+    VALID_UGC_PATH = "/ugc/650994986817657344/D2ADAD7F19BFA9A99BD2B8850CC317DC6BA01BA9/" #Silly tea hat made by RJ
 
     @classmethod
     def setUpClass(cls):
@@ -25,4 +32,5 @@ class RemoteStorageTestCase(unittest.TestCase):
         self.assertEqual(self._test_file.size, self.VALID_UGC_SIZE)
 
     def test_valid_ugcid_url(self):
-        self.assertEqual(self._test_file.url, self.VALID_UGC_URL)
+        parsed_url = urlparse(self._test_file.url)
+        self.assertEqual(parsed_url.path, self.VALID_UGC_PATH)

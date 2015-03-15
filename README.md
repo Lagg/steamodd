@@ -33,9 +33,11 @@ layer to boast as useful but not exactly unrelated utilities.
 
 # Installing #
 
-Steamodd uses the standard distutils module. To install it run
-`python setup.py install`. For further instructions and commands run
-`python setup.py --help`.
+    $ pip install steamodd
+
+If you wish to install it manually, Steamodd uses the standard distutils
+module. To install it run `python setup.py install`. For further instructions
+and commands run `python setup.py --help`.
 
 # Using #
 

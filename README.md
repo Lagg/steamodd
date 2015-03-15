@@ -33,16 +33,77 @@ layer to boast as useful but not exactly unrelated utilities.
 
 # Installing #
 
-Steamodd uses the standard distutils module. To install it run
-`python setup.py install`. For further instructions and commands run
-`python setup.py --help`.
+    $ pip install steamodd
+
+If you wish to install it manually, Steamodd uses the standard distutils
+module. To install it run `python setup.py install`. For further instructions
+and commands run `python setup.py --help`.
 
 # Using #
 
-Before calling any methods you should call the steam.api.key.set
-method and pass it your Steam API key. Most methods will not
-complete successfully without it. If you don't have an API key you
-can register for one on [Steam](http://steamcommunity.com/dev/apikey).
+## Steam API key ##
+
+Before calling any methods you should set Steam API key either from code:
+
+```python
+>>> import steam
+>>> steam.api.key.set(API_KEY)
+```
+
+Or set environmental variable:
+
+    $ export STEAMODD_API_KEY="your_key"
+
+Most methods will not complete successfully without it. If you don't have an
+API key you can register for one on [Steam](http://steamcommunity.com/dev/apikey).
+
+## Low level API ##
+
+You can call [any method from any of Steam API interfaces](https://wiki.teamfortress.com/wiki/WebAPI#Methods)
+using `steam.api.interface` class. Let's start with a quick example where we
+fetch user's game library.
+
+Start by importing `interface` class:
+
+```python
+>>> from steam.api import interface
+```
+
+Call method `GetOwnedGames` of interface `IPlayerService`. We are going to
+download games of user with id `76561198017493014` and include all application
+information:
+
+```python
+>>> games = interface('IPlayerService').GetOwnedGames(steamid=76561198017493014, include_appinfo=1)
+```
+
+Since all method calls are lazy by default, this doesn't do anything at all.
+We'll need to either iterate over `games`, `print` it or access any of its
+dictionary keys:
+
+```python
+>>> print(games['response']['game_count'])  # Fetches resource
+249
+```
+
+Don't worry, resource isn't fetched each time you access results.
+
+```python
+>>> print(games)  # Uses previously fetched resource
+{'response': {'games': [{'name': 'Counter-Strike', 'playtime_forever': 1570,...
+```
+
+You can disable lazyness of `interface` by passing `aggressive=True` to its method:
+
+```python
+>>> games = interface('IPlayerService').GetOwnedGames(steamid=76561198017493014, include_appinfo=1, aggressive=True)
+```
+
+You can also pass `since` (which translates to HTTP header `If-Modified-Since`)
+and `timeout` to method. By default, `version` is set to `1` and `method` is
+`GET`. Any number of additional keyword arguments is supported, depending on
+given method (see [documentation](https://wiki.teamfortress.com/wiki/WebAPI#Methods)).
+
 
 # Testing #
 

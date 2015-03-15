@@ -41,10 +41,21 @@ and commands run `python setup.py --help`.
 
 # Using #
 
-Before calling any methods you should call the steam.api.key.set
-method and pass it your Steam API key. Most methods will not
-complete successfully without it. If you don't have an API key you
-can register for one on [Steam](http://steamcommunity.com/dev/apikey).
+## Steam API key ##
+
+Before calling any methods you should set Steam API key either from code:
+
+```python
+>>> import steam
+>>> steam.api.key.set(API_KEY)
+```
+
+Or set environmental variable:
+
+    $ export STEAMODD_API_KEY="your_key"
+
+Most methods will not complete successfully without it. If you don't have an
+API key you can register for one on [Steam](http://steamcommunity.com/dev/apikey).
 
 # Testing #
 

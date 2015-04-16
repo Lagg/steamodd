@@ -2,3 +2,4 @@
 build
 testscript.py
 .idea/*
+.DS_Store

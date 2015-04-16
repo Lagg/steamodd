@@ -15,6 +15,7 @@ Contents:
    installation
    quick-start
    low-level-api
+   api-reference
 
 
 

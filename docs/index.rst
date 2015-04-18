@@ -14,6 +14,7 @@ Contents:
    history
    installation
    quick-start
+   apps
    low-level-api
    vdf
    api-reference

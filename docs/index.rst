@@ -15,6 +15,7 @@ Contents:
    installation
    quick-start
    apps
+   items
    low-level-api
    vdf
    api-reference

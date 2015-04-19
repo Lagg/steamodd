@@ -30,7 +30,19 @@ class ProfilePrivateError(InventoryError):
 
 
 class schema(object):
-    """ The base class for the item schema. """
+    """ Wrapper for item schema of certain games from Valve. Those are currently
+    available (along with their ids):
+
+        * ``260`` - Counter Strike: Source Beta
+        * ``440`` - Team Fortress 2
+        * ``520`` - Team Fortress 2 Public Beta
+        * ``570`` - Dota 2
+        * ``620`` - Portal 2
+        * ``710`` - Counter-Strike: Global Offensive Beta Dev
+        * ``816`` - Dota 2 internal test
+        * ``841`` - Portal 2 Beta
+        * ``205790`` - Dota 2 (beta) test
+    """
 
     @property
     def _schema(self):
@@ -235,7 +247,7 @@ class schema(object):
 
 
 class item(object):
-    """ Stores a single inventory item """
+    """ Stores a single inventory item. """
 
     @property
     def attributes(self):
@@ -677,7 +689,7 @@ class item(object):
 
 
 class item_attribute(object):
-    """ Wrapper around item attributes """
+    """ Wrapper around item attributes. """
 
     @property
     def formatted_value(self):
@@ -834,7 +846,7 @@ class item_attribute(object):
 
 
 class inventory(object):
-    """ Functions for reading player inventory """
+    """ Wrapper around player inventory. """
 
     @property
     def _inv(self):
@@ -950,7 +962,7 @@ class asset_item:
 
     @property
     def name(self):
-        """ The asset item's name """
+        """ The asset "name" which is in fact a schema id of item. """
         return self._asset.get("name")
 
 

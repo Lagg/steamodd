@@ -18,6 +18,7 @@ Contents:
    items
    localization
    remote-storage
+   sim
    low-level-api
    vdf
    api-reference

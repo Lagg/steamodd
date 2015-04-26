@@ -16,6 +16,7 @@ Contents:
    quick-start
    apps
    items
+   localization
    low-level-api
    vdf
    api-reference

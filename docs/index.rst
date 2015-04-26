@@ -17,6 +17,7 @@ Contents:
    apps
    items
    localization
+   remote-storage
    low-level-api
    vdf
    api-reference

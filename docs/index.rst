@@ -21,7 +21,6 @@ Contents:
    sim
    low-level-api
    vdf
-   api-reference
 
 
 

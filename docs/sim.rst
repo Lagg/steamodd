@@ -9,8 +9,6 @@ of Steam API.
 
     Fetches metadata of inventories for different games of given user:
 
-    .. code-block:: python
-
         >>> inventory_context = steam.sim.inventory_context('76561198017493014')
         >>> inventory_context.apps
         [u'570', u'753', u'251970', u'440', u'620']
@@ -18,8 +16,6 @@ of Steam API.
         {u'name': u'Dota 2', u'trade_permissions': u'FULL', u'rgContexts': ...}
 
     This class also acts as an iterator of inventories:
-
-    .. code-block:: python
 
         >>> for game_inventory_ctx in inventory_context:
         ...     game_inventory_ctx['name']
@@ -43,15 +39,11 @@ of Steam API.
     Takes :class:`steam.sim.inventory_context` and user id, and fetches data
     from given inventory:
 
-    .. code-block:: python
-
         >>> inventory = steam.sim.inventory(inventory_context.get(570), '76561198017493014')
         >>> inventory.cells_total
         650
 
     This class also acts as an iterator yielding :class:`steam.sim.item` objects:
-
-    .. code-block:: python
 
         >>> for item in inventory:
         ...     item.full_name

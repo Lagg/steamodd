@@ -7,8 +7,6 @@ Steam API key
 
 Before calling any methods you should set Steam API key either from code:
 
-.. code-block:: python
-
     >>> import steam
     >>> steam.api.key.set(API_KEY)
 
@@ -29,8 +27,6 @@ Using Steam API wrappers
 
 Majority of this library constists of wrappers around Steam API endpoints. So,
 let's call some:
-
-.. code-block:: python
 
     >>> app_list = steam.apps.app_list()
     >>> 'Dota 2' in app_list

@@ -12,8 +12,6 @@ fetch user's game library.
 
 Start by importing :code:`interface` class:
 
-.. code-block:: python
-
     >>> from steam.api import interface
 
 
@@ -21,30 +19,22 @@ Call method :code:`GetOwnedGames` of interface :code:`IPlayerService`. We are
 going to download games of user with id `76561198017493014` and include all
 application information:
 
-.. code-block:: python
-
     >>> games = interface('IPlayerService').GetOwnedGames(steamid=76561198017493014, include_appinfo=1)
 
 Since all method calls are lazy by default, this doesn't do anything at all.
 We'll need to either iterate over :code:`games`, :code:`print` it or access any
 of its dictionary keys:
 
-.. code-block:: python
-
     >>> print(games['response']['game_count'])  # Fetches resource
     249
 
 Don't worry, resource isn't fetched each time you access results.
-
-.. code-block:: python
 
     >>> print(games)  # Uses previously fetched resource
     {'response': {'games': [{'name': 'Counter-Strike', 'playtime_forever': 1570,...
 
 You can disable lazyness of :code:`interface` by passing :code:`aggressive=True`
 to its method:
-
-.. code-block:: python
 
     >>> games = interface('IPlayerService').GetOwnedGames(steamid=76561198017493014, include_appinfo=1, aggressive=True)
 
@@ -83,8 +73,6 @@ Items
 
     Fetching schema of Team Fortress 2 (id ``440``) would look like:
 
-    .. code-block:: python
-
         >>> schema = steam.items.schema(440)
         >>> schema[340]
         <steam.items.item object at 0x10c871ed0>
@@ -116,8 +104,6 @@ Items
     This is a simple wrapper around JSON representation of both schema and
     inventory items. It is composed mostly from item properties:
 
-    .. code-block:: python
-
         >>> item = schema[340]
         >>> item.name
         u'Defiant Spartan'
@@ -127,8 +113,6 @@ Items
         [<steam.items.item_attribute object at 0x10c8b3290>, <steam.items.item_attribute object at 0x10c8b3210>]
 
     As convenience, ``item`` acts also as iterator of its attributes:
-
-    .. code-block:: python
 
         >>> for attribute in item.attributes:
         ...     attribute.name
@@ -208,8 +192,6 @@ Items
 
 .. autoclass:: steam.items.item_attribute
 
-    .. code-block:: python
-
         >>> for attribute in item.attributes:
         ...     print('%s: %s' % (attribute.name, attribute.formatted_value))
         ...
@@ -248,8 +230,6 @@ Items
 
     Fetches inventory of ``player`` for given ``app`` id:
 
-    .. code-block:: python
-
         >>> import itertools
         >>> inventory = steam.items.inventory(570, 76561198017493014)
         >>> for item in itertools.islice(inventory, 2):
@@ -261,8 +241,6 @@ Items
     Since inventory endpoint returns just very basic structure, we have to
     provide also ``schema`` if we want to work with fully populated :meth:`steam.items.item`
     objects:
-
-    .. code-block:: python
 
         >>> schema = steam.items.schema(440)
         >>> inventory = steam.items.inventory(440, 76561198017493014, schema)
@@ -281,8 +259,6 @@ Items
     Fetches store assets for ``app`` id. Assets class acts as an iterator of
     :meth:`steam.items.asset_item` objects.
 
-    .. code-block:: python
-
         >>> import itertools
         >>> assets = steam.items.assets(440)
         >>> for asset in itertools.islice(assets, 2):
@@ -293,8 +269,6 @@ Items
 
     If you care only about single currency, ``currency`` keyword argument in
     `ISO 4217`_ format is also accepted.
-
-    .. code-block:: python
 
         >>> assets = steam.items.assets(440, currency="RUB")
         >>> for asset in itertools.islice(assets, 2):

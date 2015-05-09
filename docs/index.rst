@@ -14,13 +14,8 @@ Contents:
    history
    installation
    quick-start
-   apps
-   items
-   localization
-   remote-storage
+   api
    sim
-   user
-   low-level-api
    vdf
 
 

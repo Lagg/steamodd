@@ -1,4 +1,81 @@
-=====
+=================
+Steam API methods
+=================
+
+
+Low level API
+=============
+
+You can call `any method from any of Steam API interfaces`_ using
+:code:`steam.api.interface` class. Let's start with a quick example where we
+fetch user's game library.
+
+Start by importing :code:`interface` class:
+
+.. code-block:: python
+
+    >>> from steam.api import interface
+
+
+Call method :code:`GetOwnedGames` of interface :code:`IPlayerService`. We are
+going to download games of user with id `76561198017493014` and include all
+application information:
+
+.. code-block:: python
+
+    >>> games = interface('IPlayerService').GetOwnedGames(steamid=76561198017493014, include_appinfo=1)
+
+Since all method calls are lazy by default, this doesn't do anything at all.
+We'll need to either iterate over :code:`games`, :code:`print` it or access any
+of its dictionary keys:
+
+.. code-block:: python
+
+    >>> print(games['response']['game_count'])  # Fetches resource
+    249
+
+Don't worry, resource isn't fetched each time you access results.
+
+.. code-block:: python
+
+    >>> print(games)  # Uses previously fetched resource
+    {'response': {'games': [{'name': 'Counter-Strike', 'playtime_forever': 1570,...
+
+You can disable lazyness of :code:`interface` by passing :code:`aggressive=True`
+to its method:
+
+.. code-block:: python
+
+    >>> games = interface('IPlayerService').GetOwnedGames(steamid=76561198017493014, include_appinfo=1, aggressive=True)
+
+You can also pass :code:`since` (which translates to HTTP header :code:`If-Modified-Since`)
+and :code:`timeout` to method. By default, :code:`version` is set to :code:`1`
+and :code:`method` is :code:`GET`. Any number of additional keyword arguments is
+supported, depending on given method (see `documentation`_
+
+.. _any method from any of Steam API interfaces:
+    https://wiki.teamfortress.com/wiki/WebAPI#Methods
+
+.. _documentation: https://wiki.teamfortress.com/wiki/WebAPI#Methods
+
+
+Apps
+====
+
+.. autoclass:: steam.apps.app_list
+
+    >>> from steam.apps import app_list
+    >>> app_list = app_list()
+    >>> 'Dota 2' in app_list
+    True
+    >>> 'Half-Life 3' in app_list
+    False
+    >>> len(app_list)
+    16762
+    >>> app_list['Counter-Strike']
+    (10, u'Counter-Strike')
+
+
 Items
 =====
 
@@ -241,3 +318,152 @@ Items
     .. autoattribute:: steam.items.asset_item.name
 
 .. _ISO 4217: http://en.wikipedia.org/wiki/ISO_4217
+
+
+Localization
+============
+
+.. autoclass:: steam.loc.language
+
+    >>> language = steam.loc.language('nl_NL')
+    >>> language.name
+    'Dutch'
+    >>> language.code
+    'nl_NL'
+
+    If language is not specified, it defaults to English:
+
+    >>> language = steam.loc.language()
+    >>> language.name
+    'English'
+    >>> language.code
+    'en_US'
+
+    If language isn't supported, ``__init__`` raises :meth:`steam.loc.LanguageUnsupportedError`
+
+    >>> language = steam.loc.language('sk_SK')
+    Traceback (most recent call last):
+    File "<stdin>", line 1, in <module>
+    File "steam/loc.py", line 68, in __init__
+        raise LanguageUnsupportedError(code)
+    steam.loc.LanguageUnsupportedError: sk_sk
+
+    Properties:
+
+    .. autoattribute:: steam.loc.language.code
+
+    .. autoattribute:: steam.loc.language.name
+
+.. autoclass:: steam.loc.LanguageUnsupportedError
+
+
+Remote storage
+==============
+
+.. autoclass:: steam.remote_storage.ugc_file
+
+    Properties:
+
+    .. autoattribute:: steam.remote_storage.ugc_file.size
+
+    .. autoattribute:: steam.remote_storage.ugc_file.filename
+
+    .. autoattribute:: steam.remote_storage.ugc_file.url
+
+.. autoclass:: steam.remote_storage.FileNotFoundError
+
+
+User
+====
+
+.. autoclass:: steam.user.vanity_url
+
+    >>> vanity_url = steam.user.vanity_url('http://steamcommunity.com/id/ondrowan')
+    >>> vanity_url.id64
+    76561198017493014
+
+.. autoclass:: steam.user.profile
+
+    >>> profile = steam.user.profile('76561198017493014')
+    >>> profile.persona
+    u'Lich Buchannon'
+    >>> profile.level
+    37
+
+    .. autoattribute:: steam.user.profile.id64
+
+    .. autoattribute:: steam.user.profile.id32
+
+    .. autoattribute:: steam.user.profile.persona
+
+    .. autoattribute:: steam.user.profile.profile_url
+
+    .. autoattribute:: steam.user.profile.vanity
+
+    .. autoattribute:: steam.user.profile.avatar_small
+
+    .. autoattribute:: steam.user.profile.avatar_medium
+
+    .. autoattribute:: steam.user.profile.avatar_large
+
+    .. autoattribute:: steam.user.profile.status
+
+    .. autoattribute:: steam.user.profile.visibility
+
+    .. autoattribute:: steam.user.profile.configured
+
+    .. autoattribute:: steam.user.profile.last_online
+
+    .. autoattribute:: steam.user.profile.comments_enabled
+
+    .. autoattribute:: steam.user.profile.real_name
+
+    .. autoattribute:: steam.user.profile.primary_group
+
+    .. autoattribute:: steam.user.profile.creation_date
+
+    .. autoattribute:: steam.user.profile.current_game
+
+    .. autoattribute:: steam.user.profile.location
+
+    .. autoattribute:: steam.user.profile.level
+
+    .. automethod:: steam.user.profile.from_def
+
+    .. autoattribute:: steam.user.profile.current_game
+
+.. autoclass:: steam.user.profile_batch
+
+    >>> profiles = steam.user.profile_batch(['76561198014028523', '76561198017493014'])
+    >>> for profile in profiles:
+    ...     profile.persona
+    ...
+    u'Lagg'
+    u'Lich Buchannon'
+
+.. autoclass:: steam.user.bans
+
+    >>> bans = steam.user.bans('76561197962899758')
+    >>> bans.vac
+    True
+    >>> bans.vac_count
+    1
+    >>> bans.days_unbanned
+    2708
+
+    .. autoattribute:: steam.user.bans.id64
+    .. autoattribute:: steam.user.bans.community
+    .. autoattribute:: steam.user.bans.vac
+    .. autoattribute:: steam.user.bans.vac_count
+    .. autoattribute:: steam.user.bans.days_unbanned
+    .. autoattribute:: steam.user.bans.economy
+    .. automethod:: steam.user.bans.from_def
+
+.. autoclass:: steam.user.bans_batch
+
+    >>> bans_batch = steam.user.bans_batch(['76561197962899758', '76561198017493014'])
+    >>> for bans in bans_batch:
+    ...     '%s: %s' % (bans.id64, bans.vac)
+    ...
+    '76561197962899758: True'
+    '76561198017493014: False'

@@ -19,6 +19,7 @@ Contents:
    localization
    remote-storage
    sim
+   user
    low-level-api
    vdf
 

@@ -5,7 +5,8 @@ Quick start
 Steam API key
 -------------
 
-Before calling any methods you should set Steam API key either from code:
+If you are going to use Steam API, you'll need to set Steam API key either from
+code:
 
     >>> import steam
     >>> steam.api.key.set(API_KEY)
@@ -22,21 +23,11 @@ API key you can register for one on `Steam`_.
 .. _Steam: http://steamcommunity.com/dev/apikey
 
 
-Using Steam API wrappers
-------------------------
+Components
+----------
 
-Majority of this library constists of wrappers around Steam API endpoints. So,
-let's call some:
+This library consists of three major components, which are documented separately:
 
-    >>> app_list = steam.apps.app_list()
-    >>> 'Dota 2' in app_list
-    True
-    >>> 'Half-Life 3' in app_list
-    False
-    >>> len(app_list)
-    16762
-    >>> app_list['Counter-Strike']
-    (10, u'Counter-Strike')
-
-That's mostly what these wrappers do. Every endpoint is different and each of
-them is documented separately.
+* :doc:`api`
+* :doc:`sim`
+* :doc:`vdf`

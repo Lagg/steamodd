@@ -1,10 +1,10 @@
-=================
-Steam API methods
-=================
+==================
+Steam API wrappers
+==================
 
 
-Low level API
-=============
+Low level methods
+=================
 
 You can call `any method from any of Steam API interfaces`_ using
 :code:`steam.api.interface` class. Let's start with a quick example where we
@@ -16,7 +16,7 @@ Start by importing :code:`interface` class:
 
 
 Call method :code:`GetOwnedGames` of interface :code:`IPlayerService`. We are
-going to download games of user with id `76561198017493014` and include all
+going to fetch games of user with id :code:`76561198017493014` and include all
 application information:
 
     >>> games = interface('IPlayerService').GetOwnedGames(steamid=76561198017493014, include_appinfo=1)
@@ -30,10 +30,10 @@ of its dictionary keys:
 
 Don't worry, resource isn't fetched each time you access results.
 
-    >>> print(games)  # Uses previously fetched resource
+    >>> print(games)  # Uses cached resource
     {'response': {'games': [{'name': 'Counter-Strike', 'playtime_forever': 1570,...
 
-You can disable lazyness of :code:`interface` by passing :code:`aggressive=True`
+You can disable laziness of :code:`interface` by passing :code:`aggressive=True`
 to its method:
 
     >>> games = interface('IPlayerService').GetOwnedGames(steamid=76561198017493014, include_appinfo=1, aggressive=True)
@@ -41,7 +41,7 @@ to its method:
 You can also pass :code:`since` (which translates to HTTP header :code:`If-Modified-Since`)
 and :code:`timeout` to method. By default, :code:`version` is set to :code:`1`
 and :code:`method` is :code:`GET`. Any number of additional keyword arguments is
-supported, depending on given method (see `documentation`_
+supported, depending on given method (see `documentation`_).
 
 .. _any method from any of Steam API interfaces:
     https://wiki.teamfortress.com/wiki/WebAPI#Methods
@@ -49,8 +49,16 @@ supported, depending on given method (see `documentation`_
 .. _documentation: https://wiki.teamfortress.com/wiki/WebAPI#Methods
 
 
+High level methods
+==================
+
+Following classes are convenience wrappers around `Low level API`_. :code:`kwargs`
+are always passed to appropriate interface methods, so you can use all arguments
+from previous section.
+
+
 Apps
-====
+----
 
 .. autoclass:: steam.apps.app_list
 
@@ -67,20 +75,18 @@ Apps
 
 
 Items
-=====
+-----
 
 .. autoclass:: steam.items.schema
 
     Fetching schema of Team Fortress 2 (id ``440``) would look like:
 
         >>> schema = steam.items.schema(440)
-        >>> schema[340]
-        <steam.items.item object at 0x10c871ed0>
         >>> schema[340].name
         u'Defiant Spartan'
 
     Schema class is an iterator of :meth:`steam.items.item` objects. There are
-    also other meta properties available:
+    also other properties available:
 
     .. autoattribute:: steam.items.schema.client_url
 
@@ -230,9 +236,8 @@ Items
 
     Fetches inventory of ``player`` for given ``app`` id:
 
-        >>> import itertools
         >>> inventory = steam.items.inventory(570, 76561198017493014)
-        >>> for item in itertools.islice(inventory, 2):
+        >>> for item in inventory:
         ...     item.name
         ...
         '226749283'
@@ -244,13 +249,13 @@ Items
 
         >>> schema = steam.items.schema(440)
         >>> inventory = steam.items.inventory(440, 76561198017493014, schema)
-        >>> for item in itertools.islice(inventory, 2):
+        >>> for item in inventory:
         ...     item.name
         ...
         u'Mercenary'
         u'Noise Maker - Winter Holiday'
 
-    There also single meta property:
+    There is also single property:
 
     .. autoattribute:: steam.items.inventory.cells_total
 
@@ -259,9 +264,8 @@ Items
     Fetches store assets for ``app`` id. Assets class acts as an iterator of
     :meth:`steam.items.asset_item` objects.
 
-        >>> import itertools
         >>> assets = steam.items.assets(440)
-        >>> for asset in itertools.islice(assets, 2):
+        >>> for asset in assets:
         ...     asset.price
         ...
         {u'MXN': 74.0, u'EUR': 4.59, u'VND': 109000.0, u'AUD': 6.5, ...}
@@ -271,7 +275,7 @@ Items
     `ISO 4217`_ format is also accepted.
 
         >>> assets = steam.items.assets(440, currency="RUB")
-        >>> for asset in itertools.islice(assets, 2):
+        >>> for asset in assets:
         ...     asset.price
         ...
         {u'RUB': 290.0}
@@ -295,7 +299,7 @@ Items
 
 
 Localization
-============
+------------
 
 .. autoclass:: steam.loc.language
 
@@ -332,7 +336,7 @@ Localization
 
 
 Remote storage
-==============
+--------------
 
 .. autoclass:: steam.remote_storage.ugc_file
 
@@ -348,7 +352,7 @@ Remote storage
 
 
 User
-====
+----
 
 .. autoclass:: steam.user.vanity_url
 

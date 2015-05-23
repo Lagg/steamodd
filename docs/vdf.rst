@@ -1,6 +1,6 @@
-===
-VDF
-===
+==============
+VDF serializer
+==============
 
 |VDF|_ is format similar to JSON or YAML, used by Valve to store data. This
 module mimics built-in :code:`json` module and provides functions for

@@ -179,6 +179,13 @@ class profile(object):
         return (obj.get("locstatecode"), obj.get("loccountrycode"))
 
     @property
+    def lobbysteamid(self):
+        """
+        Returns a lobbynumber as int from few Source games
+        """
+        return int(self._prof["lobbysteamid"])
+
+    @property
     def _prof(self):
         if not self._cache:
             try:

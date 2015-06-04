@@ -55,7 +55,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Steamodd'
-copyright = u'2015, Anthony Garcia'
+copyright = u'2015, Anthony Garcia & Ondrej Slinták (initial docs)'
 author = u'Anthony Garcia'
 
 # The version info for the project you're documenting, acts as replacement for

@@ -52,7 +52,7 @@ supported, depending on given method (see `documentation`_).
 High level methods
 ==================
 
-Following classes are convenience wrappers around `Low level API`_. :code:`kwargs`
+Following classes are convenience wrappers around `Low level methods`_. :code:`kwargs`
 are always passed to appropriate interface methods, so you can use all arguments
 from previous section.
 

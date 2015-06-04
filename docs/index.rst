@@ -10,6 +10,5 @@ Contents:
    installation
    quick-start
    api
-   remote_storage
    sim
    vdf

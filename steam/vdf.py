@@ -141,10 +141,16 @@ def _run_parse_encoded(string):
 
 
 def load(stream):
+    """
+    Deserializes `stream` containing VDF document to Python object.
+    """
     return _run_parse_encoded(stream.read())
 
 
 def loads(string):
+    """
+    Deserializes `string` containing VDF document to Python object.
+    """
     return _run_parse_encoded(string)
 
 indent = 0
@@ -189,8 +195,15 @@ def _run_dump(obj):
 
 
 def dump(obj, stream):
+    """
+    Serializes `obj` as VDF formatted stream to `stream` object, encoded as
+    UTF-16 by default.
+    """
     stream.write(_run_dump(obj))
 
 
 def dumps(obj):
+    """
+    Serializes `obj` as VDF formatted string, encoded as UTF-16 by default.
+    """
     return _run_dump(obj)

@@ -2,3 +2,7 @@
 build
 testscript.py
 .idea/*
+.DS_Store
+
+# Sphinx
+docs/_build

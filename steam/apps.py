@@ -12,7 +12,7 @@ class AppError(api.APIError):
 
 
 class app_list(object):
-    """ Retrieves a list of all Steam apps with their ID and localized name """
+    """ Retrieves a list of all Steam apps with their ID and localized name. """
     _builtin = {
             753: "Steam",
             440: "Team Fortress 2",

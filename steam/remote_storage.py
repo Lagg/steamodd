@@ -16,6 +16,8 @@ class FileNotFoundError(UGCError):
 
 
 class ugc_file(object):
+    """ Resolves a UGC file ID into usable metadata. """
+
     @property
     def size(self):
         """ Size in bytes """

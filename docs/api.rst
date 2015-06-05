@@ -419,6 +419,8 @@ User
 
     .. autoattribute:: steam.user.profile.location
 
+    .. autoattribute:: steam.user.profile.lobbysteamid
+
     .. autoattribute:: steam.user.profile.level
 
     .. automethod:: steam.user.profile.from_def

@@ -365,6 +365,11 @@ class bans(object):
         """ Economy ban status which is a string for whatever reason """
         return self._bans["EconomyBan"]
 
+    @property
+    def game_count(self):
+        """ Number of bans in games, this includes CS:GO Overwatch bans """
+        return self._bans["NumberOfGameBans"]
+
     @classmethod
     def from_def(cls, obj):
         instance = cls(int(obj["SteamId"]))

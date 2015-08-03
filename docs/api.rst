@@ -463,3 +463,23 @@ User
     ...
     '76561197962899758: True'
     '76561198017493014: False'
+
+.. autoclass:: steam.user.friend
+
+    .. autoattribute:: steam.user.friend.steamid
+    .. autoattribute:: steam.user.friend.relationship
+    .. autoattribute:: steam.user.friend.since
+
+.. autoclass:: steam.user.friend_list
+
+    >>> friend_list = steam.user.friend_list('76561198014028523')
+    >>> friend_list.count
+    146
+    >>> for friend in friend_list:
+    ...     friend.steamid
+    ...
+    76561197960299337
+    76561197960339433
+    (... and 144 more)
+
+    .. autoattribute:: steam.user.friend_list.count

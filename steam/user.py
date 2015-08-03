@@ -113,6 +113,9 @@ class profile(object):
         2: busy
         3: away
         4: snooze
+        5: looking to trade
+        6: looking to play
+        If player's profile is private, this will always be 0.
         """
         return self._prof["personastate"]
 
@@ -128,7 +131,7 @@ class profile(object):
     @property
     def configured(self):
         """ Returns true if the user has created a Community profile """
-        return self._prof.get("profilestate", False)
+        return bool(self._prof.get("profilestate"))
 
     @property
     def last_online(self):
@@ -139,7 +142,7 @@ class profile(object):
     @property
     def comments_enabled(self):
         """ Returns true if the profile allows public comments """
-        return self._prof.get("commentpermission", False)
+        return bool(self._prof.get("commentpermission"))
 
     @property
     def real_name(self):
@@ -166,8 +169,10 @@ class profile(object):
         Current game app ID, server ip:port, misc. extra info (eg. game title)
         """
         obj = self._prof
-        return (obj.get("gameid"), obj.get("gameserverip"),
-                obj.get("gameextrainfo"))
+        gameid = obj.get("gameid")
+        gameserverip = obj.get("gameserverip")
+        gameextrainfo = obj.get("gameextrainfo")
+        return (int(gameid) if gameid else None, gameserverip, gameextrainfo)
 
     @property
     def location(self):
@@ -181,9 +186,9 @@ class profile(object):
     @property
     def lobbysteamid(self):
         """
-        Returns a lobbynumber as int from few Source games
+        Returns a lobbynumber as int from few Source games or 0 if not in lobby.
         """
-        return int(self._prof["lobbysteamid"])
+        return int(self._prof.get("lobbysteamid", 0))
 
     @property
     def _prof(self):

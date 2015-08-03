@@ -452,6 +452,7 @@ User
     .. autoattribute:: steam.user.bans.vac_count
     .. autoattribute:: steam.user.bans.days_unbanned
     .. autoattribute:: steam.user.bans.economy
+    .. autoattribute:: steam.user.bans.game_count
     .. automethod:: steam.user.bans.from_def
 
 .. autoclass:: steam.user.bans_batch

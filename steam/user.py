@@ -445,7 +445,11 @@ class friend_list(object):
         self._api = api.interface("ISteamUser").GetFriendList(steamid=sid,
                                                               relationship=relationship,
                                                               **kwargs)
-        self._friends = self._api["friendslist"]["friends"]
+        try:
+            self._friends = self._api["friendslist"]["friends"]
+        except api.HTTPFileNotFoundError:
+            raise ProfileNotFoundError("Profile not found")
+
         self.index = 0
 
     @property

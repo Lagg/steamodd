@@ -449,6 +449,8 @@ class friend_list(object):
             self._friends = self._api["friendslist"]["friends"]
         except api.HTTPFileNotFoundError:
             raise ProfileNotFoundError("Profile not found")
+        except api.HTTPInternalServerError:
+            raise ProfileNotFoundError("Invalid Steam ID given")
 
         self.index = 0
 

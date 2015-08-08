@@ -77,3 +77,13 @@ class ProfileBatchTestCase(ProfileTestCase):
 
         self.assertEqual(resolvedids, set(map(lambda x: str(x.id64), user.profile_batch(userlist))))
         self.assertEqual(resolvedids, set(map(lambda x: str(x.id64), user.bans_batch(userlist))))
+
+class FriendListTestCase(unittest.TestCase):
+    def test_sids(self):
+        ID64 = 76561198014028523
+
+        profile_batch_friends = api.interface("ISteamUser").GetFriendList(steamid = ID64)
+        profile_batch_testsids = [friend["steamid"] for friend in profile_batch_friends["friendslist"]["friends"]]
+        friend_list = user.friend_list(ID64)
+
+        self.assertEqual(set(profile_batch_testsids), set(map(lambda x: str(x.steamid), friend_list)))

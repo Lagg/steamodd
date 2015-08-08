@@ -55,6 +55,12 @@ class HTTPTimeoutError(HTTPError):
 
 
 class HTTPFileNotFoundError(HTTPError):
+    """ Raised for HTTP code 404 """
+    pass
+
+
+class HTTPInternalServerError(HTTPError):
+    """ Raised for HTTP code 500 """
     pass
 
 
@@ -159,6 +165,8 @@ class http_downloader(object):
                 raise HTTPFileNotFoundError("File not found")
             elif code == 304:
                 raise HTTPStale(str(self._last_modified))
+            elif code == 500:
+                raise HTTPInternalServerError("Internal Server Error")
             else:
                 raise HTTPError("Server connection failed: {0} ({1})".format(reason, code))
         except (socket.timeout, urlerror.URLError):

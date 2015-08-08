@@ -404,3 +404,70 @@ class bans_batch(_batched_request):
         response = api.interface("ISteamUser").GetPlayerBans(steamids=','.join(batch))
 
         return [bans.from_def(player) for player in response["players"]]
+
+
+class friend(object):
+    """
+    Class used to store friend obtained from GetFriendList.
+    """
+    def __init__(self, friend_dict):
+        self._friend_dict = friend_dict
+
+    @property
+    def steamid(self):
+        """ Returns the 64 bit Steam ID """
+        return int(self._friend_dict["steamid"])
+
+    @property
+    def relationship(self):
+        """ Returns relationship qualifier """
+        return self._friend_dict["relationship"]
+
+    @property
+    def since(self):
+        """ Returns date when relationship was created as a localtime time.struct_time """
+        return time.localtime(self._friend_dict["friend_since"])
+
+
+class friend_list(object):
+    """
+    Creates an iterator of friend objects fetched from given user's Steam ID.
+    Allows for filtering by specyfing relationship argument in constructor,
+    but API seems to always return items with friend relationship.
+    Possible filter values: all, friend.
+    """
+    def __init__(self, sid, relationship="all", **kwargs):
+        try:
+            sid = sid.id64
+        except AttributeError:
+            sid = os.path.basename(str(sid).strip('/'))
+
+        self._api = api.interface("ISteamUser").GetFriendList(steamid=sid,
+                                                              relationship=relationship,
+                                                              **kwargs)
+        try:
+            self._friends = self._api["friendslist"]["friends"]
+        except api.HTTPFileNotFoundError:
+            raise ProfileNotFoundError("Profile not found")
+        except api.HTTPInternalServerError:
+            raise ProfileNotFoundError("Invalid Steam ID given")
+
+        self.index = 0
+
+    @property
+    def count(self):
+        """ Returns number of friends """
+        return len(self._friends)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.index < len(self._friends):
+            self.index += 1
+            return friend(self._friends[self.index - 1])
+        else:
+            self.index = 0
+            raise StopIteration
+
+    next = __next__

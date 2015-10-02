@@ -16,3 +16,4 @@ notifications:
             - "chat.freenode.net#optf2"
         template:
             - "%{repository}/%{branch}#%{commit} by %{author}: %{message} - %{build_url}"
+sudo: false

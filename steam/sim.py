@@ -10,6 +10,7 @@ import json
 import operator
 from . import api
 from . import items
+from . import loc
 
 
 class inventory_context(object):
@@ -134,7 +135,12 @@ class inventory(object):
                 downloadlist.append(str(sec))
 
         for sec in downloadlist:
-            req = api.http_downloader(url + sec, timeout=self._timeout)
+            page_url = url + sec
+
+            if self._language:
+                page_url += "?l=" + self._language
+
+            req = api.http_downloader(page_url, timeout=self._timeout)
             inventorysection = json.loads(req.download().decode("utf-8"))
 
             if not inventorysection:
@@ -158,7 +164,7 @@ class inventory(object):
         self._cache = {"cells": cellcount, "items": items}
         return self._cache
 
-    def __init__(self, app, profile, schema=None, section=None, timeout=None):
+    def __init__(self, app, profile, schema=None, section=None, timeout=None, lang=None):
         """
         app is context data as returned by 'inventory_context.get'
         profile is a valid user object or ID64
@@ -168,6 +174,7 @@ class inventory(object):
         self._section = section
         self._ctx = app
         self._timeout = timeout or api.socket_timeout.get()
+        self._language = loc.language(lang).name.lower()
 
         if not app:
             raise items.InventoryError("No inventory available")

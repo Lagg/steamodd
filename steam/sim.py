@@ -123,7 +123,7 @@ class inventory(object):
         url = invstr.format(self._user, self._ctx["appid"])
         contexts = self._ctx["rgContexts"]
         cellcount = 0
-        items = []
+        merged_items = []
 
         if self._section is not None:
             sec = str(self._section)
@@ -159,9 +159,9 @@ class inventory(object):
                 # Store the section ID for later use
                 item["sec"] = sec
                 item.update(itemdescs.get(item["classid"] + "_" + item["instanceid"], {}))
-                items.append(item)
+                merged_items.append(item)
 
-        self._cache = {"cells": cellcount, "items": items}
+        self._cache = {"cells": cellcount, "items": merged_items}
         return self._cache
 
     def __init__(self, app, profile, schema=None, section=None, timeout=None, lang=None):

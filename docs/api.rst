@@ -39,9 +39,9 @@ to its method:
     >>> games = interface('IPlayerService').GetOwnedGames(steamid=76561198017493014, include_appinfo=1, aggressive=True)
 
 You can also pass :code:`since` (which translates to HTTP header :code:`If-Modified-Since`)
-and :code:`timeout` to method. By default, :code:`version` is set to :code:`1`
-and :code:`method` is :code:`GET`. Any number of additional keyword arguments is
-supported, depending on given method (see `documentation`_).
+and :code:`timeout` to method. By default, :code:`version` is set to :code:`1`.
+:code:`data` can be passed to send POST data with requests. By default no data is assumed and request types
+are GET. Any number of additional keyword arguments are supported depending on the given method (see `documentation`_).
 
 .. _any method from any of Steam API interfaces:
     https://wiki.teamfortress.com/wiki/WebAPI#Methods

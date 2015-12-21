@@ -105,8 +105,8 @@ class _interface_method(object):
         self._iface = iface
         self._name = name
 
-    def __call__(self, method="GET", version=1, timeout=None, since=None,
-                 aggressive=False, **kwargs):
+    def __call__(self, version=1, timeout=None, since=None,
+                 aggressive=False, data={}, **kwargs):
         kwargs.setdefault("format", "json")
         kwargs.setdefault("key", key.get())
         url = "http://api.steampowered.com/{0}/{1}/v{2}?{3}".format(self._iface,
@@ -114,7 +114,7 @@ class _interface_method(object):
                                                                     version,
                                                                     urlencode(kwargs))
 
-        return method_result(url, last_modified=since, timeout=timeout, aggressive=aggressive)
+        return method_result(url, last_modified=since, timeout=timeout, aggressive=aggressive, data=data)
 
 
 class interface(object):
@@ -126,11 +126,15 @@ class interface(object):
 
 
 class http_downloader(object):
-    def __init__(self, url, last_modified=None, timeout=None):
+    def __init__(self, url, last_modified=None, timeout=None, data={}):
         self._user_agent = "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; Valve Steam Client/1366845241; ) AppleWebKit/535.15 (KHTML, like Gecko) Chrome/18.0.989.0 Safari/535.11"
         self._url = url
         self._timeout = timeout or socket_timeout.get()
         self._last_modified = last_modified
+        self._data = None
+
+        if data:
+            self._data = data
 
     def _build_headers(self):
         head = {}
@@ -149,8 +153,12 @@ class http_downloader(object):
         body = ''
 
         try:
-            req = urlopen(urlrequest(self._url, headers=head),
-                          timeout=self._timeout)
+            if self._data:
+                url_req = urlrequest(self._url, headers=head, data=urlencode(self._data))
+            else:
+                url_req = urlrequest(self._url, headers=head);
+
+            req = urlopen(url_req, timeout=self._timeout)
             status_code = req.code
             body = req.read()
         except urlerror.HTTPError as E:

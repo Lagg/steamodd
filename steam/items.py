@@ -884,6 +884,11 @@ class inventory(object):
         can be obtained by calling len on an inventory object """
         return self._inv["cells"]
 
+    @property
+    def cells_used(self):
+        """ The total number of used cells in the inventory. """
+        return len(self._inv)
+
     def __getitem__(self, key):
         key = str(key)
         for item in self:

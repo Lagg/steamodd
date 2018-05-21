@@ -100,7 +100,10 @@ class schema(object):
 
             # Schema ID:item map (building this is insanely fast, overhead is
             # minimal compared to lookup benefits in backpacks)
-            items = self._api["result"]["items"]
+            if self._items is not None:
+                items = self._items
+            else:
+                items = self._api["result"]["items"]
             self._cache["items"] = dict([(i["defindex"], i) for i in items])
         except KeyError:
             # Due to the various fields needed we can't check for certain
@@ -243,7 +246,20 @@ class schema(object):
         if self._app == 730 and version == 1:
             version = 2
 
-        self._api = api.interface("IEconItems_" + str(self._app)).GetSchema(language=self._language, version=version, **kwargs)
+        # WORKAROUND: certain apps have moved to GetSchemaOverview/GetSchemaItems
+        if self._app in [440]:
+            self._api = api.interface("IEconItems_" + str(self._app)).GetSchemaOverview(language=self._language, version=version, **kwargs)
+            items = []
+            next_start = 0
+            # HACK: build the entire item list immediately because Valve decided not to allow us to get the entire thing at once
+            while next_start is not None:
+                next_items = api.interface("IEconItems_" + str(self._app)).GetSchemaItems(language=self._language, version=version, aggressive=True, start=next_start, **kwargs)
+                items.extend(next_items["result"]["items"])
+                next_start = next_items["result"].get("next", None)
+            self._items = items
+        else:
+            self._api = api.interface("IEconItems_" + str(self._app)).GetSchema(language=self._language, version=version, **kwargs)
+            self._items = None
 
 
 class item(object):

@@ -27,6 +27,9 @@ class inventory_context(object):
                                  data.decode("utf-8"))
             match = contexts.group(1)
             self._cache = json.loads(match)
+            if type(self._cache) != dict:
+                self._cache = {}
+                raise TypeError("Invalid inventory data type")
         except:
             raise items.InventoryError("No SIM inventory information available for this user")
 

@@ -120,6 +120,23 @@ class profile(object):
         return self._prof["personastate"]
 
     @property
+    def persona_state_flags(self):
+        """ personastateflags
+           0: NONE
+           1: Has Rich Presence
+           2: In Joinable Game
+           4: Golden
+           8: Remote Play Together
+         256: Client Type Web
+         512: Client Type Mobile
+        1024: Client Type Tenfoot
+        2048: Client Type VR
+        4096: Launch Type Gamepad
+        8182: Launch Type CompatTool
+        """
+        return self._prof["personastateflags"]
+
+    @property
     def visibility(self):
         """ Returns the visibility setting of the profile.
         1: private

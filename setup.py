@@ -3,8 +3,8 @@ Copyright (c) 2010-2013, Anthony Garcia <anthony@lagg.me>
 Distributed under the ISC License (see LICENSE)
 """
 
-from distutils.core import setup, Command
-from distutils.errors import DistutilsOptionError
+from setuptools import setup, Command
+from setuptools.errors import OptionError
 from unittest import TestLoader, TextTestRunner
 import sys
 import steam
@@ -24,7 +24,7 @@ class run_tests(Command):
 
     def finalize_options(self):
         if not self.key:
-            raise DistutilsOptionError("API key is required")
+            raise OptionError("API key is required")
         else:
             steam.api.key.set(self.key)
 

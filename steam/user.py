@@ -243,10 +243,11 @@ class profile(object):
             return -1
 
     @classmethod
-    def from_def(cls, obj):
+    def from_def(cls, obj, api):
         """ Builds a profile object from a raw player summary object """
         prof = cls(obj["steamid"])
         prof._cache = obj
+        cls._api = api
 
         return prof
 
@@ -261,7 +262,10 @@ class profile(object):
             sid = os.path.basename(str(sid).strip('/'))
 
         self._cache = {}
-        self._api = api.interface("ISteamUser").GetPlayerSummaries(version=2, steamids=sid, **kwargs)
+        try:
+            self._api
+        except AttributeError:
+            self._api = api.interface("ISteamUser").GetPlayerSummaries(version=2, steamids=sid, **kwargs)
 
 
 class _batched_request(object):
@@ -328,7 +332,7 @@ class profile_batch(_batched_request):
     def _call_method(self, batch):
         response = api.interface("ISteamUser").GetPlayerSummaries(version=2, steamids=','.join(batch))
 
-        return [profile.from_def(player) for player in response["response"]["players"]]
+        return [profile.from_def(player, response) for player in response["response"]["players"]]
 
 class bans(object):
     def __init__(self, sid, **kwargs):

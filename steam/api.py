@@ -109,7 +109,7 @@ class _interface_method(object):
                  aggressive=False, data={}, **kwargs):
         kwargs.setdefault("format", "json")
         kwargs.setdefault("key", key.get())
-        url = "http://api.steampowered.com/{0}/{1}/v{2}?{3}".format(self._iface,
+        url = "https://api.steampowered.com/{0}/{1}/v{2}?{3}".format(self._iface,
                                                                     self._name,
                                                                     version,
                                                                     urlencode(kwargs))

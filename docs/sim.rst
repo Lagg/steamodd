@@ -36,10 +36,9 @@ of Steam API.
 
 .. autoclass:: steam.sim.inventory
 
-    Takes :class:`steam.sim.inventory_context` and user id, and fetches data
-    from given inventory:
+    Takes a user ID, app ID and inventory section ID. Returns given inventory using the JSON/AJAX feed:
 
-        >>> inventory = steam.sim.inventory(inventory_context.get(570), '76561198017493014')
+        >>> inventory = steam.sim.inventory('76561198017493014', 570, 2)
         >>> inventory.cells_total
         650
 
@@ -53,9 +52,13 @@ of Steam API.
         u'Gloried Horn of Druud'
         ...
 
+     An optional last_assetid and page size can be passed for pagination.
+
     Properties:
 
     .. autoattribute:: steam.sim.inventory.cells_total
+    .. autoattribute:: steam.sim.inventory.page_end
+    .. autoattribute:: steam.sim.inventory.pages_continue
 
 .. autoclass:: steam.sim.item
 
@@ -66,8 +69,6 @@ of Steam API.
     available:
 
     .. autoattribute:: steam.items.item.attributes
-
-    .. autoattribute:: steam.sim.item.category
 
     .. autoattribute:: steam.sim.item.background_color
 

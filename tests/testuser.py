@@ -3,19 +3,15 @@ from steam import user
 from steam import api
 
 class ProfileTestCase(unittest.TestCase):
-    VALID_ID64 = 76561198014028523
-    VALID_ID32 = 53762795
+    VALID_ID64 = 76561198811195748
+    VALID_ID32 = 850930020
     INVALID_ID64 = 123
-    # This is weird but there should be no reason that it's invalid.
-    # So Valve, if you see this, be gewd guys and make 33 bit (condensed)
-    # IDs work properly. Or at least put a more appropriate error. Currently
-    # It's impossible to distinguish between this and a bad ID (all are code 8)
     WEIRD_ID64 = (VALID_ID64 >> 33 << 33) ^ VALID_ID64
 
-class VanityTestCase(unittest.TestCase):
-    VALID_VANITY = "stragglerastic"
+    VALID_VANITY = "spacecadet01"
     INVALID_VANITY = "*F*SDF9"
 
+class VanityTestCase(ProfileTestCase):
     def test_invalid_vanity(self):
         vanity = user.vanity_url(self.INVALID_VANITY)
         self.assertRaises(user.VanityError, lambda: vanity.id64)
@@ -53,8 +49,7 @@ class ProfileLevelTestCase(ProfileTestCase):
 
 class ProfileBatchTestCase(ProfileTestCase):
     def test_big_list(self):
-        # As of writing this my list has ~150 friends. I don't plan on going below 100.
-        # If I should become a pariah or otherwise go under 100 this should probably be changed.
+        # Test id64 now lagg-bot test account, might need friends list adds
         # TODO: Implement GetFriendList in steamodd proper
         friends = api.interface("ISteamUser").GetFriendList(steamid = self.VALID_ID64)
         testsids = [friend["steamid"] for friend in friends["friendslist"]["friends"]]
@@ -78,12 +73,10 @@ class ProfileBatchTestCase(ProfileTestCase):
         self.assertEqual(resolvedids, set(map(lambda x: str(x.id64), user.profile_batch(userlist))))
         self.assertEqual(resolvedids, set(map(lambda x: str(x.id64), user.bans_batch(userlist))))
 
-class FriendListTestCase(unittest.TestCase):
+class FriendListTestCase(ProfileTestCase):
     def test_sids(self):
-        ID64 = 76561198014028523
-
-        profile_batch_friends = api.interface("ISteamUser").GetFriendList(steamid = ID64)
+        profile_batch_friends = api.interface("ISteamUser").GetFriendList(steamid = self.VALID_ID64)
         profile_batch_testsids = [friend["steamid"] for friend in profile_batch_friends["friendslist"]["friends"]]
-        friend_list = user.friend_list(ID64)
+        friend_list = user.friend_list(self.VALID_ID64)
 
         self.assertEqual(set(profile_batch_testsids), set(map(lambda x: str(x.steamid), friend_list)))

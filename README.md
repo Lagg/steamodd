@@ -1,11 +1,11 @@
 # Steamodd #
 
-Steam tools library written in Python.
+Steam odds and ends
 
 
 ## Overview ##
 
-Steamodd contains of several useful tools for working with Steam related data:
+Steamodd implements a set of tools for working with the Steam API and related data:
 
 * Steam API interface wrappers
 * Steam inventory manager (SIM)
@@ -14,7 +14,7 @@ Steamodd contains of several useful tools for working with Steam related data:
 
 ## Requirements ##
 
-Python 2.7 or 3.3.
+Python 3+
 
 
 ## Installation ##
@@ -23,7 +23,7 @@ From command line:
 
     $ pip install steamodd
 
-If you wish to install it manually, Steamodd uses the standard distutils
+If you wish to install it manually, Steamodd uses the standard setuptools
 module. To install it run:
 
     $ python setup.py install
@@ -37,8 +37,6 @@ Full documentation is available at http://steamodd.readthedocs.org/en/latest/.
 ## Testing ##
 
 To launch the test suite run `python setup.py run_tests -k <KEY>`.
-
-[![Build Status](https://travis-ci.org/Lagg/steamodd.png)](https://travis-ci.org/Lagg/steamodd)
 
 
 ## Contributing ##

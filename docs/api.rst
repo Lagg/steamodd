@@ -236,7 +236,7 @@ Items
 
     Fetches inventory of ``player`` for given ``app`` id:
 
-        >>> inventory = steam.items.inventory(570, 76561198017493014)
+        >>> inventory = steam.items.inventory(76561198017493014, 570)
         >>> for item in inventory:
         ...     item.name
         ...
@@ -248,7 +248,7 @@ Items
     objects:
 
         >>> schema = steam.items.schema(440)
-        >>> inventory = steam.items.inventory(440, 76561198017493014, schema)
+        >>> inventory = steam.items.inventory(76561198017493014, 440, schema)
         >>> for item in inventory:
         ...     item.name
         ...
@@ -429,11 +429,11 @@ User
 
 .. autoclass:: steam.user.profile_batch
 
-    >>> profiles = steam.user.profile_batch(['76561198014028523', '76561198017493014'])
+    >>> profiles = steam.user.profile_batch(['76561198811195748', '76561198017493014'])
     >>> for profile in profiles:
     ...     profile.persona
     ...
-    u'Lagg'
+    u'Bot.Lagg.Me Space Cadet 01'
     u'Lich Buchannon'
 
 .. autoclass:: steam.user.bans
@@ -472,7 +472,7 @@ User
 
 .. autoclass:: steam.user.friend_list
 
-    >>> friend_list = steam.user.friend_list('76561198014028523')
+    >>> friend_list = steam.user.friend_list('76561198811195748')
     >>> friend_list.count
     146
     >>> for friend in friend_list:

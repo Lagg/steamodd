@@ -1,6 +1,6 @@
 """
 Steam Inventory Manager layer
-Copyright (c) 2010-2013, Anthony Garcia <anthony@lagg.me>
+Copyright (c) 2010+, Anthony Garcia <anthony@lagg.me>
 Distributed under the ISC License (see LICENSE)
 """
 
@@ -8,6 +8,8 @@ from xml.sax import saxutils
 import re
 import json
 import operator
+from urllib.parse import urlencode
+
 from . import api
 from . import items
 from . import loc
@@ -88,16 +90,26 @@ class inventory(object):
     @property
     def cells_total(self):
         """ Returns the total amount of "cells" which in this case is just an amount of items """
-        return self._inv.get("cells", len(self))
+        return self._inv.get("count_total", len(self))
+
+    @property
+    def page_end(self):
+        """ Returns the last asset ID of this page if the inventory continues. Can be passed as page_start arg """
+        return self._inv.get("last_assetid")
+
+    @property
+    def pages_continue(self):
+        """ Returns True if pages continue beyond the one loaded in this instance, False otherwise """
+        return self._inv.get("more", False)
 
     def __next__(self):
         iterindex = 0
-        iterdata = self._inv.get("items", [])
+        classes = self._inv.get("classes", {})
 
-        while iterindex < len(iterdata):
-            data = iterdata[iterindex]
-            iterindex += 1
-            yield item(data, self._ctx["rgContexts"][data["sec"]])
+        for assetid, data in self._inv.get("items", {}).items():
+            clsid = data["classid"] + "_" + data["instanceid"]
+            data.update(classes.get(clsid, {}))
+            yield item(data)
     next = __next__
 
     def __getitem__(self, key):
@@ -118,61 +130,71 @@ class inventory(object):
         if self._cache:
             return self._cache
 
-        downloadlist = []
-        invstr = "http://steamcommunity.com/profiles/{0}/inventory/json/{1}/"
-        url = invstr.format(self._user, self._ctx["appid"])
-        contexts = self._ctx["rgContexts"]
-        cellcount = 0
-        merged_items = []
+        invstr = "http://steamcommunity.com/inventory/{0}/{1}/{2}"
+        page_url = invstr.format(self._user, self._app, self._section)
+        page_url_args = {}
 
-        if self._section is not None:
-            sec = str(self._section)
-            downloadlist = sec
-            cellcount = contexts[sec]["asset_count"]
-        else:
-            for sec, ctx in contexts.items():
-                cellcount += ctx["asset_count"]
-                downloadlist.append(str(sec))
+        if self._language:
+            page_url_args["l"] = self._language
 
-        for sec in downloadlist:
-            page_url = url + sec
+        if self._page_size:
+            page_url_args["count"] = self._page_size
 
-            if self._language:
-                page_url += "?l=" + self._language
+        if self._page_start:
+            page_url_args["start_assetid"] = self._page_start
 
-            req = api.http_downloader(page_url, timeout=self._timeout)
-            inventorysection = json.loads(req.download().decode("utf-8"))
+        page_url += "?" + urlencode(page_url_args)
 
-            if not inventorysection:
-                raise items.InventoryError("Empty context data returned")
+        req = api.http_downloader(page_url, timeout=self._timeout)
+        inventorysection = json.loads(req.download().decode("utf-8"))
 
-            try:
-                itemdescs = inventorysection["rgDescriptions"]
-            except KeyError:
-                raise items.InventoryError("Steam returned inventory with missing context")
+        if not inventorysection:
+            raise items.InventoryError("Empty context data returned")
 
-            inv = inventorysection.get("rgInventory")
-            if not inv:
-                continue
+        itemdescs = inventorysection.get("descriptions")
+        inv = inventorysection.get("assets")
 
-            for id, item in inv.items():
-                # Store the section ID for later use
-                item["sec"] = sec
-                item.update(itemdescs.get(item["classid"] + "_" + item["instanceid"], {}))
-                merged_items.append(item)
+        if not itemdescs:
+            raise items.InventoryError("No classes in inv output")
 
-        self._cache = {"cells": cellcount, "items": merged_items}
+        if not inv:
+            raise items.InventoryError("No assets in inv output")
+
+        descs = {}
+        items = {}
+
+        for desc in itemdescs:
+            descs[desc["classid"] + "_" + desc["instanceid"]] = desc
+
+        for item in inv:
+            items[item["assetid"]] = item
+
+        self._cache = {
+                "classes": descs,
+                "items": items,
+                "app": self._app,
+                "section": self._section,
+                "more": inventorysection.get("more_items", False),
+                "count_total": inventorysection.get("total_inventory_count"),
+                "last_assetid": inventorysection.get("last_assetid")
+        }
+
         return self._cache
 
-    def __init__(self, app, profile, schema=None, section=None, timeout=None, lang=None):
+    def __init__(self, profile, app, section, page_start=None, page_size=2000, timeout=None, lang=None):
         """
-        app is context data as returned by 'inventory_context.get'
-        profile is a valid user object or ID64
+        'profile': User ID or user object
+        'app': Steam app to get the inventory for
+        'section': Inventory section to operatoe on
+        'page_start': Asset ID to use as first item in inv chunk
+        'page_size': How many assets should be in a page
         """
 
+        self._app = app
         self._cache = {}
+        self._page_size = page_size
+        self._page_start = page_start
         self._section = section
-        self._ctx = app
         self._timeout = timeout or api.socket_timeout.get()
         self._language = loc.language(lang).name.lower()
 
@@ -221,11 +243,6 @@ class item_attribute(items.item_attribute):
 
 
 class item(items.item):
-    @property
-    def category(self):
-        """ Returns the category name that the item is a member of """
-        return self._ctx.get("name", self._ctx["id"])
-
     @property
     def background_color(self):
         """ Returns the color associated with the item as a hex RGB tuple """
@@ -356,7 +373,7 @@ class item(items.item):
 
     @property
     def id(self):
-        return int(self._item["id"])
+        return int(self._item["assetid"])
 
     @property
     def slot_name(self):
@@ -379,7 +396,5 @@ class item(items.item):
 
         return cats
 
-    def __init__(self, theitem, context):
-        self._ctx = context
-
+    def __init__(self, theitem):
         super(item, self).__init__(theitem)

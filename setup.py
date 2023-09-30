@@ -1,5 +1,5 @@
 """
-Copyright (c) 2010-2013, Anthony Garcia <anthony@lagg.me>
+Copyright (c) 2010+, Anthony Garcia <anthony@lagg.me>
 Distributed under the ISC License (see LICENSE)
 """
 

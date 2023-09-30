@@ -1,6 +1,6 @@
 """
 Steam economy - Inventories, schemas, assets, etc.
-Copyright (c) 2010-2013, Anthony Garcia <anthony@lagg.me>
+Copyright (c) 2010+, Anthony Garcia <anthony@lagg.me>
 Distributed under the ISC License (see LICENSE)
 """
 
@@ -923,10 +923,10 @@ class inventory(object):
             yield data
     next = __next__
 
-    def __init__(self, app, profile, schema=None, **kwargs):
+    def __init__(self, profile, app, schema=None, **kwargs):
         """
-        'app': Steam app to get the inventory for.
         'profile': A user ID or profile object.
+        'app': Steam app to get the inventory for.
         'schema': The schema to use for item lookup.
         """
 

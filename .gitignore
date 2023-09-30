@@ -3,6 +3,8 @@ build
 testscript.py
 .idea/*
 .DS_Store
+dist
+steamodd.egg-info
 
 # Sphinx
 docs/_build
